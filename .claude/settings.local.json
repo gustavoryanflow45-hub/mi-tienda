@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\xampp\\\\htdocs\\\\mi-tienda\" -Force)",
+      "Bash(Select-Object Name, Mode)",
+      "Bash(grep -o \"Controllers\\\\\\\\\\\\[A-Za-z]*Controller\" \"C:\\\\xampp\\\\htdocs\\\\mi-tienda\\\\routes\\\\web.php\")",
+      "Bash(xargs grep -l \"GeolocationService\")",
+      "Bash(php artisan *)",
+      "Bash(php -r 'require '\\\\''vendor/autoload.php'\\\\''; $app = require '\\\\''bootstrap/app.php'\\\\''; echo '\\\\''App boots OK'\\\\'' . PHP_EOL;')"
+    ]
+  }
+}
