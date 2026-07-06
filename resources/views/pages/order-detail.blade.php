@@ -103,6 +103,13 @@
     .tracker-step.done .tracker-step-label  { color: #679941; }
     .tracker-step.active .tracker-step-label { color: #679941; }
 
+    .tracker-step-date {
+        font-size: .68rem;
+        color: #999;
+        margin-top: 2px;
+        text-align: center;
+    }
+
     /* ── Info cards ── */
     .info-card {
         background: #fff;
@@ -308,11 +315,11 @@
 
             @php
                 $steps = [
-                    'pending'    => ['label' => 'Pedido realizado', 'icon' => 'las la-file-alt'],
-                    'confirmed'  => ['label' => 'Confirmado',       'icon' => 'las la-clipboard-check'],
-                    'warehouse'  => ['label' => 'En almacén',       'icon' => 'las la-warehouse'],
-                    'on_the_way' => ['label' => 'En camino',        'icon' => 'las la-shipping-fast'],
-                    'delivered'  => ['label' => 'Entregado',        'icon' => 'las la-check-circle'],
+                    'pending'    => ['label' => 'Pedido realizado', 'icon' => 'las la-file-alt',        'date' => $order->created_at],
+                    'confirmed'  => ['label' => 'Confirmado',       'icon' => 'las la-clipboard-check', 'date' => $order->confirmed_at],
+                    'warehouse'  => ['label' => 'En almacén',       'icon' => 'las la-warehouse',       'date' => $order->warehouse_at],
+                    'on_the_way' => ['label' => 'En camino',        'icon' => 'las la-shipping-fast',   'date' => $order->dispatched_at],
+                    'delivered'  => ['label' => 'Entregado',        'icon' => 'las la-check-circle',    'date' => $order->delivered_at],
                 ];
 
                 // Orden de los estados
@@ -334,6 +341,9 @@
                             <i class="{{ $step['icon'] }}"></i>
                         </div>
                         <span class="tracker-step-label">{{ $step['label'] }}</span>
+                        @if(($isDone || $isActive) && $step['date'])
+                            <span class="tracker-step-date">{{ $step['date']->format('d-m-Y H:i') }}</span>
+                        @endif
                     </div>
                 @endforeach
             </div>

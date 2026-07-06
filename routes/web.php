@@ -23,6 +23,7 @@ use App\Http\Controllers\SellerOrderController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\Payments\StripeController;
 use App\Http\Controllers\Payments\KushkiController;
 
@@ -170,4 +171,9 @@ Route::middleware('auth')->group(function () {
     // ── Seller — pedidos ───────────────────────────────────────────
     Route::get('/seller/orders', [SellerOrderController::class, 'index'])->name('seller.orders.index');
     Route::post('/seller/orders/{id}/confirm', [SellerOrderController::class, 'confirm'])->name('seller.orders.confirm');
+
+    // ── Almacén — panel de despacho ───────────────────────────────
+    Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse.index');
+    Route::post('/warehouse/orders/{id}/dispatch', [WarehouseController::class, 'dispatchOrder'])->name('warehouse.dispatch');
+    Route::post('/warehouse/orders/{id}/deliver', [WarehouseController::class, 'deliver'])->name('warehouse.deliver');
 });

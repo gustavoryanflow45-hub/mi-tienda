@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\User;
+use App\Notifications\OrderArrivedWarehouseNotification;
+use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -31,7 +34,7 @@ class OrderController extends Controller
 
         // Búsqueda por código
         if ($request->filled('code')) {
-            $query->where('code', 'like', '%' . $request->code . '%');
+            $query->where('code', 'like', '%'.$request->code.'%');
         }
 
         // Filtro fecha inicio
@@ -46,21 +49,34 @@ class OrderController extends Controller
 
         $orders = $query->latest()->paginate(15)->withQueryString();
 
-        return view('pages.orders', compact('orders'));
+        // Avisos de cambio de estado sin leer (se marcan leídos al verlos)
+        $statusUpdates = Auth::user()->unreadNotifications()
+            ->where('type', OrderStatusUpdatedNotification::class)
+            ->get();
+
+        if ($statusUpdates->isNotEmpty()) {
+            Auth::user()->unreadNotifications()
+                ->where('type', OrderStatusUpdatedNotification::class)
+                ->update(['read_at' => now()]);
+        }
+
+        return view('pages.orders', compact('orders', 'statusUpdates'));
     }
 
     // ── GET /orders/{id} ─────────────────────────────────────────
     public function show(int $id)
     {
-        $user    = Auth::user();
+        $user = Auth::user();
         $canSell = in_array($user->user_type, ['seller', 'admin']);
 
         $query = Order::with(['orderDetails.product', 'orderDetails.product.category']);
 
-        if ($canSell) {
+        if ($user->user_type === 'admin') {
+            // El admin (personal de almacén) puede ver cualquier pedido
+        } elseif ($canSell) {
             $query->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                  ->orWhereHas('orderDetails', fn ($qq) => $qq->where('seller_id', $user->id));
+                    ->orWhereHas('orderDetails', fn ($qq) => $qq->where('seller_id', $user->id));
             });
         } else {
             $query->where('user_id', $user->id);
@@ -89,10 +105,20 @@ class OrderController extends Controller
             return back()->with('warehouse_error', 'El pedido debe estar en estado "Confirmado" para enviarlo al almacén.');
         }
 
-        $order->update(['delivery_status' => 'warehouse']);
+        $order->update([
+            'delivery_status' => 'warehouse',
+            'warehouse_at' => now(),
+        ]);
         $order->orderDetails()->where('seller_id', $user->id)
             ->update(['delivery_status' => 'warehouse']);
 
-        return back()->with('warehouse_success', '¡Pedido enviado al almacén correctamente!');
+        // Avisar al personal del almacén (admins) que llegó un pedido
+        User::where('user_type', 'admin')->get()
+            ->each(fn ($admin) => $admin->notify(new OrderArrivedWarehouseNotification($order, $user->name)));
+
+        // Avisar al cliente que su pedido está en el almacén
+        $order->user?->notify(new OrderStatusUpdatedNotification($order, 'warehouse'));
+
+        return back()->with('warehouse_success', '¡Pedido enviado al almacén correctamente! El personal de despacho fue notificado.');
     }
 }

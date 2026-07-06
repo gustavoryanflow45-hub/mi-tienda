@@ -4,8 +4,8 @@ namespace App\Models;
 
 use App\Notifications\SellerNewOrderNotification;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
@@ -26,16 +26,25 @@ class Order extends Model
         'coupon_code',
         'shipping_address',
         'paid_at',
+        'confirmed_at',
+        'warehouse_at',
+        'dispatched_at',
+        'delivered_at',
+        'dispatched_by',
     ];
 
     protected $casts = [
-        'grand_total'      => 'decimal:2',
-        'subtotal'         => 'decimal:2',
-        'tax_amount'       => 'decimal:2',
-        'shipping_total'   => 'decimal:2',
-        'discount_amount'  => 'decimal:2',
+        'grand_total' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'shipping_total' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'shipping_address' => 'array',
-        'paid_at'          => 'datetime',
+        'paid_at' => 'datetime',
+        'confirmed_at' => 'datetime',
+        'warehouse_at' => 'datetime',
+        'dispatched_at' => 'datetime',
+        'delivered_at' => 'datetime',
     ];
 
     public function orderDetails(): HasMany
@@ -54,6 +63,11 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function dispatcher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dispatched_by');
+    }
+
     public function isPaid(): bool
     {
         return $this->payment_status === 'paid';
@@ -70,11 +84,11 @@ class Order extends Model
         }
 
         $this->update([
-            'status'            => 'pagado',
-            'payment_status'    => 'paid',
-            'payment_gateway'   => $gateway,
+            'status' => 'pagado',
+            'payment_status' => 'paid',
+            'payment_gateway' => $gateway,
             'payment_reference' => $reference,
-            'paid_at'           => now(),
+            'paid_at' => now(),
         ]);
 
         $this->orderDetails()->update(['payment_status' => 'paid']);

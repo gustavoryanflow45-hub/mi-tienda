@@ -148,6 +148,11 @@
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
+                                <a href="{{ route('warehouse.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
+                                    <i class="las la-warehouse mr-2 fs-16"></i><span>Almacén</span>
+                                </a>
+                            </li>
+                            <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('wallet.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-wallet mr-2 fs-16"></i><span>Mi Billetera</span>
                                 </a>

@@ -133,6 +133,7 @@
     }
     .badge-pending    { background:#fff3cd; color:#856404; }
     .badge-confirmed  { background:#cce5ff; color:#004085; }
+    .badge-warehouse  { background:#e8d5f5; color:#5a1e82; }
     .badge-on_the_way { background:#d1ecf1; color:#0c5460; }
     .badge-delivered  { background:#d4edda; color:#155724; }
     .badge-cancelled  { background:#f8d7da; color:#721c24; }
@@ -191,6 +192,29 @@
             <p>Revisa el estado y detalle de todos tus pedidos</p>
         </div>
 
+        {{-- Avisos de estado nuevos --}}
+        @if(isset($statusUpdates) && $statusUpdates->isNotEmpty())
+            <div style="background:#eef7ff; border:1px solid #b8dcf5; border-radius:10px; padding:14px 18px; margin-bottom:20px;">
+                <h6 style="font-size:.85rem; font-weight:700; color:#0b5394; margin:0 0 8px; display:flex; align-items:center; gap:6px;">
+                    <i class="las la-bell"></i> Novedades de tus pedidos ({{ $statusUpdates->count() }})
+                </h6>
+                <ul style="margin:0; padding-left:0; list-style:none;">
+                    @foreach($statusUpdates as $update)
+                        <li style="font-size:.82rem; color:#155a8a; padding:4px 0; display:flex; align-items:center; gap:6px;">
+                            <i class="las la-truck"></i>
+                            <a href="{{ route('orders.show', $update->data['order_id']) }}"
+                               style="color:#155a8a; text-decoration:none;">
+                                {{ $update->data['message'] }}
+                            </a>
+                            <span style="margin-left:auto; color:#7fa8c9; font-size:.75rem;">
+                                {{ $update->created_at->diffForHumans() }}
+                            </span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         {{-- Filtros --}}
         <form method="GET" action="{{ route('orders.index') }}" class="filter-bar">
             <div class="filter-group">
@@ -208,6 +232,7 @@
                     <option value="">Filtrar por estado...</option>
                     <option value="pending"    {{ request('delivery_status')=='pending'    ? 'selected':'' }}>Pendiente</option>
                     <option value="confirmed"  {{ request('delivery_status')=='confirmed'  ? 'selected':'' }}>Confirmado</option>
+                    <option value="warehouse"  {{ request('delivery_status')=='warehouse'  ? 'selected':'' }}>En almacén</option>
                     <option value="on_the_way" {{ request('delivery_status')=='on_the_way' ? 'selected':'' }}>En camino</option>
                     <option value="delivered"  {{ request('delivery_status')=='delivered'  ? 'selected':'' }}>Entregado</option>
                     <option value="cancelled"  {{ request('delivery_status')=='cancelled'  ? 'selected':'' }}>Cancelado</option>

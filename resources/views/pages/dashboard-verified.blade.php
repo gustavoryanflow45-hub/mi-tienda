@@ -111,8 +111,8 @@
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-truck mr-2 fs-16"></i><span>Dispatch</span>
+                                <a href="{{ route('warehouse.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
+                                    <i class="las la-warehouse mr-2 fs-16"></i><span>Almacén / Despacho</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">

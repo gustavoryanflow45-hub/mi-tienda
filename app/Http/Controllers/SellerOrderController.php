@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,6 +16,7 @@ class SellerOrderController extends Controller
             if (! in_array(Auth::user()->user_type, ['seller', 'admin'])) {
                 abort(403, 'No autorizado.');
             }
+
             return $next($request);
         });
     }
@@ -33,7 +35,7 @@ class SellerOrderController extends Controller
         }
 
         if ($request->filled('code')) {
-            $query->where('code', 'like', '%' . $request->code . '%');
+            $query->where('code', 'like', '%'.$request->code.'%');
         }
 
         $orders = $query->latest()->paginate(15)->withQueryString();
@@ -62,9 +64,14 @@ class SellerOrderController extends Controller
             return back()->with('warehouse_error', 'Solo se pueden confirmar pedidos en estado "Pendiente".');
         }
 
-        $order->update(['delivery_status' => 'confirmed']);
+        $order->update([
+            'delivery_status' => 'confirmed',
+            'confirmed_at' => now(),
+        ]);
         $order->orderDetails()->where('seller_id', $sellerId)->update(['delivery_status' => 'confirmed']);
 
-        return back()->with('warehouse_success', 'Pedido #' . $order->code . ' confirmado correctamente.');
+        $order->user?->notify(new OrderStatusUpdatedNotification($order, 'confirmed'));
+
+        return back()->with('warehouse_success', 'Pedido #'.$order->code.' confirmado correctamente.');
     }
 }

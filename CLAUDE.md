@@ -72,6 +72,12 @@ Common query scopes: `scopeActive()`, `scopePublished()`, `scopeFeatured()`, `sc
 
 Wallet: `WalletRecharge` / `WalletWithdrawal` records with admin approve/reject routes under `/admin/wallet`.
 
+### Delivery / Warehouse Flow
+
+After payment, `orders.delivery_status` advances: `pending` → `confirmed` (seller, `SellerOrderController@confirm`) → `warehouse` (seller, `OrderController@sendToWarehouse`) → `on_the_way` (warehouse panel dispatch) → `delivered`. Each step stamps its timestamp (`confirmed_at`, `warehouse_at`, `dispatched_at` + `dispatched_by`, `delivered_at`) and every transition is guarded by a check on the previous status.
+
+The warehouse panel (`/warehouse`, `WarehouseController`, view `pages/warehouse.blade.php`) is seller/admin-only and drives dispatch (`POST /warehouse/orders/{id}/dispatch`) and delivery (`.../deliver`). Notifications (all `database` channel): `OrderArrivedWarehouseNotification` goes to all admins when a seller sends an order to the warehouse (shown as "nuevas llegadas" in the panel, marked read on view); `OrderStatusUpdatedNotification` goes to the customer on every status change (shown as a banner in `/orders`, marked read on view). The customer-facing tracker with step dates lives in `pages/order-detail.blade.php`. Full flow covered by `tests/Feature/WarehouseFlowTest.php`.
+
 ### Frontend
 
 Tailwind CSS v4 via Vite plugin. No Vue/React — plain ES modules in `resources/js/`. Blade layouts in `resources/views/layouts/`, partials heavily used via `@include`.
