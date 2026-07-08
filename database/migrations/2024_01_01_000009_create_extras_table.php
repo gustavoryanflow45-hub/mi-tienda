@@ -25,7 +25,8 @@ return new class extends Migration
                 $table->id();
                 $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
                 $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-                $table->foreignId('order_detail_id')->nullable()->constrained('order_details')->nullOnDelete();
+                // Sin FK: order_details se crea en una migración posterior (2026_06_10_200000)
+                $table->unsignedBigInteger('order_detail_id')->nullable();
                 $table->decimal('rating', 3, 1);              // 1.0 - 5.0
                 $table->text('comment')->nullable();
                 $table->string('photos')->nullable();         // JSON de fotos de la reseña

@@ -92,6 +92,6 @@ Ecuador IVA rate (15%) is read from `config/app.php` (key: `ec_iva_rate`). `Kush
 
 ## Database Notes
 
-- Tests use in-memory SQLite (configured in `phpunit.xml`); production uses MySQL.
+- Tests use in-memory SQLite (configured in `phpunit.xml`); local/production uses PostgreSQL (migrated from MySQL 2026-07; the old XAMPP MySQL `woot_db` is kept as a backup and no longer used). PostgreSQL runs as a Windows service independent of XAMPP.
 - `database/migrations/` has 17 migration files — always run `php artisan migrate` after pulling changes. `orders`/`order_details` come from `2026_06_10_200000_create_orders_table.php`; database notifications from `2026_06_22_184700_create_notifications_table.php`.
 - File uploads go to `storage/app/public/`; the `public/storage` symlink must exist (`php artisan storage:link`).
