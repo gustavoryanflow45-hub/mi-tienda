@@ -68,6 +68,7 @@ Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])-
 
 //Chekout
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
+Route::post('/checkout/shipping', [CheckoutController::class, 'saveShipping'])->name('checkout.shipping');
 
 Route::post('/payments/stripe/intent', [StripeController::class, 'createIntent'])->name('payments.stripe.intent');
 Route::post('/payments/kushki/charge',  [KushkiController::class, 'charge'])->name('payments.kushki.charge');

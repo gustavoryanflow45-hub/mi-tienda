@@ -73,6 +73,29 @@ class Order extends Model
         return $this->payment_status === 'paid';
     }
 
+    /** Snapshot de envío del pedido como arreglo (vacío si aún no se captura). */
+    public function shippingInfo(): array
+    {
+        return is_array($this->shipping_address) ? $this->shipping_address : [];
+    }
+
+    /**
+     * El almacén necesita nombre, teléfono, correo y dirección completos
+     * para poder despachar el pedido.
+     */
+    public function hasCompleteShippingInfo(): bool
+    {
+        $info = $this->shippingInfo();
+
+        foreach (['full_name', 'phone', 'email', 'address', 'city'] as $field) {
+            if (trim((string) ($info[$field] ?? '')) === '') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * Mark order as paid, update order details, and notify sellers.
      * Safe to call multiple times — skips if already paid.

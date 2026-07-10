@@ -38,10 +38,10 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'balance'           => 'decimal:2',
-            'email_verified'    => 'boolean',
-            'banned'            => 'boolean',
+            'password' => 'hashed',
+            'balance' => 'decimal:2',
+            'email_verified' => 'boolean',
+            'banned' => 'boolean',
         ];
     }
 
@@ -62,7 +62,7 @@ class User extends Authenticatable
     /** ¿Está verificado? (email_verified_at O email_verified=1) */
     public function isVerified(): bool
     {
-        return !is_null($this->email_verified_at) || (bool) $this->email_verified;
+        return ! is_null($this->email_verified_at) || (bool) $this->email_verified;
     }
 
     // ── Relaciones ───────────────────────────────────────────────
@@ -119,6 +119,29 @@ class User extends Authenticatable
     public function addresses()
     {
         return $this->hasMany(Address::class);
+    }
+
+    /**
+     * Datos de envío del usuario para copiar al pedido:
+     * dirección por defecto (o la más reciente) con el perfil como respaldo.
+     */
+    public function shippingSnapshot(): array
+    {
+        $address = $this->addresses()
+            ->orderByDesc('is_default')
+            ->latest()
+            ->first();
+
+        return [
+            'full_name' => $address->full_name ?? $this->name,
+            'phone' => $address->phone ?? $this->phone,
+            'email' => $address->email ?? $this->email,
+            'address' => $address->address ?? null,
+            'city' => $address->city ?? null,
+            'state' => $address->state ?? null,
+            'country' => $address->country ?? null,
+            'postal_code' => $address->postal_code ?? null,
+        ];
     }
 
     /** Usuario que lo refirió */

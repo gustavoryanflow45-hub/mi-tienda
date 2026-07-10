@@ -38,6 +38,18 @@
 
     .secure-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 14px; font-size: .75rem; color: #aaa; }
     .test-badge { display: inline-block; margin-bottom: 14px; font-size: .72rem; font-weight: 700; color: #8a6d00; background: #fff7dc; border: 1px solid #f0e2a8; padding: 3px 10px; border-radius: 99px; }
+
+    /* Datos de envío */
+    .ship-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .ship-field { display: flex; flex-direction: column; }
+    .ship-field.full { grid-column: 1 / -1; }
+    .ship-field label { font-size: .75rem; font-weight: 600; color: #666; margin-bottom: 4px; }
+    .ship-field label .req { color: #e74c3c; }
+    .ship-field input { border: 1px solid #ddd; border-radius: 6px; padding: 9px 11px; font-size: .85rem; color: #333; outline: none; transition: border-color .15s; }
+    .ship-field input:focus { border-color: #679941; }
+    .ship-field input.invalid { border-color: #e74c3c; }
+    .ship-field .field-error { font-size: .72rem; color: #e74c3c; margin-top: 3px; min-height: 14px; }
+    @media (max-width: 576px) { .ship-grid { grid-template-columns: 1fr; } }
 </style>
 @endsection
 
@@ -52,8 +64,68 @@
 
         <div class="row">
 
-            {{-- ── PAGO ── --}}
+            {{-- ── ENVÍO + PAGO ── --}}
             <div class="col-lg-7 mb-4">
+
+                {{-- Datos de envío: el almacén los necesita completos para despachar --}}
+                <div class="checkout-card mb-4">
+                    <h3><i class="las la-truck mr-1" style="color:#679941;"></i> Datos de envío</h3>
+
+                    <form id="shipping-form" novalidate>
+                        <div class="ship-grid">
+                            <div class="ship-field">
+                                <label for="ship-full_name">Nombre completo <span class="req">*</span></label>
+                                <input type="text" id="ship-full_name" name="full_name" required
+                                       value="{{ old('full_name', $shipping['full_name'] ?? '') }}" autocomplete="name">
+                                <span class="field-error"></span>
+                            </div>
+                            <div class="ship-field">
+                                <label for="ship-phone">Teléfono <span class="req">*</span></label>
+                                <input type="tel" id="ship-phone" name="phone" required
+                                       value="{{ old('phone', $shipping['phone'] ?? '') }}" autocomplete="tel">
+                                <span class="field-error"></span>
+                            </div>
+                            <div class="ship-field full">
+                                <label for="ship-email">Correo electrónico <span class="req">*</span></label>
+                                <input type="email" id="ship-email" name="email" required
+                                       value="{{ old('email', $shipping['email'] ?? '') }}" autocomplete="email">
+                                <span class="field-error"></span>
+                            </div>
+                            <div class="ship-field full">
+                                <label for="ship-address">Dirección <span class="req">*</span></label>
+                                <input type="text" id="ship-address" name="address" required
+                                       value="{{ old('address', $shipping['address'] ?? '') }}"
+                                       placeholder="Calle, número, referencia" autocomplete="street-address">
+                                <span class="field-error"></span>
+                            </div>
+                            <div class="ship-field">
+                                <label for="ship-city">Ciudad <span class="req">*</span></label>
+                                <input type="text" id="ship-city" name="city" required
+                                       value="{{ old('city', $shipping['city'] ?? '') }}" autocomplete="address-level2">
+                                <span class="field-error"></span>
+                            </div>
+                            <div class="ship-field">
+                                <label for="ship-state">Provincia / Estado</label>
+                                <input type="text" id="ship-state" name="state"
+                                       value="{{ old('state', $shipping['state'] ?? '') }}" autocomplete="address-level1">
+                                <span class="field-error"></span>
+                            </div>
+                            <div class="ship-field">
+                                <label for="ship-country">País</label>
+                                <input type="text" id="ship-country" name="country"
+                                       value="{{ old('country', $shipping['country'] ?? ($detectedCountry === 'EC' ? 'Ecuador' : '')) }}" autocomplete="country-name">
+                                <span class="field-error"></span>
+                            </div>
+                            <div class="ship-field">
+                                <label for="ship-postal_code">Código postal</label>
+                                <input type="text" id="ship-postal_code" name="postal_code"
+                                       value="{{ old('postal_code', $shipping['postal_code'] ?? '') }}" autocomplete="postal-code">
+                                <span class="field-error"></span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
                 <div class="checkout-card">
                     <h3>Payment Details</h3>
 
@@ -176,10 +248,67 @@
         return;
     }
 
+    // ── Datos de envío: se validan y guardan en el pedido antes de pagar ──
+    const shipForm     = document.getElementById('shipping-form');
+    const requiredIds  = ['full_name', 'phone', 'email', 'address', 'city'];
+
+    function clearShippingErrors() {
+        shipForm.querySelectorAll('input').forEach(i => i.classList.remove('invalid'));
+        shipForm.querySelectorAll('.field-error').forEach(e => e.textContent = '');
+    }
+
+    function showFieldError(name, message) {
+        const input = document.getElementById('ship-' + name);
+        if (!input) return;
+        input.classList.add('invalid');
+        input.closest('.ship-field').querySelector('.field-error').textContent = message;
+    }
+
+    async function saveShipping() {
+        clearShippingErrors();
+
+        let valid = true;
+        for (const name of requiredIds) {
+            const input = document.getElementById('ship-' + name);
+            if (!input.value.trim()) {
+                showFieldError(name, 'Este campo es obligatorio.');
+                valid = false;
+            }
+        }
+        if (!valid) {
+            throw new Error('Completa los datos de envío para continuar.');
+        }
+
+        const payload = Object.fromEntries(new FormData(shipForm).entries());
+        const res  = await fetch(@json(route('checkout.shipping')), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+            body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            if (data.errors) {
+                Object.entries(data.errors).forEach(([field, msgs]) => showFieldError(field, msgs[0]));
+            }
+            throw new Error(data.message || 'No se pudieron guardar los datos de envío.');
+        }
+    }
+
     payBtn.addEventListener('click', async () => {
         payBtn.disabled = true;
         payBtn.textContent = 'Processing…';
         errorBox.textContent = '';
+
+        try {
+            await saveShipping();
+        } catch (e) {
+            errorBox.textContent = e.message;
+            payBtn.disabled = false;
+            payBtn.textContent = 'Pay ${{ number_format($total, 2) }}';
+            shipForm.querySelector('input.invalid')?.focus();
+            return;
+        }
 
         const { error } = await stripe.confirmPayment({
             elements,

@@ -353,9 +353,17 @@
              RESUMEN DEL PEDIDO
         ══════════════════════════════════ --}}
         @php
-            $addressData = $order->shipping_address_data
-                ? json_decode($order->shipping_address_data, true)
+            $addressData = is_array($order->shipping_address) && count($order->shipping_address)
+                ? $order->shipping_address
                 : null;
+
+            // Vendedor del pedido y admin (almacén) ven los datos completos;
+            // en la vista del cliente se enmascaran.
+            $staffView = Auth::user()->user_type === 'admin' || ($isSeller ?? false);
+
+            $buyerName  = $addressData['full_name'] ?? $order->user->name ?? '—';
+            $buyerEmail = $addressData['email'] ?? $order->user->email ?? null;
+            $buyerPhone = $addressData['phone'] ?? null;
         @endphp
 
         <div class="info-card">
@@ -375,11 +383,11 @@
                     <div class="summary-item">
                         <div class="label">Cliente</div>
                         <div class="value">
-                            @php
-                                $name = Auth::user()->name;
-                                $masked = substr($name, 0, 2) . str_repeat('*', max(0, strlen($name) - 3)) . substr($name, -1);
-                            @endphp
-                            {{ $masked }}
+                            @if($staffView)
+                                {{ $buyerName }}
+                            @else
+                                {{ substr($buyerName, 0, 2) . str_repeat('*', max(0, strlen($buyerName) - 3)) . substr($buyerName, -1) }}
+                            @endif
                         </div>
                     </div>
                     <div class="summary-item">
@@ -393,12 +401,16 @@
                     <div class="summary-item">
                         <div class="label">Email</div>
                         <div class="value">
-                            @php
-                                $email = Auth::user()->email;
-                                $parts = explode('@', $email);
-                                $maskedEmail = substr($parts[0], 0, 2) . str_repeat('*', max(0, strlen($parts[0]) - 2)) . '@' . $parts[1];
-                            @endphp
-                            {{ $maskedEmail }}
+                            @if(! $buyerEmail)
+                                —
+                            @elseif($staffView)
+                                {{ $buyerEmail }}
+                            @else
+                                @php
+                                    $parts = explode('@', $buyerEmail);
+                                @endphp
+                                {{ substr($parts[0], 0, 2) . str_repeat('*', max(0, strlen($parts[0]) - 2)) . '@' . ($parts[1] ?? '') }}
+                            @endif
                         </div>
                     </div>
                     <div class="summary-item">
@@ -410,26 +422,24 @@
                     <div class="summary-item">
                         <div class="label">Dirección de Envío</div>
                         <div class="value">
-                            @if($addressData)
-                                {{ $addressData['address'] ?? $order->shipping_address }},
-                                {{ $addressData['city'] ?? '' }}
+                            @if($addressData && ! empty($addressData['address']))
+                                {{ $addressData['address'] }}{{ ! empty($addressData['city']) ? ', ' . $addressData['city'] : '' }}
+                                {{ $addressData['state'] ?? '' }}
                                 {{ $addressData['country'] ?? '' }}
                             @else
-                                {{ $order->shipping_address ?? '—' }}
+                                —
                             @endif
                         </div>
                     </div>
                     <div class="summary-item">
-                        <div class="label">Contact</div>
+                        <div class="label">Teléfono</div>
                         <div class="value">
-                            @if($addressData && isset($addressData['phone']))
-                                @php
-                                    $phone = $addressData['phone'];
-                                    $maskedPhone = substr($phone, 0, 3) . str_repeat('*', max(0, strlen($phone) - 5)) . substr($phone, -2);
-                                @endphp
-                                {{ $maskedPhone }}
-                            @else
+                            @if(! $buyerPhone)
                                 —
+                            @elseif($staffView)
+                                {{ $buyerPhone }}
+                            @else
+                                {{ substr($buyerPhone, 0, 3) . str_repeat('*', max(0, strlen($buyerPhone) - 5)) . substr($buyerPhone, -2) }}
                             @endif
                         </div>
                     </div>

@@ -105,6 +105,19 @@ class OrderController extends Controller
             return back()->with('warehouse_error', 'El pedido debe estar en estado "Confirmado" para enviarlo al almacén.');
         }
 
+        // El almacén no puede despachar sin los datos del comprador:
+        // intenta completar desde su dirección guardada / perfil antes de bloquear.
+        if (! $order->hasCompleteShippingInfo() && $order->user) {
+            $order->update(['shipping_address' => array_merge(
+                $order->user->shippingSnapshot(),
+                array_filter($order->shippingInfo(), fn ($v) => trim((string) $v) !== ''),
+            )]);
+        }
+
+        if (! $order->hasCompleteShippingInfo()) {
+            return back()->with('warehouse_error', 'No se puede enviar al almacén: faltan datos de envío del cliente (nombre, teléfono, correo, dirección o ciudad). Pide al cliente que complete su dirección de envío.');
+        }
+
         $order->update([
             'delivery_status' => 'warehouse',
             'warehouse_at' => now(),

@@ -59,6 +59,72 @@ class CheckoutTest extends TestCase
         $this->assertSame(50.00, (float) $detail->price);
     }
 
+    public function test_checkout_copies_default_address_as_shipping_snapshot(): void
+    {
+        $customer = $this->makeCustomer();
+        $customer->addresses()->create([
+            'full_name' => 'Juan Pérez',
+            'phone' => '0991234567',
+            'email' => 'juan@example.com',
+            'address' => 'Av. Amazonas N24-03',
+            'city' => 'Quito',
+            'country' => 'Ecuador',
+            'is_default' => 1,
+        ]);
+        $this->addToCart($customer, $this->makeProduct($this->makeSeller()));
+
+        $this->actingAs($customer)->get('/checkout')->assertOk();
+
+        $order = Order::sole();
+        $this->assertTrue($order->hasCompleteShippingInfo());
+        $this->assertSame('Juan Pérez', $order->shipping_address['full_name']);
+        $this->assertSame('0991234567', $order->shipping_address['phone']);
+        $this->assertSame('Av. Amazonas N24-03', $order->shipping_address['address']);
+    }
+
+    public function test_shipping_endpoint_saves_data_on_order_and_default_address(): void
+    {
+        $customer = $this->makeCustomer();
+        $this->addToCart($customer, $this->makeProduct($this->makeSeller()));
+        $this->actingAs($customer)->get('/checkout');
+
+        $payload = [
+            'full_name' => 'María López',
+            'phone' => '0987654321',
+            'email' => 'maria@example.com',
+            'address' => 'Calle Larga 123',
+            'city' => 'Cuenca',
+            'state' => 'Azuay',
+            'country' => 'Ecuador',
+            'postal_code' => '010101',
+        ];
+
+        $this->actingAs($customer)
+            ->postJson('/checkout/shipping', $payload)
+            ->assertOk();
+
+        $order = Order::sole();
+        $this->assertTrue($order->hasCompleteShippingInfo());
+        $this->assertSame('María López', $order->shipping_address['full_name']);
+        $this->assertSame('Calle Larga 123', $order->shipping_address['address']);
+
+        $address = $customer->addresses()->where('is_default', 1)->sole();
+        $this->assertSame('María López', $address->full_name);
+        $this->assertSame('0987654321', $address->phone);
+    }
+
+    public function test_shipping_endpoint_requires_complete_data(): void
+    {
+        $customer = $this->makeCustomer();
+        $this->addToCart($customer, $this->makeProduct($this->makeSeller()));
+        $this->actingAs($customer)->get('/checkout');
+
+        $this->actingAs($customer)
+            ->postJson('/checkout/shipping', ['full_name' => 'Solo Nombre'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['phone', 'email', 'address', 'city']);
+    }
+
     public function test_checkout_reuses_pending_order_and_syncs_totals(): void
     {
         $customer = $this->makeCustomer();

@@ -46,9 +46,24 @@ trait BuildsCheckoutData
         ]);
     }
 
+    protected function completeShippingAddress(User $customer): array
+    {
+        return [
+            'full_name' => $customer->name,
+            'phone' => '0999999999',
+            'email' => $customer->email,
+            'address' => 'Av. Siempre Viva 742',
+            'city' => 'Quito',
+            'state' => 'Pichincha',
+            'country' => 'Ecuador',
+            'postal_code' => '170101',
+        ];
+    }
+
     /**
      * Order in the same state CheckoutController@index leaves it:
-     * pending, unpaid, with one detail row per product.
+     * pending, unpaid, with one detail row per product and the
+     * buyer's shipping snapshot.
      */
     protected function makePendingOrder(User $customer, User $seller, float $total = 100.00): Order
     {
@@ -61,6 +76,7 @@ trait BuildsCheckoutData
             'payment_status' => 'unpaid',
             'subtotal' => $total,
             'grand_total' => $total,
+            'shipping_address' => $this->completeShippingAddress($customer),
         ]);
 
         $order->orderDetails()->create([

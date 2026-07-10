@@ -223,11 +223,20 @@
                                 @forelse($orders as $i => $order)
                                     @php
                                         $sellerSubtotal = $order->orderDetails->sum(fn($d) => $d->price * $d->quantity);
+                                        $addr = is_array($order->shipping_address) ? $order->shipping_address : [];
                                     @endphp
                                     <tr>
                                         <td>{{ $orders->firstItem() + $i }}</td>
                                         <td style="font-weight:600;">{{ $order->code }}</td>
-                                        <td>{{ $order->user->name ?? '—' }}</td>
+                                        <td>
+                                            {{ $addr['full_name'] ?? $order->user->name ?? '—' }}
+                                            @if(! empty($addr['phone']) || ! empty($addr['city']))
+                                                <br><small style="color:#888;">
+                                                    @if(! empty($addr['phone']))<i class="las la-phone"></i> {{ $addr['phone'] }}@endif
+                                                    @if(! empty($addr['city'])) · {{ $addr['city'] }}@endif
+                                                </small>
+                                            @endif
+                                        </td>
                                         <td>{{ $order->created_at->format('d-m-Y H:i') }}</td>
                                         <td style="font-weight:600;">${{ number_format($sellerSubtotal, 2) }}</td>
                                         <td>

@@ -143,6 +143,67 @@ class WarehouseFlowTest extends TestCase
         $this->assertSame('warehouse', $order->fresh()->delivery_status);
     }
 
+    public function test_send_to_warehouse_blocked_without_complete_shipping_info(): void
+    {
+        $seller = $this->makeSeller();
+        $order = $this->makePaidOrder($this->makeCustomer(), $seller);
+        $order->update([
+            'delivery_status' => 'confirmed',
+            'confirmed_at' => now(),
+            'shipping_address' => null, // pedido viejo sin datos de envío
+        ]);
+
+        $this->actingAs($seller)
+            ->post("/orders/{$order->id}/send-to-warehouse")
+            ->assertSessionHas('warehouse_error');
+
+        $this->assertSame('confirmed', $order->fresh()->delivery_status);
+    }
+
+    public function test_send_to_warehouse_backfills_shipping_from_saved_address(): void
+    {
+        $seller = $this->makeSeller();
+        $customer = $this->makeCustomer();
+        $customer->addresses()->create([
+            'full_name' => 'Cliente Backfill',
+            'phone' => '0990000000',
+            'email' => 'backfill@example.com',
+            'address' => 'Av. Backfill 100',
+            'city' => 'Guayaquil',
+            'is_default' => 1,
+        ]);
+
+        $order = $this->makePaidOrder($customer, $seller);
+        $order->update([
+            'delivery_status' => 'confirmed',
+            'confirmed_at' => now(),
+            'shipping_address' => null,
+        ]);
+
+        $this->actingAs($seller)
+            ->post("/orders/{$order->id}/send-to-warehouse")
+            ->assertSessionHas('warehouse_success');
+
+        $order->refresh();
+        $this->assertSame('warehouse', $order->delivery_status);
+        $this->assertSame('Av. Backfill 100', $order->shipping_address['address']);
+        $this->assertSame('0990000000', $order->shipping_address['phone']);
+    }
+
+    public function test_warehouse_panel_shows_buyer_contact_data(): void
+    {
+        $customer = $this->makeCustomer();
+        $order = $this->makePaidOrder($customer, $this->makeSeller());
+        $order->update(['delivery_status' => 'warehouse', 'warehouse_at' => now()]);
+
+        $this->actingAs($this->makeAdmin())
+            ->get('/warehouse')
+            ->assertOk()
+            ->assertSee('Av. Siempre Viva 742')
+            ->assertSee('0999999999')
+            ->assertSee($customer->email);
+    }
+
     public function test_send_to_warehouse_requires_confirmed_status(): void
     {
         $seller = $this->makeSeller();

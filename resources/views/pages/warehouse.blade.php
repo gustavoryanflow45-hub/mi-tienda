@@ -239,16 +239,19 @@
                             <tr>
                                 <td>{{ $orders->firstItem() + $i }}</td>
                                 <td style="font-weight:600;">{{ $order->code }}</td>
-                                <td>{{ $order->user->name ?? '—' }}</td>
+                                <td>{{ $addr['full_name'] ?? $order->user->name ?? '—' }}</td>
                                 <td class="address-cell">
-                                    @if($addr)
-                                        {{ $addr['address'] ?? '' }}{{ isset($addr['city']) ? ', ' . $addr['city'] : '' }}
-                                        {{ $addr['country'] ?? '' }}
-                                        @if(isset($addr['phone']))
+                                    @if($addr && ! empty($addr['address']))
+                                        {{ $addr['address'] }}{{ ! empty($addr['city']) ? ', ' . $addr['city'] : '' }}
+                                        {{ $addr['state'] ?? '' }} {{ $addr['country'] ?? '' }}
+                                        @if(! empty($addr['phone']))
                                             <br><i class="las la-phone"></i> {{ $addr['phone'] }}
                                         @endif
+                                        @if(! empty($addr['email']))
+                                            <br><i class="las la-envelope"></i> {{ $addr['email'] }}
+                                        @endif
                                     @else
-                                        —
+                                        <span style="color:#e74c3c;"><i class="las la-exclamation-triangle"></i> Sin datos de envío</span>
                                     @endif
                                 </td>
                                 <td style="white-space:nowrap; color:#888;">
