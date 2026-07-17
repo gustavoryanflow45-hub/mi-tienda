@@ -258,6 +258,37 @@
     .badge-published { background:#d4edda; color:#155724; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:600; }
     .badge-unpublished { background:#f8d7da; color:#721c24; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:600; }
     .badge-featured { background:#cce5ff; color:#004085; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:600; }
+
+    /* Toggle "Published" con hover */
+    .publish-toggle {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+        border: none;
+        background: none;
+        padding: 0;
+    }
+    .publish-toggle .badge-published,
+    .publish-toggle .badge-unpublished {
+        transition: filter 0.15s, box-shadow 0.15s;
+    }
+    .publish-toggle:hover .badge-published,
+    .publish-toggle:hover .badge-unpublished {
+        filter: brightness(0.95);
+        box-shadow: 0 0 0 2px rgba(103,153,65,0.35);
+    }
+    .publish-toggle .hover-hint {
+        display: none;
+        margin-left: 8px;
+        font-size: 10px;
+        color: #679941;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .publish-toggle:hover .hover-hint { display: inline; }
+    .publish-toggle.is-loading { opacity: 0.6; pointer-events: none; }
+    .publish-toggle .hover-hint i { margin-right: 2px; }
 </style>
 @endsection
 
@@ -504,11 +535,22 @@
                                             <td>{{ $product->stocks->first()->sku ?? '—' }}</td>
                                             <td>${{ number_format($product->unit_price, 2) }}</td>
                                             <td>
-                                                @if($product->published)
-                                                    <span class="badge-published">Yes</span>
-                                                @else
-                                                    <span class="badge-unpublished">No</span>
-                                                @endif
+                                                <button type="button"
+                                                        class="publish-toggle"
+                                                        data-product-id="{{ $product->id }}"
+                                                        data-toggle-published
+                                                        title="{{ $product->published ? 'Clic para despublicar' : 'Clic para publicar y mostrar de nuevo en el home' }}">
+                                                    <span class="publish-badge">
+                                                        @if($product->published)
+                                                            <span class="badge-published">Yes</span>
+                                                        @else
+                                                            <span class="badge-unpublished">No</span>
+                                                        @endif
+                                                    </span>
+                                                    <span class="hover-hint">
+                                                        <i class="las la-sync-alt"></i>{{ $product->published ? 'Despublicar' : 'Publicar' }}
+                                                    </span>
+                                                </button>
                                             </td>
                                             <td>
                                                 @if($product->featured)
@@ -671,6 +713,50 @@
 <script>
     document.getElementById('logoutModal').addEventListener('click', function (e) {
         if (e.target === this) this.classList.remove('show');
+    });
+
+    // ── Toggle "Published" desde la tabla de My Shop Products ──
+    document.querySelectorAll('[data-toggle-published]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (btn.classList.contains('is-loading')) return;
+            btn.classList.add('is-loading');
+
+            const csrf = document.querySelector('meta[name="csrf-token"]').content;
+            const id   = btn.dataset.productId;
+
+            fetch(`/seller/products/${id}/toggle-published`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'Accept': 'application/json',
+                },
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error('No se pudo actualizar el estado.');
+                    return res.json();
+                })
+                .then(data => {
+                    const badgeSpan = btn.querySelector('.publish-badge');
+                    const hint = btn.querySelector('.hover-hint');
+
+                    if (data.published) {
+                        badgeSpan.innerHTML = '<span class="badge-published">Yes</span>';
+                        hint.innerHTML = '<i class="las la-sync-alt"></i>Despublicar';
+                        btn.title = 'Clic para despublicar';
+                    } else {
+                        badgeSpan.innerHTML = '<span class="badge-unpublished">No</span>';
+                        hint.innerHTML = '<i class="las la-sync-alt"></i>Publicar';
+                        btn.title = 'Clic para publicar y mostrar de nuevo en el home';
+                    }
+                })
+                .catch(() => {
+                    alert('No se pudo actualizar el estado de publicación. Intenta de nuevo.');
+                })
+                .finally(() => {
+                    btn.classList.remove('is-loading');
+                });
+        });
     });
 </script>
 @endsection
