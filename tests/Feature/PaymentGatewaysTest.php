@@ -210,6 +210,51 @@ class PaymentGatewaysTest extends TestCase
         $this->assertFalse($order->isPaid());
     }
 
+    // ── Stock ────────────────────────────────────────────────────
+
+    public function test_mark_paid_deducts_stock_only_once(): void
+    {
+        Notification::fake();
+
+        $customer = $this->makeCustomer();
+        $seller = $this->makeSeller();
+        $order = $this->makePendingOrder($customer, $seller);
+
+        $detail = $order->orderDetails()->first();
+        $detail->update(['quantity' => 3, 'variation' => 'M']);
+
+        $product = $detail->product;
+        $product->stocks()->create(['variant' => 'S', 'qty' => 10, 'price' => 100]);
+        $product->stocks()->create(['variant' => 'M', 'qty' => 10, 'price' => 100]);
+
+        $order->markPaid('stripe', 'pi_stock');
+
+        $this->assertSame(10, $product->stocks()->where('variant', 'S')->first()->qty);
+        $this->assertSame(7, $product->stocks()->where('variant', 'M')->first()->qty);
+        $this->assertSame(3, $product->fresh()->num_of_sale);
+
+        // Second call is a no-op: stock is not deducted twice
+        $order->refresh()->markPaid('stripe', 'pi_stock');
+        $this->assertSame(7, $product->stocks()->where('variant', 'M')->first()->qty);
+    }
+
+    public function test_mark_paid_without_variation_deducts_first_stock_and_never_goes_negative(): void
+    {
+        Notification::fake();
+
+        $customer = $this->makeCustomer();
+        $seller = $this->makeSeller();
+        $order = $this->makePendingOrder($customer, $seller);
+
+        $detail = $order->orderDetails()->first();
+        $detail->update(['quantity' => 5]);
+        $detail->product->stocks()->create(['variant' => null, 'qty' => 2, 'price' => 100]);
+
+        $order->markPaid('kushki', 'TK-stock');
+
+        $this->assertSame(0, $detail->product->stocks()->first()->qty);
+    }
+
     /** Signs the payload the same way Stripe does: v1 = HMAC-SHA256("{t}.{payload}"). */
     private function sendSignedStripeWebhook(array $event, string $secret)
     {

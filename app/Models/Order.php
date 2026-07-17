@@ -116,12 +116,38 @@ class Order extends Model
 
         $this->orderDetails()->update(['payment_status' => 'paid']);
 
+        $this->deductStock();
+
         // Notify each distinct seller who has items in this order
         $sellerIds = $this->orderDetails()->whereNotNull('seller_id')->pluck('seller_id')->unique();
 
         foreach ($sellerIds as $sellerId) {
             $seller = User::find($sellerId);
             $seller?->notify(new SellerNewOrderNotification($this));
+        }
+    }
+
+    /**
+     * Descuenta del stock la cantidad comprada de cada ítem del pedido.
+     * Usa la misma regla de coincidencia que el carrito: variación exacta
+     * o, si el ítem no tiene variación, el primer registro de stock.
+     */
+    protected function deductStock(): void
+    {
+        foreach ($this->orderDetails()->with('product.stocks')->get() as $detail) {
+            if (! $detail->product) {
+                continue;
+            }
+
+            $stock = $detail->variation
+                ? $detail->product->stocks->where('variant', $detail->variation)->first()
+                : $detail->product->stocks->first();
+
+            if ($stock) {
+                $stock->update(['qty' => max(0, $stock->qty - $detail->quantity)]);
+            }
+
+            $detail->product->increment('num_of_sale', $detail->quantity);
         }
     }
 }
