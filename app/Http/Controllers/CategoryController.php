@@ -71,4 +71,27 @@ class CategoryController extends Controller
             'maxPrice',
         ));
     }
+
+    /**
+     * Devuelve el submenú (subcategorías) de una categoría para el
+     * panel lateral de categorías del home, al pasar el mouse por encima.
+     * POST /category/nav-element-list
+     */
+    public function navElement(Request $request)
+    {
+        $category = Category::where('id', (int) $request->input('id'))
+            ->where('status', 1)
+            ->first();
+
+        if (!$category) {
+            return response('');
+        }
+
+        $subCategories = Category::where('parent_id', $category->id)
+            ->where('status', 1)
+            ->orderBy('order')
+            ->get();
+
+        return view('partials.category-nav-submenu', compact('category', 'subCategories'));
+    }
 }

@@ -417,12 +417,11 @@
 </section>
 @endif
 
-{{-- SECCIONES DINÁMICAS (AJAX) --}}
-<div id="section_featured"></div>
-<div id="section_best_selling"></div>
-<div id="auction_products"></div>
-<div id="section_home_categories"></div>
-<div id="section_best_sellers"></div>
+{{-- SECCIONES ADICIONALES (renderizadas en el servidor para que las
+     imágenes aparezcan de inmediato, sin esperar peticiones AJAX) --}}
+@include('partials.home-sections.best_selling', ['products' => $best_selling_products])
+@include('partials.home-sections.home_categories', ['categories' => $home_categories])
+@include('partials.home-sections.best_sellers', ['products' => $best_seller_products])
 
 {{-- TOP 10 CATEGORÍAS Y MARCAS --}}
 <section class="mb-4">
@@ -523,23 +522,6 @@ $(document).ready(function () {
         });
     });
 
-    // Secciones dinámicas
-    $.post('{{ route("home.section", "featured") }}', {_token: AIZ.data.csrf}, function (data) {
-        $('#section_featured').html(data);
-        AIZ.plugins.slickCarousel();
-    });
-    $.post('{{ route("home.section", "best_selling") }}', {_token: AIZ.data.csrf}, function (data) {
-        $('#section_best_selling').html(data);
-        AIZ.plugins.slickCarousel();
-    });
-    $.post('{{ route("home.section", "home_categories") }}', {_token: AIZ.data.csrf}, function (data) {
-        $('#section_home_categories').html(data);
-        AIZ.plugins.slickCarousel();
-    });
-    $.post('{{ route("home.section", "best_sellers") }}', {_token: AIZ.data.csrf}, function (data) {
-        $('#section_best_sellers').html(data);
-        AIZ.plugins.slickCarousel();
-    });
 });
 
 // ── Toggle Featured (destacar en home) ──────────────────────────

@@ -27,6 +27,13 @@ class HomeController extends Controller
             ->take(12)
             ->get();
 
+        // Secciones que antes se cargaban por AJAX tras el primer render:
+        // se traen aquí para que las imágenes vengan en el HTML inicial
+        // y no haya que esperar a un round-trip extra para verlas.
+        $best_selling_products = Product::active()->orderBy('num_of_sale', 'desc')->take(12)->get();
+        $home_categories       = Category::active()->whereNull('parent_id')->take(6)->get();
+        $best_seller_products  = Product::active()->orderBy('rating', 'desc')->take(12)->get();
+
         // Si el usuario es admin o seller, cargar sus productos para gestión
         $my_products = null;
         if (Auth::check() && in_array(Auth::user()->user_type, ['admin', 'seller'])) {
@@ -46,6 +53,9 @@ class HomeController extends Controller
             'new_products',
             'promo_banners_1',
             'featured_products',
+            'best_selling_products',
+            'home_categories',
+            'best_seller_products',
             'my_products'
         ));
     }
