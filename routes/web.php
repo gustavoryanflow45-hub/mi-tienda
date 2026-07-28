@@ -168,6 +168,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/seller/products/bulk', [SellerProductController::class, 'bulkStore'])->name('seller.products.bulk.store');
     Route::post('/seller/products/{id}/toggle-featured', [HomeController::class, 'toggleFeatured'])->name('seller.products.toggle-featured');
     Route::post('/seller/products/{id}/toggle-published', [HomeController::class, 'togglePublished'])->name('seller.products.toggle-published');
+    Route::get('/seller/products/{id}/edit', [SellerProductController::class, 'edit'])->name('seller.products.edit');
+    Route::put('/seller/products/{id}', [SellerProductController::class, 'update'])->name('seller.products.update');
 
     // ── Seller — pedidos ───────────────────────────────────────────
     Route::get('/seller/orders', [SellerOrderController::class, 'index'])->name('seller.orders.index');

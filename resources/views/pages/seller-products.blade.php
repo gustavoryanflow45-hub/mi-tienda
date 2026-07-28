@@ -289,6 +289,14 @@
     .publish-toggle:hover .hover-hint { display: inline; }
     .publish-toggle.is-loading { opacity: 0.6; pointer-events: none; }
     .publish-toggle .hover-hint i { margin-right: 2px; }
+    .btn-edit-product {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: #f0f8ea; border: 1px solid #c5e0b4; color: #679941;
+        border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600;
+        text-decoration: none; transition: background .15s, color .15s;
+        white-space: nowrap;
+    }
+    .btn-edit-product:hover { background: #679941; color: #fff; }
 </style>
 @endsection
 
@@ -512,6 +520,7 @@
                                         <th>Price</th>
                                         <th>Published</th>
                                         <th>Featured</th>
+                                        <th class="text-right">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -559,10 +568,17 @@
                                                     <span style="color:#aaa;">No</span>
                                                 @endif
                                             </td>
+                                            <td class="text-right">
+                                                <a href="{{ route('seller.products.edit', $product->id) }}"
+                                                   class="btn-edit-product"
+                                                   title="Editar producto">
+                                                    <i class="las la-edit"></i> Editar
+                                                </a>
+                                            </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="8">
+                                            <td colspan="9">
                                                 <div class="nothing-found">
                                                     <i class="las la-frown-open"></i>
                                                     <span>Nothing found</span>
