@@ -34,6 +34,12 @@ class HomeController extends Controller
         $home_categories       = Category::active()->whereNull('parent_id')->take(6)->get();
         $best_seller_products  = Product::active()->orderBy('rating', 'desc')->take(12)->get();
 
+        // Sección destacada de Zapatos
+        $zapatos_category = Category::active()->where('slug', 'zapatos')->first();
+        $zapatos_products = $zapatos_category
+            ? Product::active()->where('category_id', $zapatos_category->id)->latest()->take(12)->get()
+            : collect();
+
         // Si el usuario es admin o seller, cargar sus productos para gestión
         $my_products = null;
         if (Auth::check() && in_array(Auth::user()->user_type, ['admin', 'seller'])) {
@@ -56,6 +62,8 @@ class HomeController extends Controller
             'best_selling_products',
             'home_categories',
             'best_seller_products',
+            'zapatos_category',
+            'zapatos_products',
             'my_products'
         ));
     }
@@ -75,6 +83,12 @@ class HomeController extends Controller
             case 'best_sellers':
                 $products = Product::active()->orderBy('rating', 'desc')->take(12)->get();
                 return view('partials.home-sections.best_sellers', compact('products'));
+            case 'zapatos':
+                $category = Category::active()->where('slug', 'zapatos')->first();
+                $products = $category
+                    ? Product::active()->where('category_id', $category->id)->latest()->take(12)->get()
+                    : collect();
+                return view('partials.home-sections.zapatos', compact('products', 'category'));
             default:
                 return response()->json(['error' => 'Section not found'], 404);
         }
