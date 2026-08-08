@@ -73,10 +73,29 @@ class CartController extends Controller
 
         $stock = $variant
             ? ProductStock::where('product_id', $product->id)->where('variant', $variant)->first()
-            : ProductStock::where('product_id', $product->id)->first();
+            : ProductStock::where('product_id', $product->id)->whereNull('variant')->first();
+
+        // Un producto con variantes exige una combinación que exista. Antes,
+        // una variación desconocida dejaba $stock en null y las validaciones
+        // de abajo se saltaban enteras: se agregaba a precio base y sin tope.
+        if ($product->load('stocks')->hasVariants() && ! $stock) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => $variant
+                    ? 'Esa combinación no está disponible.'
+                    : 'Elige talla y color antes de agregar al carrito.',
+            ]);
+        }
 
         // Validar stock disponible
-        if ($stock && $quantity > $stock->qty) {
+        if (! $stock || $stock->qty <= 0) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Producto agotado.',
+            ]);
+        }
+
+        if ($quantity > $stock->qty) {
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Not enough stock. Only ' . $stock->qty . ' available.',

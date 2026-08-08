@@ -163,10 +163,12 @@
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Categoría <span class="req">*</span></label>
                                     @php $catId = old('category_id', $product->category_id); @endphp
-                                    <select name="category_id" id="category_id" class="form-control" required>
+                                    <select name="category_id" id="category_id" class="form-control" required onchange="onCategoryChange()">
                                         <option value="">Seleccionar categoría...</option>
                                         @foreach($categories as $cat)
-                                            <option value="{{ $cat->id }}" {{ $catId==$cat->id?'selected':'' }}>{{ $cat->name }}</option>
+                                            <option value="{{ $cat->id }}"
+                                                    data-variant-type="{{ $cat->variant_type }}"
+                                                    {{ $catId==$cat->id?'selected':'' }}>{{ $cat->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -294,11 +296,16 @@
                                 </div>
                             </div>
 
-                            <label class="form-label">Stock <span class="req">*</span></label>
-                            <div id="stock-rows"></div>
-                            <button type="button" class="btn-add-stock mt-1" onclick="addStockRow()">
-                                <i class="las la-plus mr-1"></i> Agregar fila de stock
-                            </button>
+                            @php
+                                $initialStocks = old('stocks', $product->stocks->map(fn($s) => [
+                                    'size'  => $s->size,
+                                    'color' => $s->color,
+                                    'price' => $s->price,
+                                    'qty'   => $s->qty,
+                                    'sku'   => $s->sku,
+                                ])->values());
+                            @endphp
+                            @include('partials.variant-builder', ['initialStocks' => $initialStocks])
                         </div>
                     </div>
 
@@ -364,52 +371,6 @@
 
 @section('extra_js')
 <script>
-let stockIndex = 0;
-
-function addStockRow(preset = {}) {
-    const i = stockIndex++;
-    const variant = preset.variant ? String(preset.variant).replace(/"/g, '&quot;') : '';
-    const price   = preset.price ?? '';
-    const qty     = preset.qty ?? '';
-    const sku     = preset.sku ? String(preset.sku).replace(/"/g, '&quot;') : '';
-    const html = `
-        <div class="stock-row" id="stock-row-${i}">
-            <div class="stock-row-header">
-                <span class="stock-row-badge">Variante #${i + 1}</span>
-                <button type="button" class="btn-remove-stock" onclick="document.getElementById('stock-row-${i}').remove()">
-                    <i class="las la-times mr-1"></i> Eliminar
-                </button>
-            </div>
-            <div class="stock-row-fields">
-                <div>
-                    <label class="form-label" style="font-size:.78rem;">Variante <span style="color:#aaa;font-weight:400;">(color, talla...)</span></label>
-                    <input type="text" name="stocks[${i}][variant]" class="form-control" value="${variant}" placeholder="vacío si no aplica">
-                </div>
-                <div>
-                    <label class="form-label" style="font-size:.78rem;">Precio <span style="color:#e74c3c;">*</span></label>
-                    <input type="number" name="stocks[${i}][price]" class="form-control" value="${price}" step="0.01" min="0" required>
-                </div>
-                <div>
-                    <label class="form-label" style="font-size:.78rem;">Cantidad <span style="color:#e74c3c;">*</span></label>
-                    <input type="number" name="stocks[${i}][qty]" class="form-control" value="${qty}" min="0" required>
-                </div>
-                <div>
-                    <label class="form-label" style="font-size:.78rem;">SKU</label>
-                    <input type="text" name="stocks[${i}][sku]" class="form-control" value="${sku}" placeholder="SKU-${String(i+1).padStart(3,'0')}">
-                </div>
-            </div>
-        </div>`;
-    document.getElementById('stock-rows').insertAdjacentHTML('beforeend', html);
-}
-
-// Cargar los stocks existentes del producto
-@php $existingStocks = old('stocks', $product->stocks->map(fn($s) => ['variant' => $s->variant, 'price' => $s->price, 'qty' => $s->qty, 'sku' => $s->sku])->values()); @endphp
-const existingStocks = @json($existingStocks);
-if (existingStocks && existingStocks.length) {
-    existingStocks.forEach(s => addStockRow(s));
-} else {
-    addStockRow();
-}
 
 // ── Preview imágenes ──
 function previewSingle(input, containerId) {

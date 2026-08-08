@@ -33,6 +33,51 @@ class Product extends Model
     public function scopeActive($query)   { return $query->where('published', 1)->where('approved', 1); }
     public function scopeFeatured($query) { return $query->where('featured', 1); }
 
+    /** Tallas con al menos una fila de stock, en el orden de config/variants.php. */
+    public function availableSizes(): array
+    {
+        $used = $this->stocks->pluck('size')->filter()->unique();
+
+        if ($used->isEmpty()) {
+            return [];
+        }
+
+        $order = $this->category?->sizeOptions() ?? [];
+
+        return $used->sortBy(fn ($size) => array_search($size, $order, true) === false
+            ? PHP_INT_MAX
+            : array_search($size, $order, true))->values()->all();
+    }
+
+    /** Colores con al menos una fila de stock, en el orden de la paleta. */
+    public function availableColors(): array
+    {
+        $used = $this->stocks->pluck('color')->filter()->unique();
+
+        if ($used->isEmpty()) {
+            return [];
+        }
+
+        $order = array_keys(config('variants.colors', []));
+
+        return $used->sortBy(fn ($color) => array_search($color, $order, true) === false
+            ? PHP_INT_MAX
+            : array_search($color, $order, true))->values()->all();
+    }
+
+    /** Fila de stock de una combinación concreta, o null si no existe. */
+    public function stockFor(?string $size, ?string $color): ?ProductStock
+    {
+        return $this->stocks->first(fn ($stock) => (string) $stock->size === (string) $size
+            && (string) $stock->color === (string) $color);
+    }
+
+    /** Si el producto se vende por combinaciones y exige elegir una. */
+    public function hasVariants(): bool
+    {
+        return $this->availableSizes() !== [] || $this->availableColors() !== [];
+    }
+
     public function getDiscountedPriceAttribute(): float
     {
         if ($this->discount <= 0) return (float) $this->unit_price;

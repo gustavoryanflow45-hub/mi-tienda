@@ -9,6 +9,8 @@ use App\Models\ProductStock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class SellerProductController extends Controller
 {
@@ -68,6 +70,8 @@ class SellerProductController extends Controller
             'stocks.*.qty' => 'required|integer|min:0',
         ]);
 
+        $this->validateVariants($request);
+
         // Slug único
         $slug = Str::slug($request->name);
         $count = Product::where('slug', 'like', $slug.'%')->count();
@@ -115,19 +119,81 @@ class SellerProductController extends Controller
             'meta_description' => $request->meta_description,
         ]);
 
-        // Crear stocks
-        foreach ($request->stocks as $stockData) {
-            ProductStock::create([
-                'product_id' => $product->id,
-                'variant' => $stockData['variant'] ?? null,
-                'price' => $stockData['price'],
-                'qty' => $stockData['qty'],
-                'sku' => $stockData['sku'] ?? null,
-            ]);
-        }
+        $this->syncStocks($product, $request->stocks);
 
         return redirect()->route('seller.products.index')
             ->with('success', '¡Producto "'.$product->name.'" creado exitosamente!');
+    }
+
+    /**
+     * Valida las combinaciones talla/color contra lo que admite la categoría.
+     *
+     * La UI ya oculta las tallas en categorías que no las usan, pero la regla
+     * se aplica aquí para que no dependa del formulario: un POST directo con
+     * talla en una categoría "solo color" tiene que fallar.
+     */
+    private function validateVariants(Request $request): void
+    {
+        $category = Category::find($request->category_id);
+
+        if (! $category) {
+            return; // la regla exists: del validate() ya se encargó
+        }
+
+        $allowedSizes  = $category->sizeOptions();
+        $allowedColors = array_keys(config('variants.colors', []));
+        $rules         = [];
+
+        foreach (array_keys($request->stocks ?? []) as $i) {
+            $rules["stocks.$i.color"] = ['nullable', Rule::in($allowedColors)];
+
+            $rules["stocks.$i.size"] = $category->usesSizes()
+                ? ['nullable', Rule::in($allowedSizes)]
+                : ['nullable', 'prohibited'];
+        }
+
+        $request->validate($rules, [
+            'stocks.*.size.prohibited' => "La categoría \"{$category->name}\" no maneja tallas, solo color.",
+            'stocks.*.size.in'         => 'Talla no válida para esta categoría.',
+            'stocks.*.color.in'        => 'Color no válido.',
+        ]);
+
+        // Dos filas con la misma combinación dejarían el stock ambiguo: al
+        // resolver la variante en el carrito ganaría una de las dos al azar.
+        $combos = collect($request->stocks)
+            ->map(fn ($s) => ProductStock::buildVariant($s['size'] ?? null, $s['color'] ?? null));
+
+        if ($combos->count() !== $combos->unique()->count()) {
+            $repetida = $combos->duplicates()->first();
+
+            throw ValidationException::withMessages([
+                'stocks' => 'Hay filas de stock repetidas para la misma combinación'
+                    .($repetida ? " (\"{$repetida}\")" : '').'. Deja una sola por talla y color.',
+            ]);
+        }
+    }
+
+    /** Reemplaza las filas de stock del producto por las del formulario. */
+    private function syncStocks(Product $product, array $stocks): void
+    {
+        $product->stocks()->delete();
+
+        foreach ($stocks as $stockData) {
+            ProductStock::create([
+                'product_id' => $product->id,
+                'size'       => filled($stockData['size'] ?? null) ? $stockData['size'] : null,
+                'color'      => filled($stockData['color'] ?? null) ? $stockData['color'] : null,
+                'price'      => $stockData['price'],
+                'qty'        => $stockData['qty'],
+                'sku'        => $stockData['sku'] ?? null,
+            ]);
+        }
+
+        // variant_product refleja si el producto se vende por combinaciones,
+        // que es lo que el detalle usa para exigir una selección.
+        $product->update([
+            'variant_product' => $product->load('stocks')->hasVariants() ? 1 : 0,
+        ]);
     }
 
     // ── GET /seller/products/{id}/edit ───────────────────────────
@@ -166,6 +232,8 @@ class SellerProductController extends Controller
             'stocks.*.price' => 'required|numeric|min:0',
             'stocks.*.qty' => 'required|integer|min:0',
         ]);
+
+        $this->validateVariants($request);
 
         // Imagen principal: solo se reemplaza si se sube una nueva
         if ($request->hasFile('thumbnail')) {
@@ -206,17 +274,7 @@ class SellerProductController extends Controller
         ]);
         $product->save();
 
-        // Reemplazar stocks: borrar los antiguos y recrear
-        $product->stocks()->delete();
-        foreach ($request->stocks as $stockData) {
-            ProductStock::create([
-                'product_id' => $product->id,
-                'variant' => $stockData['variant'] ?? null,
-                'price' => $stockData['price'],
-                'qty' => $stockData['qty'],
-                'sku' => $stockData['sku'] ?? null,
-            ]);
-        }
+        $this->syncStocks($product, $request->stocks);
 
         return redirect()->route('seller.products.index')
             ->with('success', '¡Producto "'.$product->name.'" actualizado exitosamente!');
@@ -240,14 +298,14 @@ class SellerProductController extends Controller
             'name', 'category_id', 'unit_price', 'stock_qty', 'stock_price',
             'brand_id', 'purchase_price', 'discount', 'discount_type',
             'unit', 'shipping_cost', 'short_description', 'description',
-            'sku', 'variant', 'published', 'featured',
+            'sku', 'size', 'color', 'published', 'featured',
         ];
 
         $example = [
             'Camiseta Azul', '1', '29.99', '50', '29.99',
             '', '15.00', '10', 'percent',
             'pieza', '5.00', 'Algodón 100%', 'Descripción completa del producto',
-            'CAM-AZU-001', 'Azul-L', '1', '0',
+            'CAM-AZU-001', 'L', 'azul', '1', '0',
         ];
 
         $callback = function () use ($columns, $example) {
@@ -315,13 +373,28 @@ class SellerProductController extends Controller
                     'featured' => isset($d['featured']) ? (int) $d['featured'] : 0,
                 ]);
 
+                $size  = filled($d['size'] ?? null) ? trim($d['size']) : null;
+                $color = filled($d['color'] ?? null) ? Str::lower(trim($d['color'])) : null;
+
+                // Mismas reglas que el formulario: sin tallas donde la
+                // categoría no las usa, y colores dentro de la paleta.
+                if ($size !== null && ! in_array($size, $product->category?->sizeOptions() ?? [], true)) {
+                    throw new \RuntimeException("talla \"{$size}\" no válida para la categoría.");
+                }
+                if ($color !== null && ! array_key_exists($color, config('variants.colors', []))) {
+                    throw new \RuntimeException("color \"{$color}\" no está en la paleta.");
+                }
+
                 ProductStock::create([
                     'product_id' => $product->id,
-                    'variant' => $d['variant'] ?? null,
+                    'size' => $size,
+                    'color' => $color,
                     'price' => (float) $d['stock_price'],
                     'qty' => (int) $d['stock_qty'],
                     'sku' => $d['sku'] ?? null,
                 ]);
+
+                $product->update(['variant_product' => ($size || $color) ? 1 : 0]);
 
                 $created++;
             } catch (\Exception $e) {

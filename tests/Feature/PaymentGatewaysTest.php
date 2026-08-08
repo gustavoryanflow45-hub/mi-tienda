@@ -223,9 +223,11 @@ class PaymentGatewaysTest extends TestCase
         $detail = $order->orderDetails()->first();
         $detail->update(['quantity' => 3, 'variation' => 'M']);
 
+        // variant es derivado de size/color desde que existen las variantes
+        // estructuradas, así que las filas se crean por talla.
         $product = $detail->product;
-        $product->stocks()->create(['variant' => 'S', 'qty' => 10, 'price' => 100]);
-        $product->stocks()->create(['variant' => 'M', 'qty' => 10, 'price' => 100]);
+        $product->stocks()->create(['size' => 'S', 'qty' => 10, 'price' => 100]);
+        $product->stocks()->create(['size' => 'M', 'qty' => 10, 'price' => 100]);
 
         $order->markPaid('stripe', 'pi_stock');
 

@@ -220,12 +220,11 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Categoría <span class="req">*</span></label>
-                                    <select name="category_id" id="category_id" class="form-control" required onchange="detectCategoryType(this)">
+                                    <select name="category_id" id="category_id" class="form-control" required onchange="onCategoryChange()">
                                         <option value="">Seleccionar categoría...</option>
                                         @foreach($categories as $cat)
                                             <option value="{{ $cat->id }}"
-                                                    data-slug="{{ $cat->slug }}"
-                                                    data-name="{{ strtolower($cat->name) }}"
+                                                    data-variant-type="{{ $cat->variant_type }}"
                                                     {{ old('category_id')==$cat->id?'selected':'' }}>
                                                 {{ $cat->name }}
                                             </option>
@@ -340,114 +339,7 @@
                                 </div>
                             </div>
 
-                            {{-- Caja de ayuda --}}
-                            <div class="variant-info-box">
-                                <strong><i class="las la-lightbulb mr-1"></i> ¿Cómo ingresar las variantes?</strong>
-                                El campo <em>Variante</em> determina qué se muestra en la página del producto:
-                                <div class="mt-2">
-                                    <strong style="font-size:.78rem;">🎨 Colores</strong> — usa el nombre en inglés o español:
-                                    <span class="variant-example">black</span>
-                                    <span class="variant-example">red</span>
-                                    <span class="variant-example">negro</span>
-                                    <span class="variant-example">azul</span>
-                                    <span class="variant-example">#ff5733</span>
-                                </div>
-                                <div class="mt-1">
-                                    <strong style="font-size:.78rem;">👕 Tallas de ropa</strong> — texto libre:
-                                    <span class="variant-example">XS</span>
-                                    <span class="variant-example">S</span>
-                                    <span class="variant-example">M</span>
-                                    <span class="variant-example">L</span>
-                                    <span class="variant-example">XL</span>
-                                    <span class="variant-example">XXL</span>
-                                </div>
-                                <div class="mt-1">
-                                    <strong style="font-size:.78rem;">👟 Tallas de zapato</strong> — en categorías de calzado, la conversión US/EU es automática:
-                                    <span class="variant-example">7</span>
-                                    <span class="variant-example">8</span>
-                                    <span class="variant-example">9 US</span>
-                                    <span class="variant-example">42 EU</span>
-                                </div>
-                                <div class="mt-1" style="color:#888;">
-                                    Deja el campo vacío si el producto no tiene variantes.
-                                </div>
-                            </div>
-
-                            {{-- Atajos de variante --}}
-                            <div id="variant-shortcuts" style="margin-bottom:14px;">
-                                <div class="form-label mb-2">Agregar variantes rápido:</div>
-
-                                {{-- Tabs --}}
-                                <div class="variant-type-tabs">
-                                    <span class="variant-tab active" onclick="setVariantTab('cloth',this)">👕 Tallas ropa</span>
-                                    <span class="variant-tab" onclick="setVariantTab('shoe',this)">👟 Tallas zapato</span>
-                                    <span class="variant-tab" onclick="setVariantTab('color',this)">🎨 Colores</span>
-                                    <span class="variant-tab" onclick="setVariantTab('none',this)">Sin variante</span>
-                                </div>
-
-                                {{-- Tallas ropa --}}
-                                <div id="tab-cloth">
-                                    <div class="quick-sizes">
-                                        @foreach(['XS','S','M','L','XL','XXL','XXXL'] as $sz)
-                                            <button type="button" class="quick-size-btn" onclick="addQuickVariant('{{ $sz }}')">{{ $sz }}</button>
-                                        @endforeach
-                                        @foreach(['28','30','32','34','36','38','40','42','44'] as $sz)
-                                            <button type="button" class="quick-size-btn" onclick="addQuickVariant('{{ $sz }}')">{{ $sz }}</button>
-                                        @endforeach
-                                    </div>
-                                </div>
-
-                                {{-- Tallas zapato --}}
-                                <div id="tab-shoe" style="display:none;">
-                                    <div class="quick-sizes">
-                                        @foreach(['5','5.5','6','6.5','7','7.5','8','8.5','9','9.5','10','10.5','11','11.5','12','13','14'] as $sz)
-                                            <button type="button" class="quick-size-btn" onclick="addQuickVariant('{{ $sz }} US')">
-                                                {{ $sz }}<small style="font-size:.65rem;display:block;color:#aaa;">US</small>
-                                            </button>
-                                        @endforeach
-                                    </div>
-                                </div>
-
-                                {{-- Colores --}}
-                                <div id="tab-color" style="display:none;">
-                                    <div class="color-picker-row">
-                                        @php
-                                        $swatches = [
-                                            'black'=>'#1a1a1a','white'=>'#ffffff','red'=>'#e74c3c',
-                                            'blue'=>'#2980b9','green'=>'#27ae60','yellow'=>'#f1c40f',
-                                            'pink'=>'#e91e8c','purple'=>'#9b59b6','orange'=>'#e67e22',
-                                            'gray'=>'#95a5a6','brown'=>'#795548','navy'=>'#1a237e',
-                                            'beige'=>'#f5f0e8','teal'=>'#009688','coral'=>'#ff7043',
-                                            'gold'=>'#ffc107',
-                                        ];
-                                        @endphp
-                                        @foreach($swatches as $name => $hex)
-                                            <div class="color-swatch-btn"
-                                                 style="background:{{ $hex }};"
-                                                 title="{{ $name }}"
-                                                 onclick="addQuickVariant('{{ $name }}')">
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                    <div style="font-size:.75rem; color:#aaa; margin-top:4px;">
-                                        Haz clic en el color para agregarlo como variante. También puedes escribir un código hex en el campo manualmente.
-                                    </div>
-                                </div>
-
-                                {{-- Sin variante --}}
-                                <div id="tab-none" style="display:none;">
-                                    <p style="font-size:.82rem; color:#888; margin:0;">
-                                        Agrega directamente el precio y la cantidad en la fila de stock sin escribir variante.
-                                    </p>
-                                </div>
-                            </div>
-
-                            {{-- Filas de stock --}}
-                            <label class="form-label">Stock <span class="req">*</span></label>
-                            <div id="stock-rows"></div>
-                            <button type="button" class="btn-add-stock mt-1" onclick="addStockRow()">
-                                <i class="las la-plus mr-1"></i> Agregar fila de stock
-                            </button>
+                            @include('partials.variant-builder')
                         </div>
                     </div>
 
@@ -554,72 +446,6 @@
 
 @section('extra_js')
 <script>
-// ── Tabs de variante ─────────────────────────────────────────────
-function setVariantTab(tab, el) {
-    ['cloth','shoe','color','none'].forEach(t => {
-        document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
-    });
-    document.querySelectorAll('.variant-tab').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-}
-
-// ── Detectar categoría zapato y cambiar tab --
-function detectCategoryType(sel) {
-    const opt = sel.options[sel.selectedIndex];
-    const slug = (opt.dataset.slug || '').toLowerCase();
-    const name = (opt.dataset.name || '').toLowerCase();
-    const shoeKeywords = ['shoe','zapato','calzado','sneaker','boot','zapatilla','footwear'];
-    const isShoe = shoeKeywords.some(k => slug.includes(k) || name.includes(k));
-    if (isShoe) {
-        setVariantTab('shoe', document.querySelectorAll('.variant-tab')[1]);
-    }
-}
-
-// ── Agregar variante rápida ──────────────────────────────────────
-let stockIndex = 0;
-function addQuickVariant(variantValue) {
-    addStockRow(variantValue);
-}
-
-function addStockRow(presetVariant = '') {
-    const i = stockIndex++;
-    const html = `
-        <div class="stock-row" id="stock-row-${i}">
-            <div class="stock-row-header">
-                <span class="stock-row-badge">Variante #${i + 1}</span>
-                <button type="button" class="btn-remove-stock" onclick="document.getElementById('stock-row-${i}').remove()">
-                    <i class="las la-times mr-1"></i> Eliminar
-                </button>
-            </div>
-            <div class="stock-row-fields">
-                <div>
-                    <label class="form-label" style="font-size:.78rem;">
-                        Variante
-                        <span style="color:#aaa;font-weight:400;">(color, talla, número...)</span>
-                    </label>
-                    <input type="text" name="stocks[${i}][variant]" class="form-control"
-                           placeholder="Ej: black · M · 9 US · vacío si no aplica"
-                           value="${presetVariant}">
-                </div>
-                <div>
-                    <label class="form-label" style="font-size:.78rem;">Precio <span style="color:#e74c3c;">*</span></label>
-                    <input type="number" name="stocks[${i}][price]" class="form-control" placeholder="0.00" step="0.01" min="0" required>
-                </div>
-                <div>
-                    <label class="form-label" style="font-size:.78rem;">Cantidad <span style="color:#e74c3c;">*</span></label>
-                    <input type="number" name="stocks[${i}][qty]" class="form-control" placeholder="0" min="0" required>
-                </div>
-                <div>
-                    <label class="form-label" style="font-size:.78rem;">SKU</label>
-                    <input type="text" name="stocks[${i}][sku]" class="form-control" placeholder="SKU-${String(i+1).padStart(3,'0')}">
-                </div>
-            </div>
-        </div>`;
-    document.getElementById('stock-rows').insertAdjacentHTML('beforeend', html);
-}
-
-// Inicializar con una fila vacía
-addStockRow();
 
 // ── Preview imágenes ─────────────────────────────────────────────
 function previewSingle(input, containerId) {

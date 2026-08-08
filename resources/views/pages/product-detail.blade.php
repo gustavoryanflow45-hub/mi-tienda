@@ -320,33 +320,21 @@
                             }
                             $totalStock = $product->stocks->sum('qty');
 
-                            // Detectar tallas (texto) vs colores (hex o nombres de colores)
-                            $colorNames = ['red','green','blue','black','white','yellow','pink','purple','orange','gray','grey','brown','navy','maroon','rojo','negro','blanco','azul','verde','amarillo','rosa','morado','naranja','gris','café'];
-                            $sizeVariants  = $product->stocks->filter(function($s) use ($colorNames) {
-                                if (!$s->variant) return false;
-                                $v = strtolower(trim($s->variant));
-                                return !str_starts_with($v, '#') && !in_array($v, $colorNames);
-                            })->values();
-                            $colorVariants = $product->stocks->filter(function($s) use ($colorNames) {
-                                if (!$s->variant) return false;
-                                $v = strtolower(trim($s->variant));
-                                return str_starts_with($v, '#') || in_array($v, $colorNames);
-                            })->values();
+                            // Talla y color salen de columnas propias, no de adivinar
+                            // por el nombre de la variante como se hacía antes.
+                            $sizes     = $product->availableSizes();
+                            $colors    = $product->availableColors();
+                            $palette   = config('variants.colors', []);
+                            $sizeLabel = $product->category?->sizeLabel() ?? 'Talla';
 
-                            $colorMap = [
-                                'red'=>'#e74c3c','rojo'=>'#e74c3c',
-                                'green'=>'#27ae60','verde'=>'#27ae60',
-                                'blue'=>'#2980b9','azul'=>'#2980b9',
-                                'black'=>'#222','negro'=>'#222',
-                                'white'=>'#fff','blanco'=>'#fff',
-                                'yellow'=>'#f1c40f','amarillo'=>'#f1c40f',
-                                'pink'=>'#e91e8c','rosa'=>'#e91e8c',
-                                'purple'=>'#9b59b6','morado'=>'#9b59b6',
-                                'orange'=>'#e67e22','naranja'=>'#e67e22',
-                                'gray'=>'#95a5a6','grey'=>'#95a5a6','gris'=>'#95a5a6',
-                                'brown'=>'#795548','café'=>'#795548',
-                                'navy'=>'#1a237e','maroon'=>'#880e4f',
-                            ];
+                            // Mapa combinación -> stock, para que el JS pueda desactivar
+                            // las que no existen o están agotadas sin pedir nada al servidor.
+                            $stockMap = $product->stocks->mapWithKeys(fn($s) => [
+                                \App\Models\ProductStock::buildVariant($s->size, $s->color) => [
+                                    'qty'   => (int) $s->qty,
+                                    'price' => (float) $s->price,
+                                ],
+                            ]);
                         @endphp
 
                         <div class="info-row">
@@ -370,19 +358,16 @@
                             <input type="hidden" name="id" value="{{ $product->id }}">
 
                             {{-- TALLAS --}}
-                            @if($sizeVariants->count() > 0)
+                            @if(count($sizes) > 0)
                             <div class="info-row">
-                                <span class="info-label">Size:</span>
+                                <span class="info-label">{{ $sizeLabel }}:</span>
                                 <div class="info-value">
                                     <div class="size-chips">
-                                        @foreach($sizeVariants as $stock)
-                                            <label style="cursor:pointer;margin:0;" title="{{ $stock->variant }}">
-                                                <input type="radio" name="variant" value="{{ $stock->variant }}"
-                                                       style="display:none;" onchange="onVariantChange(this)">
-                                                <span class="size-chip {{ $stock->qty<=0?'no-stock':'' }}"
-                                                      data-variant="{{ $stock->variant }}">
-                                                    {{ strtoupper($stock->variant) }}
-                                                </span>
+                                        @foreach($sizes as $size)
+                                            <label style="cursor:pointer;margin:0;" title="{{ $size }}">
+                                                <input type="radio" name="size" value="{{ $size }}"
+                                                       style="display:none;" onchange="onVariantChange()">
+                                                <span class="size-chip" data-size="{{ $size }}">{{ $size }}</span>
                                             </label>
                                         @endforeach
                                     </div>
@@ -391,23 +376,22 @@
                             @endif
 
                             {{-- COLORES --}}
-                            @if($colorVariants->count() > 0)
+                            @if(count($colors) > 0)
                             <div class="info-row">
                                 <span class="info-label">Color:</span>
                                 <div class="info-value">
                                     <div class="color-chips">
-                                        @foreach($colorVariants as $stock)
+                                        @foreach($colors as $color)
                                             @php
-                                                $v   = strtolower(trim($stock->variant));
-                                                $hex = str_starts_with($v,'#') ? $v : ($colorMap[$v] ?? '#888');
+                                                $hex   = $palette[$color]['hex']   ?? '#888';
+                                                $label = $palette[$color]['label'] ?? ucfirst($color);
                                             @endphp
-                                            <label style="cursor:pointer;margin:0;" title="{{ $stock->variant }}">
-                                                <input type="radio" name="color_variant" value="{{ $stock->variant }}"
-                                                       style="display:none;" onchange="onVariantChange(this)">
+                                            <label style="cursor:pointer;margin:0;" title="{{ $label }}">
+                                                <input type="radio" name="color" value="{{ $color }}"
+                                                       style="display:none;" onchange="onVariantChange()">
                                                 <span class="color-chip"
-                                                      style="background:{{ $hex }};{{ $hex==='#fff'?'border:1px solid #ccc;':'' }}"
-                                                      data-variant="{{ $stock->variant }}">
-                                                </span>
+                                                      style="background:{{ $hex }};{{ strtolower($hex)==='#ffffff'?'border:1px solid #ccc;':'' }}"
+                                                      data-color="{{ $color }}"></span>
                                             </label>
                                         @endforeach
                                     </div>
@@ -606,43 +590,95 @@ function changeQty(delta) {
     input.value = val;
 }
 
-// ── Selección de variante ─────────────────────────────────────
-function onVariantChange(radio) {
-    const name = radio.name;
-    document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
-        const chip = r.parentElement.querySelector('.size-chip, .color-chip');
-        if (chip) chip.classList.remove('selected');
-    });
-    const myChip = radio.parentElement.querySelector('.size-chip, .color-chip');
-    if (myChip) myChip.classList.add('selected');
-    getVariantPrice();
+// ── Variantes: combinación talla + color ──────────────────────
+// STOCK_MAP va con la clave "talla-color" (o solo una de las dos), el mismo
+// formato que ProductStock::buildVariant() en PHP. Si cambia allí, cambia aquí.
+const STOCK_MAP    = @json($stockMap);
+const HAS_SIZES    = {{ count($sizes) > 0 ? 'true' : 'false' }};
+const HAS_COLORS   = {{ count($colors) > 0 ? 'true' : 'false' }};
+const TOTAL_STOCK  = {{ $totalStock }};
+
+function currentSelection() {
+    const form = document.getElementById('option-choice-form');
+    const size  = form.querySelector('input[name="size"]:checked');
+    const color = form.querySelector('input[name="color"]:checked');
+    return { size: size ? size.value : null, color: color ? color.value : null };
 }
 
-// ── Precio por variante ───────────────────────────────────────
-function getVariantPrice() {
-    const form    = document.getElementById('option-choice-form');
-    const choices = {};
-    form.querySelectorAll('input[type="radio"]:checked').forEach(r => {
-        choices[r.name] = r.value;
+function variantKey(size, color) {
+    return [size, color].filter(Boolean).join('-');
+}
+
+/** true si existe alguna combinación con stock que incluya este valor. */
+function isReachable(dimension, value) {
+    const sel = currentSelection();
+    // Al evaluar una dimensión se ignora lo ya elegido en ella misma, para no
+    // deshabilitar todas las tallas en cuanto se elige una.
+    const size  = dimension === 'size'  ? value : sel.size;
+    const color = dimension === 'color' ? value : sel.color;
+
+    // Si falta la otra dimensión, basta con que alguna combinación tenga stock.
+    if ((HAS_SIZES && !size) || (HAS_COLORS && !color)) {
+        return Object.entries(STOCK_MAP).some(([key, s]) =>
+            s.qty > 0 && key.split('-').includes(value));
+    }
+
+    const entry = STOCK_MAP[variantKey(size, color)];
+    return !!entry && entry.qty > 0;
+}
+
+function onVariantChange() {
+    const sel = currentSelection();
+
+    document.querySelectorAll('.size-chip').forEach(chip => {
+        const value = chip.dataset.size;
+        chip.classList.toggle('selected', value === sel.size);
+        chip.classList.toggle('no-stock', !isReachable('size', value));
     });
 
-    if (Object.keys(choices).length === 0) return;
+    document.querySelectorAll('.color-chip').forEach(chip => {
+        const value = chip.dataset.color;
+        chip.classList.toggle('selected', value === sel.color);
+        chip.classList.toggle('no-stock', !isReachable('color', value));
+    });
 
-    const variation = Object.values(choices).join('-');
-    const variations = @json($product->variations ?? []);
+    updatePriceAndStock();
+}
 
-    const match = variations.find(v => v.type === variation);
-    if (match) {
-        document.getElementById('chosen_price_div').style.display = 'block';
-        document.getElementById('chosen_price').textContent = '$' + parseFloat(match.price).toFixed(2);
+function updatePriceAndStock() {
+    const sel        = currentSelection();
+    const priceDiv   = document.getElementById('chosen_price_div');
+    const stockLabel = document.getElementById('stock-label');
+    const qtyInput   = document.getElementById('qty-input');
+    const complete   = (!HAS_SIZES || sel.size) && (!HAS_COLORS || sel.color);
 
-        const stockLabel = document.getElementById('stock-label');
-        if (stockLabel) stockLabel.textContent = '(' + match.qty + ' available)';
+    if (!complete) {
+        priceDiv.style.display = 'none';
+        if (stockLabel) stockLabel.textContent = '(' + TOTAL_STOCK + ' available)';
+        if (qtyInput) qtyInput.max = TOTAL_STOCK;
+        return;
+    }
 
-        const qtyInput = document.getElementById('qty-input');
-        if (qtyInput) qtyInput.max = match.qty;
+    const entry = STOCK_MAP[variantKey(sel.size, sel.color)];
+
+    if (!entry) {
+        priceDiv.style.display = 'none';
+        if (stockLabel) stockLabel.textContent = '(combinación no disponible)';
+        if (qtyInput) { qtyInput.max = 0; qtyInput.value = 1; }
+        return;
+    }
+
+    priceDiv.style.display = 'block';
+    document.getElementById('chosen_price').textContent = '$' + entry.price.toFixed(2);
+    if (stockLabel) stockLabel.textContent = '(' + entry.qty + ' available)';
+    if (qtyInput) {
+        qtyInput.max = entry.qty;
+        if (parseInt(qtyInput.value) > entry.qty) qtyInput.value = Math.max(1, entry.qty);
     }
 }
+
+// Estado inicial: marca como agotadas las que ya no tienen stock.
+document.addEventListener('DOMContentLoaded', onVariantChange);
 
 // ── Toast ─────────────────────────────────────────────────────
 function showToast(msg, type = 'success') {
@@ -665,19 +701,27 @@ function showToast(msg, type = 'success') {
 
 // ── Recopilar datos del formulario ────────────────────────────
 function getFormData() {
-    const form     = document.getElementById('option-choice-form');
     const quantity = parseInt(document.getElementById('qty-input').value) || 1;
-    const choices  = {};
+    const sel      = currentSelection();
 
-    form.querySelectorAll('input[type="radio"]:checked').forEach(r => {
-        choices[r.name] = r.value;
-    });
+    return {
+        product_id: PRODUCT_ID,
+        quantity,
+        variation: variantKey(sel.size, sel.color) || null,
+    };
+}
 
-    const variation = Object.keys(choices).length
-        ? Object.values(choices).join('-')
-        : null;
-
-    return { product_id: PRODUCT_ID, quantity, variation };
+/** Mensaje si falta elegir talla o color; null si la selección está completa. */
+function missingSelection() {
+    const sel = currentSelection();
+    if (HAS_SIZES && !sel.size)   return 'Elige una talla antes de continuar.';
+    if (HAS_COLORS && !sel.color) return 'Elige un color antes de continuar.';
+    if (HAS_SIZES || HAS_COLORS) {
+        const entry = STOCK_MAP[variantKey(sel.size, sel.color)];
+        if (!entry)        return 'Esa combinación no está disponible.';
+        if (entry.qty <= 0) return 'Esa combinación está agotada.';
+    }
+    return null;
 }
 
 // ── ADD TO CART ───────────────────────────────────────────────
@@ -692,6 +736,14 @@ function addToCart(isBuyNow = false) {
     const btn = isBuyNow
         ? document.querySelector('.btn-buynow')
         : document.querySelector('.btn-addcart');
+
+    // Sin talla o color elegidos el servidor rechazaría la petición; se avisa
+    // aquí para no gastar el round-trip y señalar qué falta.
+    const missing = missingSelection();
+    if (missing) {
+        showToast(missing, 'error');
+        return;
+    }
 
     const originalText = btn.innerHTML;
     btn.disabled = true;
