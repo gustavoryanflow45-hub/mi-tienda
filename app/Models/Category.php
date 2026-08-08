@@ -22,4 +22,18 @@ class Category extends Model
     public function scopeActive($query)    { return $query->where('status', 1); }
     public function scopeFeatured($query)  { return $query->where('featured', 1); }
     public function scopeTop($query)       { return $query->where('top', 1); }
+
+    /**
+     * IDs de esta categoría más los de sus subcategorías activas, para
+     * listar productos que cuelguen de cualquiera de ellas.
+     *
+     * Solo baja un nivel, que es la profundidad que maneja el árbol actual.
+     */
+    public function selfAndChildrenIds(): \Illuminate\Support\Collection
+    {
+        return static::active()
+            ->where('parent_id', $this->id)
+            ->pluck('id')
+            ->prepend($this->id);
+    }
 }

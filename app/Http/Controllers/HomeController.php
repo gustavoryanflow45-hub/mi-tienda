@@ -99,7 +99,11 @@ class HomeController extends Controller
         $category = Category::active()->where('slug', 'zapatos')->first();
 
         $products = $category
-            ? Product::active()->where('category_id', $category->id)->latest()->take(12)->get()
+            ? Product::active()
+                ->whereIn('category_id', $category->selfAndChildrenIds())
+                ->latest()
+                ->take(12)
+                ->get()
             : collect();
 
         return [$category, $products];

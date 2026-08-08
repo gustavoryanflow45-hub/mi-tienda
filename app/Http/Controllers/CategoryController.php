@@ -19,11 +19,8 @@ class CategoryController extends Controller
             ->where('status', 1)
             ->firstOrFail();
 
-        // Categorías hijas (para subcategorías en sidebar)
-        $childIds = Category::where('parent_id', $category->id)
-            ->where('status', 1)
-            ->pluck('id')
-            ->prepend($category->id); // incluye la propia
+        // Esta categoría y sus subcategorías activas
+        $childIds = $category->selfAndChildrenIds();
 
         // Query base: productos de esta cat o sus hijas
         $query = Product::with(['category', 'stocks'])
