@@ -34,8 +34,9 @@ class HomeController extends Controller
         $home_categories       = Category::active()->whereNull('parent_id')->take(6)->get();
         $best_seller_products  = Product::active()->orderBy('rating', 'desc')->take(12)->get();
 
-        // Sección destacada de Zapatos
-        [$zapatos_category, $zapatos_products] = $this->zapatosSection();
+        // Una sección por cada categoría marcada como destacada
+        $featured_categories = Category::active()->featured()->orderBy('order')->get()
+            ->map(fn ($category) => [$category, $this->productsForCategory($category)]);
 
         // Si el usuario es admin o seller, cargar sus productos para gestión
         $my_products = null;
@@ -59,8 +60,7 @@ class HomeController extends Controller
             'best_selling_products',
             'home_categories',
             'best_seller_products',
-            'zapatos_category',
-            'zapatos_products',
+            'featured_categories',
             'my_products'
         ));
     }
@@ -80,33 +80,33 @@ class HomeController extends Controller
             case 'best_sellers':
                 $products = Product::active()->orderBy('rating', 'desc')->take(12)->get();
                 return view('partials.home-sections.best_sellers', compact('products'));
-            case 'zapatos':
-                [$category, $products] = $this->zapatosSection();
-                return view('partials.home-sections.zapatos', compact('products', 'category'));
             default:
-                return response()->json(['error' => 'Section not found'], 404);
+                // Cualquier otro valor se interpreta como el slug de una
+                // categoría destacada. Los nombres fijos de arriba tienen
+                // precedencia, así que una categoría no puede llamarse igual.
+                $category = Category::active()->featured()->where('slug', $section)->first();
+
+                if (! $category) {
+                    return response()->json(['error' => 'Section not found'], 404);
+                }
+
+                $products = $this->productsForCategory($category);
+
+                return view('partials.home-sections.category', compact('products', 'category'));
         }
     }
 
     /**
-     * Categoría destacada de Zapatos y sus productos, usada tanto en el
-     * render inicial del home como en la carga AJAX de la sección.
-     *
-     * @return array{0: ?Category, 1: \Illuminate\Support\Collection}
+     * Productos de una categoría destacada para su sección del home,
+     * incluyendo los que cuelgan de sus subcategorías activas.
      */
-    private function zapatosSection(): array
+    private function productsForCategory(Category $category): \Illuminate\Support\Collection
     {
-        $category = Category::active()->where('slug', 'zapatos')->first();
-
-        $products = $category
-            ? Product::active()
-                ->whereIn('category_id', $category->selfAndChildrenIds())
-                ->latest()
-                ->take(12)
-                ->get()
-            : collect();
-
-        return [$category, $products];
+        return Product::active()
+            ->whereIn('category_id', $category->selfAndChildrenIds())
+            ->latest()
+            ->take(12)
+            ->get();
     }
 
     // ── POST /seller/products/{id}/toggle-featured ───────────────

@@ -422,7 +422,9 @@
 @include('partials.home-sections.best_selling', ['products' => $best_selling_products])
 @include('partials.home-sections.home_categories', ['categories' => $home_categories])
 @include('partials.home-sections.best_sellers', ['products' => $best_seller_products])
-@include('partials.home-sections.zapatos', ['products' => $zapatos_products, 'category' => $zapatos_category])
+@foreach($featured_categories as [$featured_category, $featured_category_products])
+    @include('partials.home-sections.category', ['category' => $featured_category, 'products' => $featured_category_products])
+@endforeach
 
 {{-- TOP 10 CATEGORÍAS Y MARCAS --}}
 <section class="mb-4">
