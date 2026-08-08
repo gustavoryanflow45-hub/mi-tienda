@@ -35,10 +35,7 @@ class HomeController extends Controller
         $best_seller_products  = Product::active()->orderBy('rating', 'desc')->take(12)->get();
 
         // Sección destacada de Zapatos
-        $zapatos_category = Category::active()->where('slug', 'zapatos')->first();
-        $zapatos_products = $zapatos_category
-            ? Product::active()->where('category_id', $zapatos_category->id)->latest()->take(12)->get()
-            : collect();
+        [$zapatos_category, $zapatos_products] = $this->zapatosSection();
 
         // Si el usuario es admin o seller, cargar sus productos para gestión
         $my_products = null;
@@ -84,14 +81,28 @@ class HomeController extends Controller
                 $products = Product::active()->orderBy('rating', 'desc')->take(12)->get();
                 return view('partials.home-sections.best_sellers', compact('products'));
             case 'zapatos':
-                $category = Category::active()->where('slug', 'zapatos')->first();
-                $products = $category
-                    ? Product::active()->where('category_id', $category->id)->latest()->take(12)->get()
-                    : collect();
+                [$category, $products] = $this->zapatosSection();
                 return view('partials.home-sections.zapatos', compact('products', 'category'));
             default:
                 return response()->json(['error' => 'Section not found'], 404);
         }
+    }
+
+    /**
+     * Categoría destacada de Zapatos y sus productos, usada tanto en el
+     * render inicial del home como en la carga AJAX de la sección.
+     *
+     * @return array{0: ?Category, 1: \Illuminate\Support\Collection}
+     */
+    private function zapatosSection(): array
+    {
+        $category = Category::active()->where('slug', 'zapatos')->first();
+
+        $products = $category
+            ? Product::active()->where('category_id', $category->id)->latest()->take(12)->get()
+            : collect();
+
+        return [$category, $products];
     }
 
     // ── POST /seller/products/{id}/toggle-featured ───────────────
