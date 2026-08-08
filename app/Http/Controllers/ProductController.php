@@ -47,8 +47,8 @@ class ProductController extends Controller
             ->limit(6)
             ->get();
 
-        // Fotos adicionales (guardadas como JSON)
-        $photos = $product->photos ? json_decode($product->photos, true) : [];
+        // Fotos adicionales (el modelo ya castea la columna a array)
+        $photos = $product->photos ?: [];
 
         return view('pages.product-detail', compact('product', 'related', 'photos'));
     }

@@ -28,10 +28,10 @@
     <div class="p-md-3 p-2 text-left">
         <div class="fs-15">
             @if($product->discount > 0)
-                <del class="fw-400 opacity-50 mr-1">${{ number_format($product->price, 2) }}</del>
+                <del class="fw-400 opacity-50 mr-1">${{ number_format($product->unit_price, 2) }}</del>
                 <span class="fw-700 text-primary">${{ number_format($product->discounted_price, 2) }}</span>
             @else
-                <span class="fw-700 text-primary">${{ number_format($product->price, 2) }}</span>
+                <span class="fw-700 text-primary">${{ number_format($product->unit_price, 2) }}</span>
             @endif
         </div>
         <div class="rating rating-sm mt-1">
