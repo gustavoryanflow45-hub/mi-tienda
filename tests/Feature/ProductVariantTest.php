@@ -16,13 +16,16 @@ class ProductVariantTest extends TestCase
     use BuildsCheckoutData;
     use RefreshDatabase;
 
-    /** El middleware del panel de vendedor exige email verificado. */
+    /** El panel de vendedor exige email verificado y tienda aprobada. */
     protected function makeVerifiedSeller(): User
     {
-        return User::factory()->create([
+        $seller = User::factory()->create([
             'user_type' => 'seller',
             'email_verified_at' => now(),
         ]);
+        $this->makeShop($seller, 1);
+
+        return $seller;
     }
 
     protected function makeCategory(string $slug, string $variantType): Category

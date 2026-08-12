@@ -41,7 +41,33 @@ No API layer — all responses are server-rendered Blade. AJAX calls (search aut
 
 ### User Types
 
-`users.user_type` distinguishes three roles: `customer`, `seller`, `admin`. A single `User` model handles all three. Sellers also have a `shops` record. There is no role middleware — seller/admin-only controllers check `in_array($user->user_type, ['seller', 'admin'])` manually (see `SellerProductController`, `SellerOrderController`). Shop registration (`/shops/create`) is public and creates the user with `user_type = 'seller'`.
+`users.user_type` distinguishes three roles: `customer`, `seller`, `admin`. A single `User` model handles all three. Sellers also have a `shops` record. Shop registration (`/shops/create`) is public and creates the user with `user_type = 'seller'`.
+
+Two middleware aliases are registered in `bootstrap/app.php`:
+- **`admin`** (`EnsureUserIsAdmin`) — guards `/admin/wallet` and `/warehouse` as route groups. Always place it after `auth` so guests get redirected to login instead of a 403.
+- **`shop.approved`** (`EnsureShopApproved`) — guards every `/seller/*` route. Because `/shops/create` is public and logs the user straight in, `user_type = 'seller'` alone means nothing: the shop must also have `status = 1`. Admins bypass it (they have no shop); pending/rejected/shopless sellers are redirected to `/dashboard` with a `warning` flash.
+
+Admins approve shops at `/admin/shops` (`AdminShopController`, view `admin/shops.blade.php`) — list with status/search filters, ID document thumbnails, and approve/reject actions. `shops.status`: `0` pending, `1` approved, `2` rejected (`Shop::statusLabel()`); the constants live on `AdminShopController`. The dashboard sidebar shows a pending-count badge for admins.
+
+Each decision sends `ShopStatusUpdatedNotification` to the seller on **both** `database` and `mail` (a decision can take days, so the seller may not be logged in). A no-op re-approval sends nothing. `DashboardController` reads the unread ones, marks them read, and passes `$shopUpdates` to both dashboard views, which render `partials/shop-status-banner.blade.php` — same read-once pattern as `OrderStatusUpdatedNotification` in `/orders`. Its `toMail()` calls `route()`, which is safe in console and queue contexts (the console kernel's `SetRequestForConsole` bootstrapper builds a request from `APP_URL`). It only breaks in ad-hoc scripts that boot the **HTTP** kernel without binding a `request` — `url()` fails there too, so swapping helpers is not a fix; bind a request instead.
+
+Controllers additionally check `in_array($user->user_type, ['seller', 'admin'])` in a constructor middleware closure (`SellerProductController`, `SellerOrderController`); `WarehouseController` checks `isAdmin()`. These are defense in depth — the route middleware is the real gate.
+
+`User::$fillable` deliberately **excludes** `user_type`, `balance`, `banned`, `email_verified` and `verification_code`. Assign them explicitly (`$user->user_type = ...`), never through `create()`/`fill()` with request data — see `RegisterController` and `SellerController`. Model factories bypass this via `Model::unguarded()`, so tests can still set them inline.
+
+Flash messages (`success` / `warning` / `error`) render globally via `partials/flash.blade.php`, included in the app layout.
+
+### Email Verification
+
+`users` carries both `email_verified_at` and a legacy `email_verified` flag; `User::isVerified()` accepts either — always use it rather than checking the columns directly.
+
+`VerifyEmailNotification` (mail channel) is sent on customer registration (`RegisterController`) and shop registration (`SellerController`). It builds a **temporary signed URL** to `verification.verify` (`URL::temporarySignedRoute`, 60 min — `VerifyEmailNotification::EXPIRES_MINUTES`), so no token is persisted; the legacy `verification_code` column is unused and merely cleared on success.
+
+Routes (`Auth\VerificationController`): `GET /email/verify` (`verification.notice`, auth) is the "check your inbox" page; `GET /email/verify/{id}/{hash}` (`verification.verify`) is `signed` but deliberately **not** `auth` — the link is opened from an email, often in a browser with no session, and it logs the user in on success; `POST /email/resend` is `auth` + `throttle:6,1`. The `{hash}` is `sha1($user->email)`, so changing the email invalidates outstanding links.
+
+`SellerProductController` bounces unverified sellers to `verification.notice`. `MAIL_MAILER=log` locally — verification emails land in `storage/logs/laravel.log`, not a real inbox.
+
+`app/Http/Middleware/SetLocale.php` runs on every `web` request and applies `session('locale')` (see Localization below).
 
 ### Checkout & Payment Flow
 
@@ -76,11 +102,19 @@ Wallet: `WalletRecharge` / `WalletWithdrawal` records with admin approve/reject 
 
 After payment, `orders.delivery_status` advances: `pending` → `confirmed` (seller, `SellerOrderController@confirm`) → `warehouse` (seller, `OrderController@sendToWarehouse`) → `on_the_way` (warehouse panel dispatch) → `delivered`. Each step stamps its timestamp (`confirmed_at`, `warehouse_at`, `dispatched_at` + `dispatched_by`, `delivered_at`) and every transition is guarded by a check on the previous status.
 
-The warehouse panel (`/warehouse`, `WarehouseController`, view `pages/warehouse.blade.php`) is seller/admin-only and drives dispatch (`POST /warehouse/orders/{id}/dispatch`) and delivery (`.../deliver`). Notifications (all `database` channel): `OrderArrivedWarehouseNotification` goes to all admins when a seller sends an order to the warehouse (shown as "nuevas llegadas" in the panel, marked read on view); `OrderStatusUpdatedNotification` goes to the customer on every status change (shown as a banner in `/orders`, marked read on view). The customer-facing tracker with step dates lives in `pages/order-detail.blade.php`. Full flow covered by `tests/Feature/WarehouseFlowTest.php`.
+The warehouse panel (`/warehouse`, `WarehouseController`, view `pages/warehouse.blade.php`) is **admin-only** (`admin` middleware on the route group) — it lists every seller's orders together with buyer contact data, so sellers must not reach it; they work from `/seller/orders`. It drives dispatch (`POST /warehouse/orders/{id}/dispatch`) and delivery (`.../deliver`). Notifications (all `database` channel): `OrderArrivedWarehouseNotification` goes to all admins when a seller sends an order to the warehouse (shown as "nuevas llegadas" in the panel, marked read on view); `OrderStatusUpdatedNotification` goes to the customer on every status change (shown as a banner in `/orders`, marked read on view). The customer-facing tracker with step dates lives in `pages/order-detail.blade.php`. Full flow covered by `tests/Feature/WarehouseFlowTest.php`.
 
 ### Frontend
 
 Tailwind CSS v4 via Vite plugin. No Vue/React — plain ES modules in `resources/js/`. Blade layouts in `resources/views/layouts/`, partials heavily used via `@include`.
+
+Note: much of the page JS (language/currency switchers, search autocomplete) lives inline in `resources/views/layouts/app.blade.php`, not in `resources/js/` — search both when hunting for a handler.
+
+### Localization
+
+Default locale is `es` (`config/app.php` + `.env`). The topbar switcher POSTs to `/language` (`LanguageController@change`, param name `locale`), which stores `session('locale')`; `SetLocale` middleware applies it on every `web` request. Supported locales are declared once in `SetLocale::SUPPORTED` — the topbar dropdown and the controller both read from it, so adding a language means adding it there plus a `lang/<code>/` directory.
+
+Migration to `__()` is partial: only `partials/topbar` and the two dashboard views use translation keys (`lang/es`, `lang/en`). Every other view still has hardcoded Spanish, so switching to English leaves them untranslated.
 
 ### Queue & Sessions
 

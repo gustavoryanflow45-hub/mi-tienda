@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Shop;
 use App\Models\User;
 
 trait BuildsCheckoutData
@@ -15,9 +16,35 @@ trait BuildsCheckoutData
         return User::factory()->create(['user_type' => 'customer']);
     }
 
+    /** Seller operativo: con la tienda ya aprobada (shops.status = 1). */
     protected function makeSeller(): User
     {
-        return User::factory()->create(['user_type' => 'seller']);
+        $seller = User::factory()->create(['user_type' => 'seller']);
+        $this->makeShop($seller, 1);
+
+        return $seller;
+    }
+
+    /** Seller recién registrado, con la tienda aún sin revisar. */
+    protected function makePendingSeller(): User
+    {
+        $seller = User::factory()->create(['user_type' => 'seller']);
+        $this->makeShop($seller, 0);
+
+        return $seller;
+    }
+
+    protected function makeShop(User $seller, int $status = 1): Shop
+    {
+        return Shop::create([
+            'user_id' => $seller->id,
+            'name' => 'Tienda de '.$seller->name,
+            'email' => 'tienda-'.$seller->id.'@example.com',
+            'address' => 'Av. Siempre Viva 742',
+            'id_front_image' => 'sellers/id/front.jpg',
+            'id_back_image' => 'sellers/id/back.jpg',
+            'status' => $status,
+        ]);
     }
 
     protected function makeProduct(User $seller, float $price = 100.00): Product
