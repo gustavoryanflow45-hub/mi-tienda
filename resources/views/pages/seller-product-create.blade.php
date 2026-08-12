@@ -153,8 +153,9 @@
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('seller.orders.index') }}" class="aiz-side-nav-link d-flex align-items-center p-2">
                                     <i class="las la-shopping-cart mr-2 fs-16"></i><span>Pedidos</span>
-                                    @if(Auth::user()->unreadNotifications->count() > 0)
-                                        <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ Auth::user()->unreadNotifications->count() }}</span>
+                                    @php $newOrders = Auth::user()->newOrderNotificationsCount(); @endphp
+                                    @if($newOrders > 0)
+                                        <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ $newOrders }}</span>
                                     @endif
                                 </a>
                             </li>

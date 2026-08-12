@@ -390,9 +390,9 @@
                                    class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-shopping-cart mr-2 fs-16"></i>
                                     <span>Pedidos</span>
-                                    @php $unread = Auth::user()->unreadNotifications->count(); @endphp
-                                    @if($unread > 0)
-                                        <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ $unread }}</span>
+                                    @php $newOrders = Auth::user()->newOrderNotificationsCount(); @endphp
+                                    @if($newOrders > 0)
+                                        <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ $newOrders }}</span>
                                     @endif
                                 </a>
                             </li>
@@ -488,7 +488,7 @@
                         <p class="opacity-60 fs-14 mb-3">
                             Debes verificar tu correo electrónico para poder agregar y gestionar productos en tu tienda.
                         </p>
-                        <a href="{{ url('/email/verify') }}" class="btn btn-warning fw-600 px-4">
+                        <a href="{{ route('verification.notice') }}" class="btn btn-warning fw-600 px-4">
                             <i class="las la-envelope mr-1"></i> Verificar Email
                         </a>
                     </div>

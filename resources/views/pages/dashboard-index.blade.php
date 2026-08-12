@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard')
-@section('meta_description', 'Your account dashboard')
+@section('title', __('dashboard.title'))
+@section('meta_description', __('dashboard.meta_unverified'))
 
 @section('extra_css')
 <style>
@@ -28,9 +28,6 @@
 
     .info-card { background: #fff; border-radius: 0.75rem; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: box-shadow 0.2s ease; }
     .info-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-
-    .btn-become-seller { background-color: #e8f5e0; color: #679941; border: 1px solid #c5e0b4; font-weight: 600; border-radius: 8px; transition: background 0.2s; }
-    .btn-become-seller:hover { background-color: #d4edca; color: #4e7a2e; }
 
     .logout-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9999; align-items: center; justify-content: center; }
     .logout-modal-overlay.show { display: flex; }
@@ -62,72 +59,72 @@
                         <h4 class="h5 fw-600 fs-18 mb-1">{{ strtoupper(Auth::user()->name) }}</h4>
                         <p class="mb-2 text-truncate opacity-80 fs-13">{{ Auth::user()->email }}</p>
                         <span class="unverified-badge">
-                            <i class="las la-exclamation-circle"></i> Not Verified
+                            <i class="las la-exclamation-circle"></i> {{ __('dashboard.not_verified') }}
                         </span>
                     </div>
                     <div class="bg-white shadow-sm rounded-bottom p-3">
                         <ul class="aiz-side-nav-list list-unstyled mb-0">
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/dashboard') }}" class="aiz-side-nav-link bg-soft-primary d-flex align-items-center text-reset p-2">
-                                    <i class="las la-home mr-2 fs-16"></i><span>Dashboard</span>
+                                    <i class="las la-home mr-2 fs-16"></i><span>{{ __('dashboard.nav.dashboard') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/orders') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2 opacity-60">
-                                    <i class="las la-file-invoice mr-2 fs-16"></i><span>Purchase History</span>
+                                    <i class="las la-file-invoice mr-2 fs-16"></i><span>{{ __('dashboard.nav.purchase_history') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2 opacity-60">
-                                    <i class="las la-download mr-2 fs-16"></i><span>Downloads</span>
+                                    <i class="las la-download mr-2 fs-16"></i><span>{{ __('dashboard.nav.downloads') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2 opacity-60">
-                                    <i class="las la-reply mr-2 fs-16"></i><span>Sent Refund Request</span>
+                                    <i class="las la-reply mr-2 fs-16"></i><span>{{ __('dashboard.nav.refund_sent') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/wishlist') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2 opacity-60">
-                                    <i class="las la-heart mr-2 fs-16"></i><span>Wishlist</span>
+                                    <i class="las la-heart mr-2 fs-16"></i><span>{{ __('dashboard.nav.wishlist') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('wallet.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2 opacity-60">
-                                    <i class="las la-wallet mr-2 fs-16"></i><span>My Wallet</span>
+                                    <i class="las la-wallet mr-2 fs-16"></i><span>{{ __('dashboard.nav.wallet') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/profile') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2 opacity-60">
-                                    <i class="las la-user mr-2 fs-16"></i><span>Profile</span>
+                                    <i class="las la-user mr-2 fs-16"></i><span>{{ __('dashboard.nav.profile') }}</span>
                                 </a>
                             </li>
                         </ul>
-                        <div class="mt-3 pt-3 border-top">
-                            <a href="{{ url('/shops/create') }}" class="btn btn-block btn-become-seller">
-                                <i class="las la-store mr-1"></i> Become a Seller
-                            </a>
-                        </div>
                     </div>
                 </div>
             </div>
 
             {{-- CONTENIDO --}}
             <div class="col-lg-9">
-                <h3 class="h4 fw-700 mb-4">Hello, {{ Auth::user()->name }}!</h3>
+                <h3 class="h4 fw-700 mb-4">{{ __('dashboard.greeting', ['name' => Auth::user()->name]) }}</h3>
+
+                @include('partials.shop-status-banner')
 
                 <div class="verify-alert d-flex align-items-start mb-4">
                     <i class="las la-exclamation-triangle verify-icon mr-3 mt-1"></i>
                     <div>
-                        <strong class="verify-title d-block mb-1">Email address not verified</strong>
-                        <span class="verify-text">Your account is pending verification. Please check your inbox and confirm your email to unlock all features.</span>
+                        <strong class="verify-title d-block mb-1">{{ __('dashboard.verify.title') }}</strong>
+                        <span class="verify-text">{{ __('dashboard.verify.text') }}</span>
                         <div class="mt-3 d-flex flex-wrap gap-2">
-                            <a href="{{ url('/email/verify') }}" class="btn btn-sm btn-warning fw-600">
-                                <i class="las la-envelope mr-1"></i> Verify Email
+                            <a href="{{ route('verification.notice') }}" class="btn btn-sm btn-warning fw-600">
+                                <i class="las la-envelope mr-1"></i> {{ __('dashboard.verify.verify_btn') }}
                             </a>
-                            <a href="{{ url('/email/resend') }}" class="btn btn-sm btn-outline-warning ml-2 fw-600">
-                                <i class="las la-redo-alt mr-1"></i> Resend Email
-                            </a>
+                            <form method="POST" action="{{ route('verification.resend') }}" class="d-inline ml-2">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-warning fw-600">
+                                    <i class="las la-redo-alt mr-1"></i> {{ __('dashboard.verify.resend_btn') }}
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -137,21 +134,21 @@
                         <div class="wave-card" style="background: linear-gradient(135deg, #ee9ca7, #ffdde1);">
                             <i class="las la-shopping-cart stat-icon"></i>
                             <h2 class="fw-700 fs-32 mb-1 position-relative">{{ $cartCount ?? 0 }}</h2>
-                            <p class="mb-0 opacity-80 fs-14 position-relative">Products in cart</p>
+                            <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.cart') }}</p>
                         </div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <div class="wave-card" style="background: linear-gradient(135deg, #4776e6, #8e54e9);">
                             <i class="las la-heart stat-icon"></i>
                             <h2 class="fw-700 fs-32 mb-1 position-relative">{{ $wishlistCount ?? 0 }}</h2>
-                            <p class="mb-0 opacity-80 fs-14 position-relative">Products in wishlist</p>
+                            <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.wishlist') }}</p>
                         </div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <div class="wave-card" style="background: linear-gradient(135deg, #6a85b6, #bac8e0);">
                             <i class="las la-box stat-icon"></i>
                             <h2 class="fw-700 fs-32 mb-1 position-relative">{{ $orderCount ?? 0 }}</h2>
-                            <p class="mb-0 opacity-80 fs-14 position-relative">You ordered</p>
+                            <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.ordered') }}</p>
                         </div>
                     </div>
                 </div>
@@ -159,7 +156,7 @@
                 <div class="row gutters-10">
                     <div class="col-md-7 mb-3">
                         <div class="info-card p-4 h-100">
-                            <h4 class="h6 fw-600 mb-3 opacity-60"><i class="las la-map-marker mr-1 text-primary"></i> Default Delivery Address</h4>
+                            <h4 class="h6 fw-600 mb-3 opacity-60"><i class="las la-map-marker mr-1 text-primary"></i> {{ __('dashboard.address.title') }}</h4>
                             @if(isset($address) && $address)
                                 <p class="fs-14 mb-1 fw-600">{{ $address->full_name }}</p>
                                 <p class="fs-13 opacity-70 mb-1">{{ $address->address }}</p>
@@ -168,8 +165,8 @@
                             @else
                                 <div class="opacity-50 fs-13 mt-4 text-center py-3">
                                     <i class="las la-map-marker la-2x mb-2 d-block text-primary"></i>
-                                    No address saved yet.
-                                    <div class="mt-3"><a href="{{ url('/profile') }}" class="btn btn-sm btn-outline-primary">Add Address</a></div>
+                                    {{ __('dashboard.address.empty') }}
+                                    <div class="mt-3"><a href="{{ url('/profile') }}" class="btn btn-sm btn-outline-primary">{{ __('dashboard.address.add') }}</a></div>
                                 </div>
                             @endif
                         </div>
@@ -177,9 +174,9 @@
                     <div class="col-md-5 mb-3">
                         <div class="info-card p-4 h-100 text-center d-flex flex-column justify-content-center align-items-center">
                             <i class="las la-box-open la-3x text-primary mb-3 opacity-50"></i>
-                            <h4 class="h6 fw-600 mb-2 opacity-60">Purchased Package</h4>
-                            <h5 class="fw-600 text-primary mb-4">{{ $package->name ?? 'Package not found' }}</h5>
-                            <a href="{{ url('/packages') }}" class="btn btn-primary fw-600 px-4">Upgrade Package</a>
+                            <h4 class="h6 fw-600 mb-2 opacity-60">{{ __('dashboard.package.title') }}</h4>
+                            <h5 class="fw-600 text-primary mb-4">{{ $package->name ?? __('dashboard.package.not_found') }}</h5>
+                            <a href="{{ url('/packages') }}" class="btn btn-primary fw-600 px-4">{{ __('dashboard.package.upgrade') }}</a>
                         </div>
                     </div>
                 </div>
@@ -192,13 +189,13 @@
 <div class="logout-modal-overlay" id="logoutModal">
     <div class="logout-modal-box">
         <div class="logout-icon"><i class="las la-sign-out-alt"></i></div>
-        <h5 class="fw-700 mb-1">Sign out?</h5>
-        <p class="opacity-60 fs-14 mb-4">Are you sure you want to log out of your account?</p>
+        <h5 class="fw-700 mb-1">{{ __('dashboard.logout.title') }}</h5>
+        <p class="opacity-60 fs-14 mb-4">{{ __('dashboard.logout.text') }}</p>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" class="btn-logout-confirm"><i class="las la-sign-out-alt mr-1"></i> Yes, sign out</button>
+            <button type="submit" class="btn-logout-confirm"><i class="las la-sign-out-alt mr-1"></i> {{ __('dashboard.logout.confirm') }}</button>
         </form>
-        <button class="btn-logout-cancel" onclick="document.getElementById('logoutModal').classList.remove('show')">Cancel</button>
+        <button class="btn-logout-cancel" onclick="document.getElementById('logoutModal').classList.remove('show')">{{ __('dashboard.logout.cancel') }}</button>
     </div>
 </div>
 @endsection
