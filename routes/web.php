@@ -12,10 +12,12 @@ use App\Http\Controllers\CompareController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\SubscriberController;
+use App\Http\Controllers\AdminShopController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SellerController;
 use App\Http\Controllers\SellerProductController;
@@ -120,6 +122,22 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->midd
 
 /*
 |--------------------------------------------------------------------------
+| Verificación de correo
+|--------------------------------------------------------------------------
+| El enlace de 'verify' va firmado y caduca, así que no necesita sesión:
+| se abre desde el correo, muchas veces en otro navegador.
+*/
+Route::get('/email/verify', [VerificationController::class, 'notice'])
+    ->middleware('auth')->name('verification.notice');
+
+Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])
+    ->middleware('signed')->name('verification.verify');
+
+Route::post('/email/resend', [VerificationController::class, 'resend'])
+    ->middleware(['auth', 'throttle:6,1'])->name('verification.resend');
+
+/*
+|--------------------------------------------------------------------------
 | Rutas Protegidas (requieren autenticación)
 |--------------------------------------------------------------------------
 */
@@ -150,33 +168,50 @@ Route::middleware('auth')->group(function () {
     Route::post('/wallet/withdraw', [WalletController::class, 'withdraw'])->name('wallet.withdraw');
 
     // ── Wallet (admin) ───────────────────────────────────────────
-    Route::get('/admin/wallet', [WalletController::class, 'adminIndex'])->name('admin.wallet');
-    Route::post('/admin/wallet/approve/{id}', [WalletController::class, 'approve'])->name('wallet.approve');
-    Route::post('/admin/wallet/reject/{id}', [WalletController::class, 'reject'])->name('wallet.reject');
-    Route::post('/admin/wallet/withdrawal/approve/{id}', [WalletController::class, 'approveWithdrawal'])->name('wallet.withdrawal.approve');
-    Route::post('/admin/wallet/withdrawal/reject/{id}', [WalletController::class, 'rejectWithdrawal'])->name('wallet.withdrawal.reject');
+    // Aprobar una recarga acredita saldo real: solo para user_type = 'admin'.
+    Route::middleware('admin')->group(function () {
+        // ── Aprobación de tiendas ────────────────────────────────
+        Route::get('/admin/shops', [AdminShopController::class, 'index'])->name('admin.shops');
+        Route::post('/admin/shops/{id}/approve', [AdminShopController::class, 'approve'])->name('admin.shops.approve');
+        Route::post('/admin/shops/{id}/reject', [AdminShopController::class, 'reject'])->name('admin.shops.reject');
+
+        Route::get('/admin/wallet', [WalletController::class, 'adminIndex'])->name('admin.wallet');
+        Route::post('/admin/wallet/approve/{id}', [WalletController::class, 'approve'])->name('wallet.approve');
+        Route::post('/admin/wallet/reject/{id}', [WalletController::class, 'reject'])->name('wallet.reject');
+        Route::post('/admin/wallet/withdrawal/approve/{id}', [WalletController::class, 'approveWithdrawal'])->name('wallet.withdrawal.approve');
+        Route::post('/admin/wallet/withdrawal/reject/{id}', [WalletController::class, 'rejectWithdrawal'])->name('wallet.withdrawal.reject');
+    });
 
     // ── Seller — productos ───────────────────────────────────────
     // ⚠️ Las rutas específicas (bulk, template, create) van ANTES
     //    que cualquier ruta con parámetro dinámico {id}
 
-    Route::get('/seller/products', [SellerProductController::class, 'index'])->name('seller.products.index');
-    Route::get('/seller/products/create', [SellerProductController::class, 'create'])->name('seller.products.create');
-    Route::post('/seller/products', [SellerProductController::class, 'store'])->name('seller.products.store');
-    Route::get('/seller/products/bulk', [SellerProductController::class, 'bulk'])->name('seller.products.bulk');
-    Route::get('/seller/products/bulk/template', [SellerProductController::class, 'bulkTemplate'])->name('seller.products.bulk.template');
-    Route::post('/seller/products/bulk', [SellerProductController::class, 'bulkStore'])->name('seller.products.bulk.store');
-    Route::post('/seller/products/{id}/toggle-featured', [HomeController::class, 'toggleFeatured'])->name('seller.products.toggle-featured');
-    Route::post('/seller/products/{id}/toggle-published', [HomeController::class, 'togglePublished'])->name('seller.products.toggle-published');
-    Route::get('/seller/products/{id}/edit', [SellerProductController::class, 'edit'])->name('seller.products.edit');
-    Route::put('/seller/products/{id}', [SellerProductController::class, 'update'])->name('seller.products.update');
+    // Nadie vende hasta que un admin apruebe su tienda: /shops/create es
+    // público y auto-loguea, así que el rol 'seller' por sí solo no basta.
+    Route::middleware('shop.approved')->group(function () {
+        Route::get('/seller/products', [SellerProductController::class, 'index'])->name('seller.products.index');
+        Route::get('/seller/products/create', [SellerProductController::class, 'create'])->name('seller.products.create');
+        Route::post('/seller/products', [SellerProductController::class, 'store'])->name('seller.products.store');
+        Route::get('/seller/products/bulk', [SellerProductController::class, 'bulk'])->name('seller.products.bulk');
+        Route::get('/seller/products/bulk/template', [SellerProductController::class, 'bulkTemplate'])->name('seller.products.bulk.template');
+        Route::post('/seller/products/bulk', [SellerProductController::class, 'bulkStore'])->name('seller.products.bulk.store');
+        Route::post('/seller/products/{id}/toggle-featured', [HomeController::class, 'toggleFeatured'])->name('seller.products.toggle-featured');
+        Route::post('/seller/products/{id}/toggle-published', [HomeController::class, 'togglePublished'])->name('seller.products.toggle-published');
+        Route::get('/seller/products/{id}/edit', [SellerProductController::class, 'edit'])->name('seller.products.edit');
+        Route::put('/seller/products/{id}', [SellerProductController::class, 'update'])->name('seller.products.update');
 
-    // ── Seller — pedidos ───────────────────────────────────────────
-    Route::get('/seller/orders', [SellerOrderController::class, 'index'])->name('seller.orders.index');
-    Route::post('/seller/orders/{id}/confirm', [SellerOrderController::class, 'confirm'])->name('seller.orders.confirm');
+        // ── Seller — pedidos ───────────────────────────────────────
+        Route::get('/seller/orders', [SellerOrderController::class, 'index'])->name('seller.orders.index');
+        Route::post('/seller/orders/{id}/confirm', [SellerOrderController::class, 'confirm'])->name('seller.orders.confirm');
+    });
 
     // ── Almacén — panel de despacho ───────────────────────────────
-    Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse.index');
-    Route::post('/warehouse/orders/{id}/dispatch', [WarehouseController::class, 'dispatchOrder'])->name('warehouse.dispatch');
-    Route::post('/warehouse/orders/{id}/deliver', [WarehouseController::class, 'deliver'])->name('warehouse.deliver');
+    // El panel muestra los pedidos de TODOS los vendedores junto con los
+    // datos de contacto del comprador: es solo para el personal de despacho.
+    // Los vendedores gestionan lo suyo desde /seller/orders.
+    Route::middleware('admin')->group(function () {
+        Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse.index');
+        Route::post('/warehouse/orders/{id}/dispatch', [WarehouseController::class, 'dispatchOrder'])->name('warehouse.dispatch');
+        Route::post('/warehouse/orders/{id}/deliver', [WarehouseController::class, 'deliver'])->name('warehouse.deliver');
+    });
 });

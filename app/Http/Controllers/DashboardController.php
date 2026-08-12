@@ -6,6 +6,7 @@ use App\Models\Address;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\Wishlist;
+use App\Notifications\ShopStatusUpdatedNotification;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -22,6 +23,17 @@ class DashboardController extends Controller
                           ->where('is_default', 1)
                           ->first();
 
+        // Aviso de aprobación/rechazo de tienda: se muestra una vez y se marca leído.
+        $shopUpdates = $user->unreadNotifications()
+                            ->where('type', ShopStatusUpdatedNotification::class)
+                            ->get();
+
+        if ($shopUpdates->isNotEmpty()) {
+            $user->unreadNotifications()
+                 ->where('type', ShopStatusUpdatedNotification::class)
+                 ->update(['read_at' => now()]);
+        }
+
         // ── Usuario NO verificado → vista simple ─────────────────
         if (!$user->isVerified()) {
             $cartCount     = session('cart') ? count(session('cart')) : 0;
@@ -33,6 +45,7 @@ class DashboardController extends Controller
                 'cartCount',
                 'wishlistCount',
                 'orderCount',
+                'shopUpdates',
             ));
         }
 
@@ -50,6 +63,6 @@ class DashboardController extends Controller
             'visitors'       => 0, // implementar con analytics si se desea
         ];
 
-        return view('pages.dashboard-verified', compact('address', 'stats'));
+        return view('pages.dashboard-verified', compact('address', 'stats', 'shopUpdates'));
     }
 }

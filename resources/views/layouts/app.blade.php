@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="app-url" content="{{ url('/public/uploads/ew') }}">
@@ -89,6 +89,9 @@
                 </div>
             </div>
         </div>
+
+        {{-- Mensajes flash (p. ej. tienda pendiente de aprobación) --}}
+        @include('partials.flash')
 
         {{-- CONTENIDO DE CADA PÁGINA --}}
         @yield('content')
