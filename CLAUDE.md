@@ -126,6 +126,29 @@ Ecuador IVA rate (15%) is read from `config/app.php` (key: `ec_iva_rate`). `Kush
 
 ## Database Notes
 
-- Tests use in-memory SQLite (configured in `phpunit.xml`); local/production uses PostgreSQL (migrated from MySQL 2026-07; the old XAMPP MySQL `woot_db` is kept as a backup and no longer used). PostgreSQL runs as a Windows service independent of XAMPP.
-- `database/migrations/` has 17 migration files — always run `php artisan migrate` after pulling changes. `orders`/`order_details` come from `2026_06_10_200000_create_orders_table.php`; database notifications from `2026_06_22_184700_create_notifications_table.php`.
+- Tests use in-memory SQLite (configured in `phpunit.xml`); local/production uses PostgreSQL (migrated from MySQL 2026-07; the old XAMPP MySQL `woot_db` is kept as a backup — it holds the only copy of the seed data, see `legacy:restore` below). PostgreSQL runs as a Windows service independent of XAMPP.
+- `database/migrations/` has 19 migration files — always run `php artisan migrate` after pulling changes. `orders`/`order_details` come from `2026_06_10_200000_create_orders_table.php`; database notifications from `2026_06_22_184700_create_notifications_table.php`.
 - File uploads go to `storage/app/public/`; the `public/storage` symlink must exist (`php artisan storage:link`).
+
+### Restoring Seed Data (`legacy:restore`)
+
+The 2026-07 MySQL → PostgreSQL migration created the schema but **never moved the rows**. An empty `banners`/`categories`/`brands`/`products` makes the home page render with no images at all — the `@foreach` loops just iterate empty collections, so the symptom looks like broken image paths when it is actually missing data. `php artisan migrate:fresh` reproduces the same empty state.
+
+`php artisan legacy:restore` (`app/Console/Commands/RestoreLegacyData.php`) repopulates from the old XAMPP MySQL `woot_db`, which is still the only copy of that data:
+
+```bash
+php artisan legacy:restore --pretend   # show what it would do, write nothing
+php artisan legacy:restore --force     # skip the confirmation prompt
+```
+
+Options: `--host` / `--port` / `--database` / `--username` / `--password` (default to the XAMPP MySQL `woot_db`), `--tables=a,b` to limit the run, `--with-notifications` to include `notifications` (skipped by default — the legacy rows point at orders that no longer exist).
+
+It only ever reads from the source, and it is idempotent: any table that already has rows is skipped, so re-running is safe. It copies the intersection of columns (the two schemas differ by a few newer nullable columns), walks 19 tables in dependency order, and resyncs the PostgreSQL identity sequences afterwards — skip that last step and the next insert collides on a duplicate id.
+
+**Users get special handling.** A local account may be newer than the legacy one but share its email, and the unique email index means they cannot both exist. In that case the local row wins — keeping its password — and only adopts the legacy `id` and `user_type`, so `products.added_by` and the other FKs still line up.
+
+It also repairs two defects that predate the migration: values whose JSON was encoded twice (with the model's `'array'` cast those decode to a string instead of an array, so the product gallery renders nothing), and rows whose image is missing from disk but present under another extension. It finishes by listing any referenced image that is still missing.
+
+**MySQL must be running**, and it is not a Windows service — start it from the XAMPP control panel, or `mysqld.exe --defaults-file=C:\xampp\mysql\bin\my.ini --standalone`. If it aborts with `Failed to initialize multi master structures`, the data dir has corrupt replication state: `mysqld` log output was once written into `multi-master.info`, so MariaDB reads each log line as a named replica. Move `master-*.info`, `relay-log*.info`, `mysql-relay-bin-*` and `multi-master.info` out of `C:\xampp\mysql\data\` — they hold no table data (a set from 2026-07 is parked in `data\_repl_backup_20260824\`).
+
+The command restores data as it exists in the backup, and nothing more: shops come back with their original `status` (`0` pending) and users with their original verification state. Approving a shop and verifying an email are separate actions.
