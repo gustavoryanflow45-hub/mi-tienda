@@ -129,7 +129,7 @@
                 <div class="checkout-card">
                     <h3>Payment Details</h3>
 
-                    @if(str_starts_with($stripeKey ?? '', 'pk_test_51Te0U6Qg0O05LAp8ySAJB0Fa8QA0ARnv2ZbVXFpyqpvflNcVeM6eBBYMsqnP64t2G2SjjxN9ScOslBrEPDVVvZtn00fMsH9Rih'))
+                    @if(str_starts_with($stripeKey ?? '', 'pk_test_51Te0UUHnXJ0r9Xwy2rBnD7dlH7TXMVnO8IHesiCGpmT0QMGzIjfubvGjMtsbhYkxMp4838NAZhvPg3dNxiyCV2rY00LzInCMkQ'))
                         <span class="test-badge">Modo prueba — tarjeta 4242 4242 4242 4242, fecha futura, CVC 123</span>
                     @endif
 
