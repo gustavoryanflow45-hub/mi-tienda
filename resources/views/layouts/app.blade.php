@@ -2,6 +2,12 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    {{-- aiz-core.js lee estos dos al arrancar (AIZ.data). No los quites:
+         AIZ.extra.trimAppUrl() hace appUrl.slice() sin comprobar, así que
+         sin el meta lanza y corta el resto del init: carruseles, tooltips,
+         contadores y zoom se quedan sin inicializar. --}}
+    <meta name="app-url" content="{{ url('/') }}">
+    <meta name="file-base-url" content="{{ url('/') }}/public/">
 
     <title>@yield('title', 'Woot') | {{ config('app.name', 'Woot') }}</title>
 
