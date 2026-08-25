@@ -9,6 +9,35 @@ use Illuminate\Http\Request;
 class CategoryController extends Controller
 {
     /**
+     * Índice de todas las categorías raíz con sus subcategorías.
+     * GET /categories
+     */
+    public function index()
+    {
+        $categories = Category::active()
+            ->whereNull('parent_id')
+            ->with(['children' => fn ($q) => $q->where('status', 1)->orderBy('order')])
+            ->orderBy('order')
+            ->get();
+
+        // Un solo conteo agrupado en vez de una consulta por categoría.
+        $counts = Product::where('published', 1)
+            ->selectRaw('category_id, count(*) as total')
+            ->groupBy('category_id')
+            ->pluck('total', 'category_id');
+
+        // Cada raíz suma lo suyo más lo de sus hijas, igual que hace show().
+        $categories->each(function (Category $category) use ($counts) {
+            $category->product_count = $category->children
+                ->pluck('id')
+                ->prepend($category->id)
+                ->sum(fn ($id) => $counts[$id] ?? 0);
+        });
+
+        return view('pages.categories', compact('categories'));
+    }
+
+    /**
      * Muestra los productos de una categoría por su slug.
      * GET /category/{slug}
      */
@@ -42,10 +71,10 @@ class CategoryController extends Controller
 
         // ── Ordenamiento ─────────────────────────────────────────
         match ($request->get('sort', 'newest')) {
-            'price_asc'  => $query->orderBy('unit_price', 'asc'),
+            'price_asc' => $query->orderBy('unit_price', 'asc'),
             'price_desc' => $query->orderBy('unit_price', 'desc'),
-            'popular'    => $query->orderBy('num_of_sale', 'desc'),
-            default      => $query->latest(),   // newest
+            'popular' => $query->orderBy('num_of_sale', 'desc'),
+            default => $query->latest(),   // newest
         };
 
         $products = $query->paginate(12)->withQueryString();
@@ -80,7 +109,7 @@ class CategoryController extends Controller
             ->where('status', 1)
             ->first();
 
-        if (!$category) {
+        if (! $category) {
             return response('');
         }
 
