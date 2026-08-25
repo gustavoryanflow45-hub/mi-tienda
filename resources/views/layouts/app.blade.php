@@ -2,8 +2,6 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="app-url" content="{{ url('/public/uploads/ew') }}">
-    <meta name="file-base-url" content="{{ url('/') }}/public/">
 
     <title>@yield('title', 'Woot') | {{ config('app.name', 'Woot') }}</title>
 
