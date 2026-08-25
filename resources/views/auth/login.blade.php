@@ -12,7 +12,7 @@
                     <div class="card-body p-4">
                         <div class="text-center mb-4">
                             <a href="{{ route('home') }}">
-                                <img src="{{ asset('uploads/all/zzC47w6sBbEtktVBm2l1WiIZqCidTVQ3eni2k8pW.png') }}"
+                                <img src="{{ asset('assets/img/logo.png') }}"
                                      alt="Woot" height="40" class="mb-3">
                             </a>
                             <h4 class="fw-700">Welcome Back!</h4>

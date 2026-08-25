@@ -41,7 +41,7 @@
                 <div class="mt-4">
                     <a href="{{ route('home') }}" class="d-block">
                         <img class="lazyload" src="{{ asset('assets/img/placeholder-rect.jpg') }}"
-                             data-src="{{ asset('uploads/all/l1gUPhrCdi3mrsWaUsleOwPhNWkUYITGQeKOMN7c.png') }}"
+                             data-src="{{ asset('assets/img/logo-footer.png') }}"
                              alt="Woot" height="44">
                     </a>
                     <div class="d-inline-block d-md-block mb-4 mt-3">
@@ -177,7 +177,7 @@
                 <div class="text-center text-md-right">
                     <ul class="list-inline mb-0">
                         <li class="list-inline-item">
-                            <img src="{{ asset('uploads/all/2pa1XwhAPf2KPeCw45Xxyv1M6aZo1ZfsJP2YZOvR.png') }}" height="30" class="mw-100 h-auto" style="max-height: 30px">
+                            <img src="{{ asset('assets/img/payment-methods.png') }}" height="30" class="mw-100 h-auto" style="max-height: 30px">
                         </li>
                     </ul>
                 </div>

@@ -14,7 +14,7 @@
     <meta name="keywords" content="@yield('meta_keywords', '')">
 
     <!-- Favicon -->
-    <link rel="icon" href="{{ asset('uploads/all/ewIoftW21tLoxgjjAjKxqH2mDETTiOdRixlfZ5V3.png') }}">
+    <link rel="icon" href="{{ asset('assets/img/favicon.png') }}">
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i,800,800i&display=swap" rel="stylesheet">
