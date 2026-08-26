@@ -43,4 +43,9 @@ class StripeService
     {
         return $this->client()->paymentIntents->retrieve($paymentIntentId);
     }
+
+    public function updateIntent(string $paymentIntentId, array $params): PaymentIntent
+    {
+        return $this->client()->paymentIntents->update($paymentIntentId, $params);
+    }
 }
