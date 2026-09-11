@@ -15,7 +15,7 @@
                 <p>Estos Términos y Condiciones regulan el acceso y el uso de guStore, el mercado en línea donde vendedores independientes ofrecen sus productos a los compradores. Al registrarse, navegar o realizar una compra, usted declara haber leído, comprendido y aceptado íntegramente este documento, y se obliga a cumplirlo en su totalidad. Si no está de acuerdo con alguno de sus puntos, debe abstenerse de utilizar la plataforma.</p>
 
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">1. Generalidades</h3>
-                <p>guStore es operada por guStore S.A.S., con RUC [RUC] y domicilio en Guayaquil, Ecuador. En adelante, «la plataforma» se refiere al sitio web y a todos los servicios que prestamos a través de él; «usuario», a cualquier persona que acceda a ella; «comprador», a quien adquiere productos; y «vendedor», a quien los publica y comercializa.</p>
+                <p>guStore es operada por guStore S.A.S., con domicilio en Cuenca, Ecuador. En adelante, «la plataforma» se refiere al sitio web y a todos los servicios que prestamos a través de él; «usuario», a cualquier persona que acceda a ella; «comprador», a quien adquiere productos; y «vendedor», a quien los publica y comercializa.</p>
 
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">2. Objeto y alcance del servicio</h3>
                 <p>guStore pone a disposición de los usuarios un espacio tecnológico que conecta a compradores con vendedores independientes, junto con las herramientas de catálogo, carrito, cobro y seguimiento de pedidos necesarias para esa relación.</p>
@@ -76,7 +76,7 @@
                 <p>Podemos actualizar estos términos para reflejar cambios legales, técnicos o en nuestros servicios. La versión vigente es siempre la publicada en esta página, con su fecha de última actualización; el uso de la plataforma después de una modificación implica su aceptación.</p>
 
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">16. Ley aplicable y solución de controversias</h3>
-                <p>Estos términos se rigen por la legislación de la República del Ecuador. Cualquier controversia se procurará resolver de buena fe entre las partes y, de no lograrse un acuerdo, se someterá a los jueces competentes de Guayaquil, sin perjuicio de las acciones que el consumidor pueda ejercer ante la autoridad de protección al consumidor.</p>
+                <p>Estos términos se rigen por la legislación de la República del Ecuador. Cualquier controversia se procurará resolver de buena fe entre las partes y, de no lograrse un acuerdo, se someterá a los jueces competentes de Cuenca, sin perjuicio de las acciones que el consumidor pueda ejercer ante la autoridad de protección al consumidor.</p>
 
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">17. Contacto</h3>
                 <p>Para consultas sobre estos Términos y Condiciones puede escribirnos a soporte@gustore.com o a través del formulario de contacto del sitio.</p>
