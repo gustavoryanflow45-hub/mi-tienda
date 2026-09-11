@@ -82,13 +82,53 @@
                 <p>Para consultas sobre estos Términos y Condiciones puede escribirnos a soporte@gustore.com o a través del formulario de contacto del sitio.</p>
 
             @elseif($type === 'return-policy')
-                <p>Queremos que estés completamente satisfecho con tu compra. Si no es así, aquí está nuestra política de devoluciones.</p>
-                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">Plazo para devoluciones</h3>
-                <p>Tienes hasta 30 días desde la fecha de entrega para solicitar una devolución.</p>
-                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">Condiciones</h3>
-                <p>El producto debe estar en su estado original, sin usar y con todos sus accesorios.</p>
-                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">Proceso</h3>
-                <p>Contacta al vendedor a través del panel de pedidos para iniciar el proceso de devolución.</p>
+                <p>Queremos que estés conforme con lo que compras en guStore. Esta política explica cuándo puedes devolver un producto, en qué estado debe estar, quién paga el envío de la devolución y cómo recuperas tu dinero. Forma parte de nuestros <a href="{{ route('terms') }}" style="color:#679941;">Términos y Condiciones</a>.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">1. Alcance</h3>
+                <p>guStore es un mercado en línea: quien vende es una tienda independiente, y es ella la que recibe la devolución y emite el reembolso. Esta política es el estándar mínimo que todas las tiendas de la plataforma se obligan a cumplir, y guStore acompaña el proceso hasta que se resuelva.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">2. Plazo para solicitar la devolución</h3>
+                <p>Tienes <strong>30 días calendario desde la fecha de entrega</strong> para solicitar la devolución de un producto. Este plazo es más amplio que el que exige la ley para las ventas a distancia y no sustituye los derechos que la Ley Orgánica de Defensa del Consumidor te reconoce, incluida la garantía legal, que se mantiene vigente durante todo su período aunque hayan pasado los 30 días.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">3. Estado en que debe devolverse el producto</h3>
+                <p>Para que la devolución sea aceptada, el producto debe entregarse:</p>
+                <ul style="margin:0 0 12px 18px; padding:0;">
+                    <li>Sin uso y en las mismas condiciones en que lo recibiste.</li>
+                    <li>Con todos sus accesorios, manuales, obsequios y empaques originales.</li>
+                    <li>Con sus etiquetas y sellos de fábrica intactos.</li>
+                    <li>Acompañado del comprobante de compra o del código del pedido.</li>
+                </ul>
+                <p>Estas condiciones no se exigen cuando el producto llegó defectuoso, incompleto, dañado o no corresponde a lo que compraste.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">4. Productos que no admiten devolución</h3>
+                <p>Salvo que presenten un defecto, no se aceptan devoluciones de productos perecederos, de ropa interior y artículos de higiene o cuidado personal cuyo sello sanitario haya sido abierto, de bienes hechos a medida o personalizados a tu pedido, ni de contenidos digitales, licencias o códigos ya entregados o activados.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">5. Cómo solicitarla</h3>
+                <p>Ingresa a <em>Mis pedidos</em>, abre el detalle del pedido y contacta a la tienda indicando el código del pedido, el producto y el motivo; si el producto llegó dañado o equivocado, adjunta fotografías. También puedes escribirnos a soporte@gustore.com con esos mismos datos.</p>
+                <p>La tienda debe responder en un máximo de 48 horas hábiles e indicarte cómo y a dónde enviar el producto. No envíes nada antes de recibir esa confirmación: una devolución no coordinada puede rechazarse o extraviarse.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">6. Costos de envío de la devolución</h3>
+                <p>Si el producto llegó defectuoso, dañado, incompleto o distinto al que compraste, el costo del envío de devolución lo asume la tienda y también se te reintegra el envío que pagaste originalmente.</p>
+                <p>Si la devolución responde a un cambio de opinión, el costo del envío de retorno corre por tu cuenta y el envío original no se reembolsa.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">7. Reembolsos</h3>
+                <p>Una vez que la tienda reciba el producto y verifique su estado, el reembolso se emite dentro de los 10 días hábiles siguientes por el mismo medio de pago que usaste, a través de Kushki o Stripe según corresponda. El tiempo que tarde en reflejarse en tu estado de cuenta depende de tu banco o del emisor de la tarjeta.</p>
+                <p>Si la devolución es parcial, se reembolsa el valor de los productos devueltos y los impuestos correspondientes.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">8. Cambios</h3>
+                <p>Puedes solicitar el cambio por otra talla, color o variante del mismo producto, sujeto a la disponibilidad de inventario de la tienda. Si no hay stock, se procede con el reembolso.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">9. Productos defectuosos y garantía</h3>
+                <p>Si el producto presenta una falla de fabricación, la tienda debe repararlo, reemplazarlo o devolverte el dinero, conforme a la garantía legal. Repórtalo apenas lo detectes, con fotografías o videos que muestren el problema.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">10. Pedidos no entregados</h3>
+                <p>Si el pedido figura como despachado y no lo recibes en el plazo informado, escríbenos. Verificaremos el estado del envío con la tienda y, si se confirma que el producto se extravió en tránsito, tendrás derecho al reenvío o al reembolso total, incluido el costo de envío.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">11. Si no llegas a un acuerdo con la tienda</h3>
+                <p>Cuando la tienda no responde dentro del plazo o rechaza una devolución que cumple esta política, escríbenos a soporte@gustore.com. guStore intervendrá como mediador y podrá retener las liquidaciones pendientes de esa tienda hasta que el caso se resuelva, sin perjuicio de los reclamos que puedas presentar ante la autoridad de protección al consumidor.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">12. Contacto</h3>
+                <p>Para cualquier consulta sobre devoluciones, escríbenos a soporte@gustore.com o utiliza el formulario de contacto del sitio.</p>
 
             @elseif($type === 'support-policy')
                 <p>Estamos comprometidos a brindarte el mejor soporte posible.</p>
