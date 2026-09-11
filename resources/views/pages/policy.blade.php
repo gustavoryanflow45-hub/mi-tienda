@@ -14,7 +14,7 @@
             @if($type === 'terms')
                 <p>Bienvenido a nuestra plataforma. Al utilizar nuestros servicios, aceptas los siguientes términos y condiciones.</p>
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">1. Uso del servicio</h3>
-                <p>Nuestro marketplace conecta compradores y vendedores. Debes tener al menos 18 años para utilizar este servicio.</p>
+                <p>Nuestro marketplace conecta compradores y vendedores. Debes tener al menos 18 años para utilizar este servicio. Al Registrarse o utilizar la plataforma, usted reconoce haber leido, comprendido y aceptado plenamente los Terminos y Condiciones, comprometiendose a cumplir en su totalidad. en caso de no estar de acuerdo con estos Términos, debe absteners de utilizar la plataforma de gustore </p>
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">2. Responsabilidades</h3>
                 <p>Los vendedores son responsables de la calidad y descripción de sus productos. No nos hacemos responsables por daños derivados del uso del servicio.</p>
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">3. Pagos</h3>
