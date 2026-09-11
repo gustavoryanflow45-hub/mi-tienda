@@ -131,13 +131,41 @@
                 <p>Para cualquier consulta sobre devoluciones, escríbenos a soporte@gustore.com o utiliza el formulario de contacto del sitio.</p>
 
             @elseif($type === 'support-policy')
-                <p>Estamos comprometidos a brindarte el mejor soporte posible.</p>
-                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">Horario de atención</h3>
-                <p>Lunes a viernes de 9:00 a 18:00 (hora Ecuador).</p>
-                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">Canales de soporte</h3>
-                <p>Puedes contactarnos a través del formulario de contacto en nuestro sitio web o por correo electrónico.</p>
-                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">Tiempo de respuesta</h3>
-                <p>Respondemos a todas las consultas en un plazo máximo de 24 horas hábiles.</p>
+                <p>Esta política explica a quién dirigirte según lo que necesites, por qué canales atendemos y en cuánto tiempo puedes esperar respuesta, seas comprador o vendedor.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">1. A quién dirigirte</h3>
+                <p><strong>Sobre un pedido en curso</strong> —estado del envío, un producto que llegó mal, una devolución o un cambio— escribe primero a la tienda que te vendió, desde el detalle del pedido en <em>Mis pedidos</em>. Es quien tiene el producto y quien resuelve más rápido.</p>
+                <p><strong>Sobre tu cuenta o la plataforma</strong> —acceso, verificación de correo, cobros que no reconoces, aprobación de tu tienda, o una tienda que no te responde— escríbenos directamente a guStore.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">2. Canales de atención</h3>
+                <p>Puedes contactarnos por correo a soporte@gustore.com o mediante el formulario de contacto del sitio. Ambos llegan al mismo equipo, así que no es necesario escribir por los dos.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">3. Horario de atención</h3>
+                <p>De lunes a viernes, de 9:00 a 18:00, hora de Ecuador (UTC-5), excepto feriados nacionales. Los mensajes que recibimos fuera de ese horario se atienden el siguiente día hábil.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">4. Tiempos de respuesta</h3>
+                <ul style="margin:0 0 12px 18px; padding:0;">
+                    <li><strong>Consultas generales:</strong> primera respuesta dentro de 24 horas hábiles.</li>
+                    <li><strong>Cobros no reconocidos o pagos duplicados:</strong> los priorizamos y respondemos dentro de 24 horas hábiles.</li>
+                    <li><strong>Reclamos por un pedido:</strong> la tienda tiene 48 horas hábiles para responderte; si no lo hace, intervenimos nosotros.</li>
+                    <li><strong>Solicitudes sobre tus datos personales:</strong> se atienden en los plazos que fija la ley.</li>
+                </ul>
+                <p>Estos plazos corresponden a la primera respuesta. Un caso que dependa de la tienda, del transportista o de la pasarela de pago puede tardar más en cerrarse; en ese caso te mantendremos informado del avance.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">5. Revisión de tiendas nuevas</h3>
+                <p>Las solicitudes de registro de tienda se revisan en un plazo de hasta 5 días hábiles. Te avisamos de la decisión por correo electrónico y en tu panel, tanto si se aprueba como si se rechaza. Mientras dure la revisión no es necesario que vuelvas a enviar la solicitud.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">6. Cómo ayudarnos a resolverlo más rápido</h3>
+                <p>Escríbenos desde el correo con el que te registraste e incluye el código del pedido, el nombre del producto y una descripción de lo que ocurrió. Si el problema es visible —un producto dañado, un error en pantalla o un cobro— adjunta fotografías o capturas.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">7. Qué no cubre el soporte</h3>
+                <p>No negociamos precios ni condiciones en nombre de las tiendas, no asesoramos sobre el uso técnico de los productos que ellas venden, y no gestionamos pagos, envíos ni acuerdos pactados fuera de la plataforma. Una compra acordada por fuera de guStore queda sin cobertura: ni esta política ni la de devoluciones pueden ampararla.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">8. Seguridad en las comunicaciones</h3>
+                <p>Nuestro equipo <strong>nunca</strong> te pedirá tu contraseña, el código de seguridad de tu tarjeta ni que hagas transferencias a cuentas personales. Si recibes un mensaje que dice ser de guStore y te pide algo así, no respondas y repórtalo a soporte@gustore.com.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">9. Si no quedas conforme</h3>
+                <p>Si tu caso no se resolvió o venció el plazo sin respuesta, escríbenos de nuevo a soporte@gustore.com indicando el número de tu solicitud anterior, y lo revisaremos con mayor prioridad. Esto no limita tu derecho a acudir a la autoridad de protección al consumidor.</p>
 
             @elseif($type === 'privacy-policy')
                 <p>Esta política explica qué datos personales tratamos en guStore, para qué los usamos, con quién los compartimos y cómo puedes ejercer tus derechos. Se aplica a compradores, vendedores y visitantes del sitio, y se rige por la Ley Orgánica de Protección de Datos Personales del Ecuador.</p>
