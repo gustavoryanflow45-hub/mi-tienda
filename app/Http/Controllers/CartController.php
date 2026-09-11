@@ -6,10 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\Cart;
 use App\Models\Product;
 use App\Models\ProductStock;
+use App\Services\CheckoutService;
 
 class CartController extends Controller
 {
-    public function __construct()
+    public function __construct(private CheckoutService $checkout)
     {
         $this->middleware('auth');
     }
@@ -21,9 +22,21 @@ class CartController extends Controller
         return Cart::where('user_id', auth()->id());
     }
 
-    private function cartTotal()
+    /**
+     * Subtotal, envío y total ya formateados, para que cada respuesta AJAX
+     * deje el resumen del carrito completo y no solo el subtotal.
+     */
+    private function summaryPayload(): array
     {
-        return $this->getCartQuery()->get()->sum(fn($item) => $item->price * $item->quantity);
+        $totals = $this->checkout->totals($this->getCartQuery()->get());
+
+        return [
+            'cart_total'    => number_format($totals['subtotal'], 2),
+            'cart_shipping' => number_format($totals['shipping'], 2),
+            'cart_tax'      => number_format($totals['tax'], 2),
+            'cart_grand'    => number_format($totals['grand_total'], 2),
+            'cart_count'    => $this->getCartQuery()->sum('quantity'),
+        ];
     }
 
     // ── INDEX ─────────────────────────────────────────────────────────
@@ -39,9 +52,15 @@ class CartController extends Controller
             $item->available_stock = $stock ? $stock->qty : 999;
         });
 
-        $total = $cartItems->sum(fn($item) => $item->price * $item->quantity);
+        $totals = $this->checkout->totals($cartItems);
 
-        return view('cart.index', compact('cartItems', 'total'));
+        return view('cart.index', [
+            'cartItems'     => $cartItems,
+            'total'         => $totals['subtotal'],
+            'shippingTotal' => $totals['shipping'],
+            'taxTotal'      => $totals['tax'],
+            'grandTotal'    => $totals['grand_total'],
+        ]);
     }
 
     // ── MINI CART (dropdown header) ───────────────────────────────────
@@ -49,12 +68,17 @@ class CartController extends Controller
     public function mini()
     {
         $cartItems = $this->getCartQuery()->with('product')->get();
-        $total     = $cartItems->sum(fn($item) => $item->price * $item->quantity);
+        $totals    = $this->checkout->totals($cartItems);
         $count     = $cartItems->sum('quantity');
 
         return response()->json([
             'count' => $count,
-            'html'  => view('cart.mini', compact('cartItems', 'total'))->render(),
+            'html'  => view('cart.mini', [
+                'cartItems'     => $cartItems,
+                'total'         => $totals['subtotal'],
+                'shippingTotal' => $totals['shipping'],
+                'grandTotal'    => $totals['grand_total'],
+            ])->render(),
         ]);
     }
 
@@ -135,14 +159,9 @@ class CartController extends Controller
             ]);
         }
 
-        $cartCount = $this->getCartQuery()->sum('quantity');
-        $cartTotal = $this->cartTotal();
-
-        return response()->json([
-            'status'     => 'success',
-            'message'    => 'Product added to cart',
-            'cart_count' => $cartCount,
-            'cart_total' => number_format($cartTotal, 2),
+        return response()->json($this->summaryPayload() + [
+            'status'  => 'success',
+            'message' => 'Product added to cart',
         ]);
     }
 
@@ -160,14 +179,9 @@ class CartController extends Controller
 
         $item->delete();
 
-        $cartCount = $this->getCartQuery()->sum('quantity');
-        $cartTotal = $this->cartTotal();
-
-        return response()->json([
-            'status'     => 'success',
-            'message'    => 'Item removed',
-            'cart_count' => $cartCount,
-            'cart_total' => number_format($cartTotal, 2),
+        return response()->json($this->summaryPayload() + [
+            'status'  => 'success',
+            'message' => 'Item removed',
         ]);
     }
 
@@ -226,14 +240,9 @@ class CartController extends Controller
 
         $item->update(['quantity' => $quantity]);
 
-        $cartTotal = $this->cartTotal();
-        $cartCount = $this->getCartQuery()->sum('quantity');
-
-        return response()->json([
+        return response()->json($this->summaryPayload() + [
             'status'     => 'success',
             'subtotal'   => number_format($item->price * $quantity, 2),
-            'cart_total' => number_format($cartTotal, 2),
-            'cart_count' => $cartCount,
             'limited_to' => $quantity,
         ]);
     }

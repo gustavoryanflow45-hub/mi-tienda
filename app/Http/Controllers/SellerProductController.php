@@ -22,9 +22,9 @@ class SellerProductController extends Controller
             if (! in_array($user->user_type, ['seller', 'admin'])) {
                 abort(403, 'No autorizado.');
             }
-            if (! $user->email_verified_at && ! $user->email_verified) {
+            if (! $user->isVerified()) {
                 return redirect()->route('verification.notice')
-                    ->with('warning', 'Debes verificar tu email primero.');
+                    ->with('warning', 'Debes verificar tu correo electrónico antes de usar el panel de vendedor.');
             }
 
             return $next($request);

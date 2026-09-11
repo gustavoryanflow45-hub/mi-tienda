@@ -43,9 +43,17 @@
     </div>
     {{-- Total + botón --}}
     <div class="p-3">
+        <div class="d-flex justify-content-between fs-13 text-muted mb-1">
+            <span>Subtotal</span>
+            <span>${{ number_format($total, 2) }}</span>
+        </div>
+        <div class="d-flex justify-content-between fs-13 text-muted mb-2">
+            <span>Envío</span>
+            <span>{{ $shippingTotal > 0 ? '$'.number_format($shippingTotal, 2) : 'Gratis' }}</span>
+        </div>
         <div class="d-flex justify-content-between mb-3">
             <span class="fw-700">Total</span>
-            <span class="fw-700 text-primary">${{ number_format($total, 2) }}</span>
+            <span class="fw-700 text-primary">${{ number_format($grandTotal, 2) }}</span>
         </div>
         <a href="{{ route('cart.index') }}"
            class="btn btn-primary btn-block fw-700">

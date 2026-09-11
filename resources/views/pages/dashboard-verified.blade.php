@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard')
-@section('meta_description', 'Your verified seller dashboard')
+@section('title', __('dashboard.title'))
+@section('meta_description', __('dashboard.meta_verified'))
 
 @section('extra_css')
 <style>
@@ -23,9 +23,6 @@
 
     .info-card { background: #fff; border-radius: 0.75rem; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: box-shadow 0.2s ease; }
     .info-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-
-    .btn-become-seller { background-color: #e8f5e0; color: #679941; border: 1px solid #c5e0b4; font-weight: 600; border-radius: 8px; transition: background 0.2s; }
-    .btn-become-seller:hover { background-color: #d4edca; color: #4e7a2e; }
 
     .logout-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9999; align-items: center; justify-content: center; }
     .logout-modal-overlay.show { display: flex; }
@@ -57,130 +54,139 @@
                         <h4 class="h5 fw-600 fs-18 mb-1">{{ strtoupper(Auth::user()->name) }}</h4>
                         <p class="mb-2 text-truncate opacity-80 fs-13">{{ Auth::user()->email }}</p>
                         <span class="verified-badge">
-                            <i class="las la-check-circle"></i> Verified
+                            <i class="las la-check-circle"></i> {{ __('dashboard.verified') }}
                         </span>
                     </div>
                     <div class="bg-white shadow-sm rounded-bottom p-3">
                         <ul class="aiz-side-nav-list list-unstyled mb-0">
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/dashboard') }}" class="aiz-side-nav-link bg-soft-primary d-flex align-items-center text-reset p-2">
-                                    <i class="las la-home mr-2 fs-16"></i><span>Dashboard</span>
+                                    <i class="las la-home mr-2 fs-16"></i><span>{{ __('dashboard.nav.dashboard') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/orders') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-file-invoice mr-2 fs-16"></i><span>Historial de Compras</span>
+                                    <i class="las la-file-invoice mr-2 fs-16"></i><span>{{ __('dashboard.nav.purchase_history') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-reply mr-2 fs-16"></i><span>Solicitud de Reembolso Enviada</span>
+                                    <i class="las la-reply mr-2 fs-16"></i><span>{{ __('dashboard.nav.refund_sent') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/wishlist') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-heart mr-2 fs-16"></i><span>Lista de Deseos</span>
+                                    <i class="las la-heart mr-2 fs-16"></i><span>{{ __('dashboard.nav.wishlist') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('seller.products.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-box mr-2 fs-16"></i><span>Productos</span>
+                                    <i class="las la-box mr-2 fs-16"></i><span>{{ __('dashboard.nav.products') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-boxes mr-2 fs-16"></i><span>Wholesale Products</span>
+                                    <i class="las la-boxes mr-2 fs-16"></i><span>{{ __('dashboard.nav.wholesale') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-ticket-alt mr-2 fs-16"></i><span>Cupos</span>
+                                    <i class="las la-ticket-alt mr-2 fs-16"></i><span>{{ __('dashboard.nav.coupons') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-tags mr-2 fs-16"></i><span>Productos Clasificados</span>
+                                    <i class="las la-tags mr-2 fs-16"></i><span>{{ __('dashboard.nav.classified') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('seller.orders.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-shopping-cart mr-2 fs-16"></i><span>Pedidos</span>
-                                    @if(Auth::user()->unreadNotifications->count() > 0)
-                                        <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ Auth::user()->unreadNotifications->count() }}</span>
+                                    <i class="las la-shopping-cart mr-2 fs-16"></i><span>{{ __('dashboard.nav.orders') }}</span>
+                                    @php $newOrders = Auth::user()->newOrderNotificationsCount(); @endphp
+                                    @if($newOrders > 0)
+                                        <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ $newOrders }}</span>
                                     @endif
                                 </a>
                             </li>
+                            @if(Auth::user()->isAdmin())
+                                <li class="aiz-side-nav-item mb-1">
+                                    <a href="{{ route('warehouse.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
+                                        <i class="las la-warehouse mr-2 fs-16"></i><span>{{ __('dashboard.nav.warehouse') }}</span>
+                                    </a>
+                                </li>
+                                <li class="aiz-side-nav-item mb-1">
+                                    <a href="{{ route('admin.shops') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
+                                        <i class="las la-store mr-2 fs-16"></i><span>{{ __('dashboard.nav.shop_approvals') }}</span>
+                                        @php $pendingShops = \App\Models\Shop::where('status', 0)->count(); @endphp
+                                        @if($pendingShops > 0)
+                                            <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ $pendingShops }}</span>
+                                        @endif
+                                    </a>
+                                </li>
+                            @endif
                             <li class="aiz-side-nav-item mb-1">
-                                <a href="{{ route('warehouse.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-warehouse mr-2 fs-16"></i><span>Almacén / Despacho</span>
+                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
+                                    <i class="las la-undo mr-2 fs-16"></i><span>{{ __('dashboard.nav.refund_received') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-undo mr-2 fs-16"></i><span>Solicitud de Reembolso Recibida</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-star mr-2 fs-16"></i><span>Reseña de Productos</span>
+                                    <i class="las la-star mr-2 fs-16"></i><span>{{ __('dashboard.nav.reviews') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('wallet.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-wallet mr-2 fs-16"></i><span>Mi Billetera</span>
+                                    <i class="las la-wallet mr-2 fs-16"></i><span>{{ __('dashboard.nav.wallet') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-headset mr-2 fs-16"></i><span>Ticket de Soporte</span>
+                                    <i class="las la-headset mr-2 fs-16"></i><span>{{ __('dashboard.nav.support') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/profile') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-user-cog mr-2 fs-16"></i><span>Administrar Perfil</span>
+                                    <i class="las la-user-cog mr-2 fs-16"></i><span>{{ __('dashboard.nav.manage_profile') }}</span>
                                 </a>
                             </li>
                         </ul>
-                        <div class="mt-3 pt-3 border-top">
-                            <a href="{{ url('/shops/create') }}" class="btn btn-block btn-become-seller">
-                                <i class="las la-store mr-1"></i> Ser Vendedor
-                            </a>
-                        </div>
                     </div>
                 </div>
             </div>
 
             {{-- CONTENIDO --}}
             <div class="col-lg-9">
-                <h3 class="h4 fw-700 mb-4">Dashboard, {{ Auth::user()->name }}</h3>
+                <h3 class="h4 fw-700 mb-4">{{ __('dashboard.heading', ['name' => Auth::user()->name]) }}</h3>
+
+                @include('partials.shop-status-banner')
 
                 <div class="row gutters-10 mb-3">
                     <div class="col-6 col-md-3 mb-3">
                         <div class="wave-card" style="background: linear-gradient(135deg, #6a85b6, #bac8e0);">
                             <i class="las la-box stat-icon"></i>
                             <h2 class="fw-700 fs-32 mb-1 position-relative">{{ $stats['products'] ?? 0 }}</h2>
-                            <p class="mb-0 opacity-80 fs-14 position-relative">Products</p>
+                            <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.products') }}</p>
                         </div>
                     </div>
                     <div class="col-6 col-md-3 mb-3">
                         <div class="wave-card" style="background: linear-gradient(135deg, #7b4397, #dc2430);">
                             <i class="las la-dollar-sign stat-icon"></i>
                             <h2 class="fw-700 fs-32 mb-1 position-relative">${{ number_format($stats['total_sale'] ?? 0, 2) }}</h2>
-                            <p class="mb-0 opacity-80 fs-14 position-relative">Total Sale</p>
+                            <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.total_sale') }}</p>
                         </div>
                     </div>
                     <div class="col-6 col-md-3 mb-3">
                         <div class="wave-card" style="background: linear-gradient(135deg, #56317a, #6e48aa);">
                             <i class="las la-chart-line stat-icon"></i>
                             <h2 class="fw-700 fs-32 mb-1 position-relative">${{ number_format($stats['total_profits'] ?? 0, 2) }}</h2>
-                            <p class="mb-0 opacity-80 fs-14 position-relative">Total Profits</p>
+                            <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.total_profits') }}</p>
                         </div>
                     </div>
                     <div class="col-6 col-md-3 mb-3">
                         <div class="wave-card" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
                             <i class="las la-check-circle stat-icon"></i>
                             <h2 class="fw-700 fs-32 mb-1 position-relative">{{ $stats['success_orders'] ?? 0 }}</h2>
-                            <p class="mb-0 opacity-80 fs-14 position-relative">Success Orders</p>
+                            <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.success_orders') }}</p>
                         </div>
                     </div>
                 </div>
@@ -190,7 +196,7 @@
                         <div class="wave-card" style="background: linear-gradient(135deg, #c471ed, #f64f59);">
                             <i class="las la-eye stat-icon"></i>
                             <h2 class="fw-700 fs-32 mb-1 position-relative">{{ $stats['visitors'] ?? 0 }}</h2>
-                            <p class="mb-0 opacity-80 fs-14 position-relative">Today Visitors</p>
+                            <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.visitors') }}</p>
                         </div>
                     </div>
                 </div>
@@ -198,7 +204,7 @@
                 <div class="row gutters-10">
                     <div class="col-md-7 mb-3">
                         <div class="info-card p-4 h-100">
-                            <h4 class="h6 fw-600 mb-3 opacity-60"><i class="las la-map-marker mr-1 text-primary"></i> Default Delivery Address</h4>
+                            <h4 class="h6 fw-600 mb-3 opacity-60"><i class="las la-map-marker mr-1 text-primary"></i> {{ __('dashboard.address.title') }}</h4>
                             @if(isset($address) && $address)
                                 <p class="fs-14 mb-1 fw-600">{{ $address->full_name }}</p>
                                 <p class="fs-13 opacity-70 mb-1">{{ $address->address }}</p>
@@ -207,8 +213,8 @@
                             @else
                                 <div class="opacity-50 fs-13 mt-4 text-center py-3">
                                     <i class="las la-map-marker la-2x mb-2 d-block text-primary"></i>
-                                    No address saved yet.
-                                    <div class="mt-3"><a href="{{ url('/profile') }}" class="btn btn-sm btn-outline-primary">Add Address</a></div>
+                                    {{ __('dashboard.address.empty') }}
+                                    <div class="mt-3"><a href="{{ url('/profile') }}" class="btn btn-sm btn-outline-primary">{{ __('dashboard.address.add') }}</a></div>
                                 </div>
                             @endif
                         </div>
@@ -216,9 +222,9 @@
                     <div class="col-md-5 mb-3">
                         <div class="info-card p-4 h-100 text-center d-flex flex-column justify-content-center align-items-center">
                             <i class="las la-box-open la-3x text-primary mb-3 opacity-50"></i>
-                            <h4 class="h6 fw-600 mb-2 opacity-60">Purchased Package</h4>
-                            <h5 class="fw-600 text-primary mb-4">{{ $package->name ?? 'Package not found' }}</h5>
-                            <a href="{{ url('/packages') }}" class="btn btn-primary fw-600 px-4">Upgrade Package</a>
+                            <h4 class="h6 fw-600 mb-2 opacity-60">{{ __('dashboard.package.title') }}</h4>
+                            <h5 class="fw-600 text-primary mb-4">{{ $package->name ?? __('dashboard.package.not_found') }}</h5>
+                            <a href="{{ url('/packages') }}" class="btn btn-primary fw-600 px-4">{{ __('dashboard.package.upgrade') }}</a>
                         </div>
                     </div>
                 </div>
@@ -231,13 +237,13 @@
 <div class="logout-modal-overlay" id="logoutModal">
     <div class="logout-modal-box">
         <div class="logout-icon"><i class="las la-sign-out-alt"></i></div>
-        <h5 class="fw-700 mb-1">Sign out?</h5>
-        <p class="opacity-60 fs-14 mb-4">Are you sure you want to log out of your account?</p>
+        <h5 class="fw-700 mb-1">{{ __('dashboard.logout.title') }}</h5>
+        <p class="opacity-60 fs-14 mb-4">{{ __('dashboard.logout.text') }}</p>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" class="btn-logout-confirm"><i class="las la-sign-out-alt mr-1"></i> Yes, sign out</button>
+            <button type="submit" class="btn-logout-confirm"><i class="las la-sign-out-alt mr-1"></i> {{ __('dashboard.logout.confirm') }}</button>
         </form>
-        <button class="btn-logout-cancel" onclick="document.getElementById('logoutModal').classList.remove('show')">Cancel</button>
+        <button class="btn-logout-cancel" onclick="document.getElementById('logoutModal').classList.remove('show')">{{ __('dashboard.logout.cancel') }}</button>
     </div>
 </div>
 @endsection

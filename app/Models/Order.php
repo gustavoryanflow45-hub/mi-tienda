@@ -18,6 +18,7 @@ class Order extends Model
         'delivery_status',
         'payment_gateway',
         'payment_reference',
+        'payment_intent_id',
         'subtotal',
         'tax_amount',
         'shipping_total',

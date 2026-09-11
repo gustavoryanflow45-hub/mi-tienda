@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\SellerNewOrderNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -11,19 +12,20 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     // ── Campos asignables masivamente ───────────────────────────
+    //
+    // OJO: 'user_type', 'balance', 'banned', 'email_verified' y
+    // 'verification_code' quedan FUERA a propósito. Son campos de privilegio
+    // y de dinero: si entran aquí, un solo User::create($request->all())
+    // permite que cualquiera se haga admin o se ponga saldo.
+    // Para asignarlos hay que hacerlo explícitamente ($user->user_type = ...).
     protected $fillable = [
         'name',
         'email',
         'password',
         'phone',
         'avatar',
-        'user_type',
-        'email_verified',
-        'verification_code',
-        'balance',
         'referral_code',
         'referred_by',
-        'banned',
     ];
 
     // ── Campos ocultos en serialización ─────────────────────────
@@ -63,6 +65,18 @@ class User extends Authenticatable
     public function isVerified(): bool
     {
         return ! is_null($this->email_verified_at) || (bool) $this->email_verified;
+    }
+
+    /**
+     * Pedidos nuevos sin ver: alimenta el globo del menú "Pedidos".
+     * Solo cuenta las notificaciones que SellerOrderController@index
+     * marca como leídas, para que el globo se apague al abrir la página.
+     */
+    public function newOrderNotificationsCount(): int
+    {
+        return $this->unreadNotifications()
+            ->where('type', SellerNewOrderNotification::class)
+            ->count();
     }
 
     // ── Relaciones ───────────────────────────────────────────────

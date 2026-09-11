@@ -1,8 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="app-url" content="{{ url('/public/uploads/ew') }}">
+    {{-- aiz-core.js lee estos dos al arrancar (AIZ.data). No los quites:
+         AIZ.extra.trimAppUrl() hace appUrl.slice() sin comprobar, así que
+         sin el meta lanza y corta el resto del init: carruseles, tooltips,
+         contadores y zoom se quedan sin inicializar. --}}
+    <meta name="app-url" content="{{ url('/') }}">
     <meta name="file-base-url" content="{{ url('/') }}/public/">
 
     <title>@yield('title', 'Woot') | {{ config('app.name', 'Woot') }}</title>
@@ -14,7 +18,7 @@
     <meta name="keywords" content="@yield('meta_keywords', '')">
 
     <!-- Favicon -->
-    <link rel="icon" href="{{ asset('uploads/all/ewIoftW21tLoxgjjAjKxqH2mDETTiOdRixlfZ5V3.png') }}">
+    <link rel="icon" href="{{ asset('assets/img/favicon.png') }}">
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i,800,800i&display=swap" rel="stylesheet">
@@ -89,6 +93,9 @@
                 </div>
             </div>
         </div>
+
+        {{-- Mensajes flash (p. ej. tienda pendiente de aprobación) --}}
+        @include('partials.flash')
 
         {{-- CONTENIDO DE CADA PÁGINA --}}
         @yield('content')

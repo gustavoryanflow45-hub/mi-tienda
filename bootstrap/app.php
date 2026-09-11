@@ -14,6 +14,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'webhooks/*',
         ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\SetLocale::class,
+        ]);
+
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'shop.approved' => \App\Http\Middleware\EnsureShopApproved::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

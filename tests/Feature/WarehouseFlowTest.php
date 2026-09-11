@@ -36,6 +36,41 @@ class WarehouseFlowTest extends TestCase
             ->assertForbidden();
     }
 
+    /**
+     * El panel lista los pedidos de todos los vendedores junto con los datos
+     * de contacto del comprador, así que un seller no debe poder abrirlo:
+     * filtraría clientes de la competencia. Sus pedidos van en /seller/orders.
+     */
+    public function test_seller_cannot_access_warehouse_panel(): void
+    {
+        $this->actingAs($this->makeSeller())
+            ->get('/warehouse')
+            ->assertForbidden();
+    }
+
+    public function test_seller_cannot_dispatch_or_deliver_an_order(): void
+    {
+        $customer = $this->makeCustomer();
+        $owner = $this->makeSeller();
+        $intruder = $this->makeSeller();
+
+        $order = $this->makePaidOrder($customer, $owner);
+        $order->update(['delivery_status' => 'warehouse', 'warehouse_at' => now()]);
+
+        $this->actingAs($intruder)
+            ->post("/warehouse/orders/{$order->id}/dispatch")
+            ->assertForbidden();
+
+        $this->assertSame('warehouse', $order->fresh()->delivery_status);
+
+        // Tampoco el vendedor dueño del pedido: despachar es tarea del almacén.
+        $this->actingAs($owner)
+            ->post("/warehouse/orders/{$order->id}/deliver")
+            ->assertForbidden();
+
+        $this->assertSame('warehouse', $order->fresh()->delivery_status);
+    }
+
     public function test_full_flow_confirm_warehouse_dispatch_deliver(): void
     {
         $customer = $this->makeCustomer();

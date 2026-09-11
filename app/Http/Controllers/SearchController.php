@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
@@ -13,9 +13,9 @@ class SearchController extends Controller
         $keyword = $request->get('keyword', '');
 
         $products = Product::active()
-            ->where(function($q) use ($keyword) {
+            ->where(function ($q) use ($keyword) {
                 $q->where('name', 'like', "%{$keyword}%")
-                  ->orWhere('description', 'like', "%{$keyword}%");
+                    ->orWhere('description', 'like', "%{$keyword}%");
             })
             ->paginate(20);
 
@@ -32,14 +32,14 @@ class SearchController extends Controller
             ->where('name', 'like', "%{$keyword}%")
             ->take(8)
             ->get()
-            ->map(function($p) {
+            ->map(function ($p) {
                 return [
-                    'id'        => $p->id,
-                    'name'      => $p->name,
-                    'slug'      => $p->slug,
-                    'price'     => number_format($p->unit_price, 2),
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'slug' => $p->slug,
+                    'price' => number_format($p->unit_price, 2),
                     'thumbnail' => $p->thumbnail
-                        ? asset('uploads/' . $p->thumbnail)
+                        ? uploaded_asset($p->thumbnail)
                         : 'https://via.placeholder.com/60x60/f8f9fa/679941?text=P',
                 ];
             });

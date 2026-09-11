@@ -141,17 +141,19 @@
                                 <a href="{{ route('seller.orders.index') }}" class="aiz-side-nav-link bg-soft-primary active d-flex align-items-center text-reset p-2">
                                     <i class="las la-shopping-cart mr-2 fs-16"></i>
                                     <span>Pedidos</span>
-                                    @php $unread = Auth::user()->unreadNotifications->count(); @endphp
-                                    @if($unread > 0)
-                                        <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ $unread }}</span>
+                                    @php $newOrders = Auth::user()->newOrderNotificationsCount(); @endphp
+                                    @if($newOrders > 0)
+                                        <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ $newOrders }}</span>
                                     @endif
                                 </a>
                             </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="{{ route('warehouse.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-warehouse mr-2 fs-16"></i><span>Almacén</span>
-                                </a>
-                            </li>
+                            @if(Auth::user()->isAdmin())
+                                <li class="aiz-side-nav-item mb-1">
+                                    <a href="{{ route('warehouse.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
+                                        <i class="las la-warehouse mr-2 fs-16"></i><span>Almacén</span>
+                                    </a>
+                                </li>
+                            @endif
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('wallet.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-wallet mr-2 fs-16"></i><span>Mi Billetera</span>
@@ -222,7 +224,9 @@
                             <tbody>
                                 @forelse($orders as $i => $order)
                                     @php
+                                        // orderDetails ya viene filtrado a este vendedor por el controlador
                                         $sellerSubtotal = $order->orderDetails->sum(fn($d) => $d->price * $d->quantity);
+                                        $sellerShipping = $order->orderDetails->sum('shipping_cost');
                                         $addr = is_array($order->shipping_address) ? $order->shipping_address : [];
                                     @endphp
                                     <tr>
@@ -238,7 +242,14 @@
                                             @endif
                                         </td>
                                         <td>{{ $order->created_at->format('d-m-Y H:i') }}</td>
-                                        <td style="font-weight:600;">${{ number_format($sellerSubtotal, 2) }}</td>
+                                        <td style="font-weight:600;">
+                                            ${{ number_format($sellerSubtotal + $sellerShipping, 2) }}
+                                            @if($sellerShipping > 0)
+                                                <br><small style="color:#888; font-weight:400;">
+                                                    incluye ${{ number_format($sellerShipping, 2) }} de envío
+                                                </small>
+                                            @endif
+                                        </td>
                                         <td>
                                             <span class="badge-status badge-{{ $order->payment_status === 'paid' ? 'paid' : 'unpaid' }}">
                                                 {{ $order->payment_status === 'paid' ? 'Pagado' : 'Pendiente' }}

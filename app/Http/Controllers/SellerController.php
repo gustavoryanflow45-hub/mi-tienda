@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Shop;
 use App\Models\User;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -65,12 +66,17 @@ class SellerController extends Controller
             ->store('sellers/id', 'public');
 
         // ── Crear el usuario con user_type = seller ─────────────────
-        $user = User::create([
-            'name'      => $request->name,
-            'email'     => $request->email,
-            'password'  => Hash::make($request->password),
-            'user_type' => 'seller',   // campo de tu migración add_extra_fields_to_users
+        // user_type no es fillable (ver User::$fillable): se asigna aparte
+        // para que nunca pueda llegar desde el request.
+        $user = new User([
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'password' => Hash::make($request->password),
         ]);
+        $user->user_type = 'seller';
+        $user->save();
+
+        $user->notify(new VerifyEmailNotification());
 
         // ── Crear la tienda vinculada al usuario ────────────────────
         Shop::create([

@@ -13,8 +13,9 @@ class WarehouseController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        // Defensa en profundidad: las rutas ya llevan el middleware 'admin'.
         $this->middleware(function ($request, $next) {
-            if (! in_array(Auth::user()->user_type, ['seller', 'admin'])) {
+            if (! Auth::user()->isAdmin()) {
                 abort(403, 'No autorizado.');
             }
 

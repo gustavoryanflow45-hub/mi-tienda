@@ -41,7 +41,33 @@ No API layer — all responses are server-rendered Blade. AJAX calls (search aut
 
 ### User Types
 
-`users.user_type` distinguishes three roles: `customer`, `seller`, `admin`. A single `User` model handles all three. Sellers also have a `shops` record. There is no role middleware — seller/admin-only controllers check `in_array($user->user_type, ['seller', 'admin'])` manually (see `SellerProductController`, `SellerOrderController`). Shop registration (`/shops/create`) is public and creates the user with `user_type = 'seller'`.
+`users.user_type` distinguishes three roles: `customer`, `seller`, `admin`. A single `User` model handles all three. Sellers also have a `shops` record. Shop registration (`/shops/create`) is public and creates the user with `user_type = 'seller'`.
+
+Two middleware aliases are registered in `bootstrap/app.php`:
+- **`admin`** (`EnsureUserIsAdmin`) — guards `/admin/wallet` and `/warehouse` as route groups. Always place it after `auth` so guests get redirected to login instead of a 403.
+- **`shop.approved`** (`EnsureShopApproved`) — guards every `/seller/*` route. Because `/shops/create` is public and logs the user straight in, `user_type = 'seller'` alone means nothing: the shop must also have `status = 1`. Admins bypass it (they have no shop); pending/rejected/shopless sellers are redirected to `/dashboard` with a `warning` flash.
+
+Admins approve shops at `/admin/shops` (`AdminShopController`, view `admin/shops.blade.php`) — list with status/search filters, ID document thumbnails, and approve/reject actions. `shops.status`: `0` pending, `1` approved, `2` rejected (`Shop::statusLabel()`); the constants live on `AdminShopController`. The dashboard sidebar shows a pending-count badge for admins.
+
+Each decision sends `ShopStatusUpdatedNotification` to the seller on **both** `database` and `mail` (a decision can take days, so the seller may not be logged in). A no-op re-approval sends nothing. `DashboardController` reads the unread ones, marks them read, and passes `$shopUpdates` to both dashboard views, which render `partials/shop-status-banner.blade.php` — same read-once pattern as `OrderStatusUpdatedNotification` in `/orders`. Its `toMail()` calls `route()`, which is safe in console and queue contexts (the console kernel's `SetRequestForConsole` bootstrapper builds a request from `APP_URL`). It only breaks in ad-hoc scripts that boot the **HTTP** kernel without binding a `request` — `url()` fails there too, so swapping helpers is not a fix; bind a request instead.
+
+Controllers additionally check `in_array($user->user_type, ['seller', 'admin'])` in a constructor middleware closure (`SellerProductController`, `SellerOrderController`); `WarehouseController` checks `isAdmin()`. These are defense in depth — the route middleware is the real gate.
+
+`User::$fillable` deliberately **excludes** `user_type`, `balance`, `banned`, `email_verified` and `verification_code`. Assign them explicitly (`$user->user_type = ...`), never through `create()`/`fill()` with request data — see `RegisterController` and `SellerController`. Model factories bypass this via `Model::unguarded()`, so tests can still set them inline.
+
+Flash messages (`success` / `warning` / `error`) render globally via `partials/flash.blade.php`, included in the app layout.
+
+### Email Verification
+
+`users` carries both `email_verified_at` and a legacy `email_verified` flag; `User::isVerified()` accepts either — always use it rather than checking the columns directly.
+
+`VerifyEmailNotification` (mail channel) is sent on customer registration (`RegisterController`) and shop registration (`SellerController`). It builds a **temporary signed URL** to `verification.verify` (`URL::temporarySignedRoute`, 60 min — `VerifyEmailNotification::EXPIRES_MINUTES`), so no token is persisted; the legacy `verification_code` column is unused and merely cleared on success.
+
+Routes (`Auth\VerificationController`): `GET /email/verify` (`verification.notice`, auth) is the "check your inbox" page; `GET /email/verify/{id}/{hash}` (`verification.verify`) is `signed` but deliberately **not** `auth` — the link is opened from an email, often in a browser with no session, and it logs the user in on success; `POST /email/resend` is `auth` + `throttle:6,1`. The `{hash}` is `sha1($user->email)`, so changing the email invalidates outstanding links.
+
+`SellerProductController` bounces unverified sellers to `verification.notice`. `MAIL_MAILER=log` locally — verification emails land in `storage/logs/laravel.log`, not a real inbox.
+
+`app/Http/Middleware/SetLocale.php` runs on every `web` request and applies `session('locale')` (see Localization below).
 
 ### Checkout & Payment Flow
 
@@ -76,11 +102,19 @@ Wallet: `WalletRecharge` / `WalletWithdrawal` records with admin approve/reject 
 
 After payment, `orders.delivery_status` advances: `pending` → `confirmed` (seller, `SellerOrderController@confirm`) → `warehouse` (seller, `OrderController@sendToWarehouse`) → `on_the_way` (warehouse panel dispatch) → `delivered`. Each step stamps its timestamp (`confirmed_at`, `warehouse_at`, `dispatched_at` + `dispatched_by`, `delivered_at`) and every transition is guarded by a check on the previous status.
 
-The warehouse panel (`/warehouse`, `WarehouseController`, view `pages/warehouse.blade.php`) is seller/admin-only and drives dispatch (`POST /warehouse/orders/{id}/dispatch`) and delivery (`.../deliver`). Notifications (all `database` channel): `OrderArrivedWarehouseNotification` goes to all admins when a seller sends an order to the warehouse (shown as "nuevas llegadas" in the panel, marked read on view); `OrderStatusUpdatedNotification` goes to the customer on every status change (shown as a banner in `/orders`, marked read on view). The customer-facing tracker with step dates lives in `pages/order-detail.blade.php`. Full flow covered by `tests/Feature/WarehouseFlowTest.php`.
+The warehouse panel (`/warehouse`, `WarehouseController`, view `pages/warehouse.blade.php`) is **admin-only** (`admin` middleware on the route group) — it lists every seller's orders together with buyer contact data, so sellers must not reach it; they work from `/seller/orders`. It drives dispatch (`POST /warehouse/orders/{id}/dispatch`) and delivery (`.../deliver`). Notifications (all `database` channel): `OrderArrivedWarehouseNotification` goes to all admins when a seller sends an order to the warehouse (shown as "nuevas llegadas" in the panel, marked read on view); `OrderStatusUpdatedNotification` goes to the customer on every status change (shown as a banner in `/orders`, marked read on view). The customer-facing tracker with step dates lives in `pages/order-detail.blade.php`. Full flow covered by `tests/Feature/WarehouseFlowTest.php`.
 
 ### Frontend
 
 Tailwind CSS v4 via Vite plugin. No Vue/React — plain ES modules in `resources/js/`. Blade layouts in `resources/views/layouts/`, partials heavily used via `@include`.
+
+Note: much of the page JS (language/currency switchers, search autocomplete) lives inline in `resources/views/layouts/app.blade.php`, not in `resources/js/` — search both when hunting for a handler.
+
+### Localization
+
+Default locale is `es` (`config/app.php` + `.env`). The topbar switcher POSTs to `/language` (`LanguageController@change`, param name `locale`), which stores `session('locale')`; `SetLocale` middleware applies it on every `web` request. Supported locales are declared once in `SetLocale::SUPPORTED` — the topbar dropdown and the controller both read from it, so adding a language means adding it there plus a `lang/<code>/` directory.
+
+Migration to `__()` is partial: only `partials/topbar` and the two dashboard views use translation keys (`lang/es`, `lang/en`). Every other view still has hardcoded Spanish, so switching to English leaves them untranslated.
 
 ### Queue & Sessions
 
@@ -92,6 +126,29 @@ Ecuador IVA rate (15%) is read from `config/app.php` (key: `ec_iva_rate`). `Kush
 
 ## Database Notes
 
-- Tests use in-memory SQLite (configured in `phpunit.xml`); local/production uses PostgreSQL (migrated from MySQL 2026-07; the old XAMPP MySQL `woot_db` is kept as a backup and no longer used). PostgreSQL runs as a Windows service independent of XAMPP.
-- `database/migrations/` has 17 migration files — always run `php artisan migrate` after pulling changes. `orders`/`order_details` come from `2026_06_10_200000_create_orders_table.php`; database notifications from `2026_06_22_184700_create_notifications_table.php`.
+- Tests use in-memory SQLite (configured in `phpunit.xml`); local/production uses PostgreSQL (migrated from MySQL 2026-07; the old XAMPP MySQL `woot_db` is kept as a backup — it holds the only copy of the seed data, see `legacy:restore` below). PostgreSQL runs as a Windows service independent of XAMPP.
+- `database/migrations/` has 19 migration files — always run `php artisan migrate` after pulling changes. `orders`/`order_details` come from `2026_06_10_200000_create_orders_table.php`; database notifications from `2026_06_22_184700_create_notifications_table.php`.
 - File uploads go to `storage/app/public/`; the `public/storage` symlink must exist (`php artisan storage:link`).
+
+### Restoring Seed Data (`legacy:restore`)
+
+The 2026-07 MySQL → PostgreSQL migration created the schema but **never moved the rows**. An empty `banners`/`categories`/`brands`/`products` makes the home page render with no images at all — the `@foreach` loops just iterate empty collections, so the symptom looks like broken image paths when it is actually missing data. `php artisan migrate:fresh` reproduces the same empty state.
+
+`php artisan legacy:restore` (`app/Console/Commands/RestoreLegacyData.php`) repopulates from the old XAMPP MySQL `woot_db`, which is still the only copy of that data:
+
+```bash
+php artisan legacy:restore --pretend   # show what it would do, write nothing
+php artisan legacy:restore --force     # skip the confirmation prompt
+```
+
+Options: `--host` / `--port` / `--database` / `--username` / `--password` (default to the XAMPP MySQL `woot_db`), `--tables=a,b` to limit the run, `--with-notifications` to include `notifications` (skipped by default — the legacy rows point at orders that no longer exist).
+
+It only ever reads from the source, and it is idempotent: any table that already has rows is skipped, so re-running is safe. It copies the intersection of columns (the two schemas differ by a few newer nullable columns), walks 19 tables in dependency order, and resyncs the PostgreSQL identity sequences afterwards — skip that last step and the next insert collides on a duplicate id.
+
+**Users get special handling.** A local account may be newer than the legacy one but share its email, and the unique email index means they cannot both exist. In that case the local row wins — keeping its password — and only adopts the legacy `id` and `user_type`, so `products.added_by` and the other FKs still line up.
+
+It also repairs two defects that predate the migration: values whose JSON was encoded twice (with the model's `'array'` cast those decode to a string instead of an array, so the product gallery renders nothing), and rows whose image is missing from disk but present under another extension. It finishes by listing any referenced image that is still missing.
+
+**MySQL must be running**, and it is not a Windows service — start it from the XAMPP control panel, or `mysqld.exe --defaults-file=C:\xampp\mysql\bin\my.ini --standalone`. If it aborts with `Failed to initialize multi master structures`, the data dir has corrupt replication state: `mysqld` log output was once written into `multi-master.info`, so MariaDB reads each log line as a named replica. Move `master-*.info`, `relay-log*.info`, `mysql-relay-bin-*` and `multi-master.info` out of `C:\xampp\mysql\data\` — they hold no table data (a set from 2026-07 is parked in `data\_repl_backup_20260824\`).
+
+The command restores data as it exists in the backup, and nothing more: shops come back with their original `status` (`0` pending) and users with their original verification state. Approving a shop and verifying an email are separate actions.
