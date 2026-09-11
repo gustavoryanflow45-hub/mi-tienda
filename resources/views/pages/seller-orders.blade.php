@@ -224,7 +224,9 @@
                             <tbody>
                                 @forelse($orders as $i => $order)
                                     @php
+                                        // orderDetails ya viene filtrado a este vendedor por el controlador
                                         $sellerSubtotal = $order->orderDetails->sum(fn($d) => $d->price * $d->quantity);
+                                        $sellerShipping = $order->orderDetails->sum('shipping_cost');
                                         $addr = is_array($order->shipping_address) ? $order->shipping_address : [];
                                     @endphp
                                     <tr>
@@ -240,7 +242,14 @@
                                             @endif
                                         </td>
                                         <td>{{ $order->created_at->format('d-m-Y H:i') }}</td>
-                                        <td style="font-weight:600;">${{ number_format($sellerSubtotal, 2) }}</td>
+                                        <td style="font-weight:600;">
+                                            ${{ number_format($sellerSubtotal + $sellerShipping, 2) }}
+                                            @if($sellerShipping > 0)
+                                                <br><small style="color:#888; font-weight:400;">
+                                                    incluye ${{ number_format($sellerShipping, 2) }} de envío
+                                                </small>
+                                            @endif
+                                        </td>
                                         <td>
                                             <span class="badge-status badge-{{ $order->payment_status === 'paid' ? 'paid' : 'unpaid' }}">
                                                 {{ $order->payment_status === 'paid' ? 'Pagado' : 'Pendiente' }}

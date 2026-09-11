@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Payments;
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\Order;
+use App\Services\CheckoutService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class KushkiController extends Controller
 {
+    public function __construct(private readonly CheckoutService $checkout) {}
+
     private function baseUrl(): string
     {
         return config('services.kushki.env') === 'production'
@@ -29,11 +32,14 @@ class KushkiController extends Controller
             'last_name'       => 'required|string',
         ]);
 
-        $orderId = session('checkout_order_id');
-        $order   = $orderId ? Order::find($orderId) : null;
+        // Igual que en Stripe: el pedido se crea aquí, al cobrar, y no al
+        // abrir /checkout.
+        $order = $request->user()
+            ? $this->checkout->pendingOrderFor($request->user())
+            : null;
 
-        if (! $order || $order->isPaid()) {
-            return response()->json(['status' => 'error', 'message' => 'Pedido inválido o ya pagado.'], 422);
+        if (! $order) {
+            return response()->json(['status' => 'error', 'message' => 'Tu carrito está vacío.'], 422);
         }
 
         $total   = (float) $order->grand_total;

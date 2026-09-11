@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Cart;
+use App\Models\Order;
+use App\Services\CheckoutService;
 use App\Services\Payments\StripeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request as HttpRequest;
@@ -41,10 +43,9 @@ class PaymentGatewaysTest extends TestCase
         $customer = $this->makeCustomer();
         $seller = $this->makeSeller();
         $order = $this->makePendingOrder($customer, $seller, 115.00);
-        $this->addToCart($customer, $this->makeProduct($seller));
 
         $this->actingAs($customer)
-            ->withSession(['checkout_order_id' => $order->id])
+            ->withSession([CheckoutService::ORDER_SESSION_KEY => $order->id])
             ->postJson('/payments/kushki/charge', $this->kushkiPayload())
             ->assertOk()
             ->assertJson(['status' => 'success', 'ticket' => 'TK-123']);
@@ -74,7 +75,7 @@ class PaymentGatewaysTest extends TestCase
         $order = $this->makePendingOrder($customer, $this->makeSeller());
 
         $this->actingAs($customer)
-            ->withSession(['checkout_order_id' => $order->id])
+            ->withSession([CheckoutService::ORDER_SESSION_KEY => $order->id])
             ->postJson('/payments/kushki/charge', $this->kushkiPayload())
             ->assertStatus(422)
             ->assertJson(['status' => 'error', 'message' => 'Tarjeta rechazada']);
@@ -82,7 +83,7 @@ class PaymentGatewaysTest extends TestCase
         $this->assertFalse($order->refresh()->isPaid());
     }
 
-    public function test_kushki_charge_without_pending_order_is_rejected(): void
+    public function test_kushki_charge_with_an_empty_cart_is_rejected(): void
     {
         Http::fake();
 
@@ -125,7 +126,8 @@ class PaymentGatewaysTest extends TestCase
         });
 
         $this->actingAs($customer)
-            ->postJson('/payments/stripe/intent', ['order_id' => $order->id])
+            ->withSession([CheckoutService::ORDER_SESSION_KEY => $order->id])
+            ->postJson('/payments/stripe/intent')
             ->assertOk()
             ->assertJson(['clientSecret' => 'cs_test_abc']);
 
@@ -154,7 +156,8 @@ class PaymentGatewaysTest extends TestCase
         });
 
         $this->actingAs($customer)
-            ->postJson('/payments/stripe/intent', ['order_id' => $order->id])
+            ->withSession([CheckoutService::ORDER_SESSION_KEY => $order->id])
+            ->postJson('/payments/stripe/intent')
             ->assertOk()
             ->assertJson(['clientSecret' => 'cs_test_existing']);
 
@@ -189,7 +192,8 @@ class PaymentGatewaysTest extends TestCase
         });
 
         $this->actingAs($customer)
-            ->postJson('/payments/stripe/intent', ['order_id' => $order->id])
+            ->withSession([CheckoutService::ORDER_SESSION_KEY => $order->id])
+            ->postJson('/payments/stripe/intent')
             ->assertOk()
             ->assertJson(['clientSecret' => 'cs_fresh']);
     }
@@ -213,7 +217,8 @@ class PaymentGatewaysTest extends TestCase
         });
 
         $this->actingAs($customer)
-            ->postJson('/payments/stripe/intent', ['order_id' => $order->id])
+            ->withSession([CheckoutService::ORDER_SESSION_KEY => $order->id])
+            ->postJson('/payments/stripe/intent')
             ->assertStatus(409);
     }
 
@@ -236,23 +241,43 @@ class PaymentGatewaysTest extends TestCase
         });
 
         $this->actingAs($customer)
-            ->postJson('/payments/stripe/intent', ['order_id' => $order->id])
+            ->withSession([CheckoutService::ORDER_SESSION_KEY => $order->id])
+            ->postJson('/payments/stripe/intent')
             ->assertOk()
             ->assertJson(['clientSecret' => 'cs_replacement']);
 
         $this->assertSame('pi_replacement', $order->refresh()->payment_intent_id);
     }
 
-    public function test_stripe_intent_is_forbidden_for_strangers(): void
+    public function test_stripe_intent_never_touches_another_users_order(): void
     {
-        $order = $this->makePendingOrder($this->makeCustomer(), $this->makeSeller());
+        $seller = $this->makeSeller();
+        $victimOrder = $this->makePendingOrder($this->makeCustomer(), $seller);
 
-        $this->actingAs($this->makeCustomer())
-            ->postJson('/payments/stripe/intent', ['order_id' => $order->id])
-            ->assertForbidden();
+        $intruder = $this->makeCustomer();
+        $this->addToCart($intruder, $this->makeProduct($seller, 30.00));
+
+        $this->mock(StripeService::class, function ($mock) {
+            $mock->shouldReceive('createIntent')
+                ->once()
+                ->withArgs(fn (int $cents) => $cents === 3000)
+                ->andReturn(PaymentIntent::constructFrom([
+                    'id' => 'pi_intruder',
+                    'client_secret' => 'cs_intruder',
+                ]));
+        });
+
+        // Aunque la sesión apunte al pedido ajeno, se cobra uno propio
+        $this->actingAs($intruder)
+            ->withSession([CheckoutService::ORDER_SESSION_KEY => $victimOrder->id])
+            ->postJson('/payments/stripe/intent')
+            ->assertOk();
+
+        $this->assertNull($victimOrder->refresh()->payment_intent_id);
+        $this->assertSame(2, Order::count());
     }
 
-    public function test_stripe_intent_conflicts_when_order_already_paid(): void
+    public function test_stripe_intent_starts_a_new_order_when_the_previous_one_was_paid(): void
     {
         Notification::fake();
 
@@ -260,9 +285,21 @@ class PaymentGatewaysTest extends TestCase
         $order = $this->makePendingOrder($customer, $this->makeSeller());
         $order->markPaid('stripe', 'pi_prev');
 
+        $this->mock(StripeService::class, function ($mock) {
+            $mock->shouldReceive('createIntent')->once()->andReturn(PaymentIntent::constructFrom([
+                'id' => 'pi_second',
+                'client_secret' => 'cs_second',
+            ]));
+        });
+
         $this->actingAs($customer)
-            ->postJson('/payments/stripe/intent', ['order_id' => $order->id])
-            ->assertStatus(409);
+            ->withSession([CheckoutService::ORDER_SESSION_KEY => $order->id])
+            ->postJson('/payments/stripe/intent')
+            ->assertOk();
+
+        $this->assertSame(2, Order::count());
+        $this->assertSame('pi_prev', $order->refresh()->payment_reference);
+        $this->assertNotSame($order->id, (int) session(CheckoutService::ORDER_SESSION_KEY));
     }
 
     public function test_stripe_webhook_with_valid_signature_marks_order_paid(): void

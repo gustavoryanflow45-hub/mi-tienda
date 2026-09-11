@@ -63,13 +63,19 @@ trait BuildsCheckoutData
         ]);
     }
 
-    protected function addToCart(User $user, Product $product, int $quantity = 1, ?float $price = null): Cart
-    {
+    protected function addToCart(
+        User $user,
+        Product $product,
+        int $quantity = 1,
+        ?float $price = null,
+        float $shippingCost = 0.0,
+    ): Cart {
         return Cart::create([
             'user_id' => $user->id,
             'product_id' => $product->id,
             'quantity' => $quantity,
             'price' => $price ?? $product->unit_price,
+            'shipping_cost' => $shippingCost,
         ]);
     }
 
@@ -88,13 +94,14 @@ trait BuildsCheckoutData
     }
 
     /**
-     * Order in the same state CheckoutController@index leaves it:
-     * pending, unpaid, with one detail row per product and the
-     * buyer's shipping snapshot.
+     * Checkout a medio camino: el comprador ya pulsó "Pagar", así que existe
+     * el pedido pendiente y el carrito que lo originó sigue cargado (los
+     * controladores de pago recalculan los totales desde él).
      */
     protected function makePendingOrder(User $customer, User $seller, float $total = 100.00): Order
     {
         $product = $this->makeProduct($seller, $total);
+        $this->addToCart($customer, $product, 1, $total);
 
         $order = Order::create([
             'user_id' => $customer->id,
@@ -102,6 +109,8 @@ trait BuildsCheckoutData
             'status' => 'pendiente',
             'payment_status' => 'unpaid',
             'subtotal' => $total,
+            'shipping_total' => 0,
+            'tax_amount' => 0,
             'grand_total' => $total,
             'shipping_address' => $this->completeShippingAddress($customer),
         ]);

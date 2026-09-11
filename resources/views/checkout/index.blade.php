@@ -18,7 +18,8 @@
     .co-item-img-ph i { font-size: 1.2rem; color: #bbb; }
     .co-item-name { font-size: .82rem; font-weight: 600; color: #333; line-height: 1.3; }
     .co-item-meta { font-size: .75rem; color: #999; }
-    .co-item-price { margin-left: auto; font-size: .85rem; font-weight: 600; color: #444; white-space: nowrap; }
+    .co-item-price { margin-left: auto; font-size: .85rem; font-weight: 600; color: #444; white-space: nowrap; text-align: right; }
+    .co-item-ship { display: block; font-size: .7rem; font-weight: 500; color: #999; }
 
     .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: .85rem; color: #666; }
     .summary-row.total { font-weight: 700; font-size: 1rem; color: #222; margin-top: 14px; padding-top: 14px; border-top: 1px solid #eee; }
@@ -59,7 +60,6 @@
 
         <h1 style="font-size:1.15rem; font-weight:700; color:#222; margin-bottom:20px;">
             <i class="las la-lock mr-1" style="color:#679941;"></i> Secure Checkout
-            <span style="color:#aaa; font-size:.85rem; font-weight:400;">— Order #{{ $order->id }}</span>
         </h1>
 
         <div class="row">
@@ -172,15 +172,26 @@
                                     × {{ $item->quantity }}
                                 </div>
                             </div>
-                            <span class="co-item-price">${{ number_format($item->price * $item->quantity, 2) }}</span>
+                            <div class="co-item-price">
+                                ${{ number_format($item->price * $item->quantity, 2) }}
+                                @if($item->shipping_cost > 0)
+                                    <span class="co-item-ship">+ ${{ number_format($item->shipping_cost, 2) }} envío</span>
+                                @endif
+                            </div>
                         </div>
                     @endforeach
 
                     <div class="summary-row" style="margin-top:14px;">
-                        <span>Subtotal</span><span class="val">${{ number_format($total, 2) }}</span>
+                        <span>Subtotal</span><span class="val">${{ number_format($subtotal, 2) }}</span>
                     </div>
                     <div class="summary-row">
-                        <span>Shipping</span><span class="val">Free</span>
+                        <span>Envío</span>
+                        <span class="val">
+                            {{ $shippingTotal > 0 ? '$'.number_format($shippingTotal, 2) : 'Gratis' }}
+                        </span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Impuesto</span><span class="val">${{ number_format($taxTotal, 2) }}</span>
                     </div>
                     <div class="summary-row total">
                         <span>Total</span><span class="val">${{ number_format($total, 2) }}</span>
@@ -203,6 +214,8 @@
 (async function () {
     const CSRF      = document.querySelector('meta[name="csrf-token"]').content;
     const stripeKey = @json($stripeKey);
+    const amount    = @json((int) round($total * 100));
+    const payLabel  = 'Pay ${{ number_format($total, 2) }}';
     const errorBox  = document.getElementById('payment-error');
     const payBtn    = document.getElementById('pay-button');
 
@@ -216,39 +229,29 @@
 
     const stripe = Stripe(stripeKey);
 
-    let elements;
-    try {
-        const res  = await fetch(@json(route('payments.stripe.intent')), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-            body: JSON.stringify({ order_id: @json($order->id) }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'No se pudo iniciar el pago.');
-
-        elements = stripe.elements({
-            clientSecret: data.clientSecret,
-            appearance: {
-                theme: 'stripe',
-                variables: {
-                    colorPrimary: '#679941',
-                    colorDanger: '#e74c3c',
-                    borderRadius: '6px',
-                    fontSizeBase: '14px',
-                },
+    // Elements en modo diferido: el formulario se monta solo con el monto, sin
+    // PaymentIntent. El intent —y con él el pedido— nacen al pulsar "Pagar",
+    // así que abrir el checkout y volver atrás no registra nada.
+    const elements = stripe.elements({
+        mode: 'payment',
+        amount: amount,
+        currency: 'usd',
+        appearance: {
+            theme: 'stripe',
+            variables: {
+                colorPrimary: '#679941',
+                colorDanger: '#e74c3c',
+                borderRadius: '6px',
+                fontSizeBase: '14px',
             },
-        });
+        },
+    });
 
-        const paymentElement = elements.create('payment');
-        paymentElement.mount('#payment-element');
-        paymentElement.on('ready', () => { payBtn.disabled = false; });
-    } catch (e) {
-        errorBox.textContent = e.message;
-        document.querySelector('.stripe-loading')?.remove();
-        return;
-    }
+    const paymentElement = elements.create('payment');
+    paymentElement.mount('#payment-element');
+    paymentElement.on('ready', () => { payBtn.disabled = false; });
 
-    // ── Datos de envío: se validan y guardan en el pedido antes de pagar ──
+    // ── Datos de envío: se validan y guardan antes de pagar ──
     const shipForm     = document.getElementById('shipping-form');
     const requiredIds  = ['full_name', 'phone', 'email', 'address', 'city'];
 
@@ -295,34 +298,53 @@
         }
     }
 
+    /** Crea el pedido a partir del carrito y devuelve el secret del intent. */
+    async function startPayment() {
+        const res  = await fetch(@json(route('payments.stripe.intent')), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+            body: JSON.stringify({}),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || 'No se pudo iniciar el pago.');
+
+        return data;
+    }
+
+    function resetPayButton() {
+        payBtn.disabled = false;
+        payBtn.textContent = payLabel;
+    }
+
     payBtn.addEventListener('click', async () => {
         payBtn.disabled = true;
         payBtn.textContent = 'Processing…';
         errorBox.textContent = '';
 
         try {
+            // Stripe exige validar el formulario antes de pedir el secret.
+            const { error: submitError } = await elements.submit();
+            if (submitError) throw new Error(submitError.message);
+
             await saveShipping();
+
+            const { clientSecret, returnUrl } = await startPayment();
+
+            const { error } = await stripe.confirmPayment({
+                elements,
+                clientSecret,
+                confirmParams: {
+                    // Stripe redirige aquí con ?payment_intent=pi_... al aprobar
+                    return_url: returnUrl,
+                },
+            });
+
+            // Solo se llega aquí si hubo error (tarjeta rechazada, etc.)
+            if (error) throw new Error(error.message);
         } catch (e) {
             errorBox.textContent = e.message;
-            payBtn.disabled = false;
-            payBtn.textContent = 'Pay ${{ number_format($total, 2) }}';
+            resetPayButton();
             shipForm.querySelector('input.invalid')?.focus();
-            return;
-        }
-
-        const { error } = await stripe.confirmPayment({
-            elements,
-            confirmParams: {
-                // Stripe redirige aquí con ?payment_intent=pi_... al aprobar
-                return_url: @json(route('checkout.success', $order)),
-            },
-        });
-
-        // Solo se llega aquí si hubo error (tarjeta rechazada, etc.)
-        if (error) {
-            errorBox.textContent = error.message;
-            payBtn.disabled = false;
-            payBtn.textContent = 'Pay ${{ number_format($total, 2) }}';
         }
     });
 })();

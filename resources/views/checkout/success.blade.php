@@ -39,6 +39,11 @@
 
             <div class="order-detail">
                 <div class="d-row"><span>Pedido</span><span>#{{ $order->code }}</span></div>
+                <div class="d-row"><span>Subtotal</span><span>${{ number_format($order->subtotal, 2) }}</span></div>
+                <div class="d-row">
+                    <span>Envío</span>
+                    <span>{{ $order->shipping_total > 0 ? '$'.number_format($order->shipping_total, 2) : 'Gratis' }}</span>
+                </div>
                 <div class="d-row"><span>Total</span><span>${{ number_format($order->grand_total, 2) }}</span></div>
                 @if($order->payment_reference)
                     <div class="d-row"><span>Referencia</span><span>{{ $order->payment_reference }}</span></div>

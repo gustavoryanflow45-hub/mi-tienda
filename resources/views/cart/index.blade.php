@@ -90,6 +90,7 @@
                             <th>Product</th>
                             <th>Price</th>
                             <th>Quantity</th>
+                            <th>Envío</th>
                             <th>Subtotal</th>
                             <th></th>
                         </tr>
@@ -139,6 +140,15 @@
                                 </div>
                             </td>
 
+                            {{-- Envío del producto --}}
+                            <td>
+                                @if($item->shipping_cost > 0)
+                                    ${{ number_format($item->shipping_cost, 2) }}
+                                @else
+                                    <span style="color:#aaa;">Gratis</span>
+                                @endif
+                            </td>
+
                             {{-- Subtotal --}}
                             <td>
                                 <strong id="subtotal-{{ $item->id }}" style="color:#679941;">
@@ -168,16 +178,18 @@
                         <span class="val" id="summary-subtotal">${{ number_format($total, 2) }}</span>
                     </div>
                     <div class="summary-row">
-                        <span>Shipping</span>
-                        <span class="val">Free</span>
+                        <span>Envío</span>
+                        <span class="val" id="summary-shipping">
+                            {{ $shippingTotal > 0 ? '$'.number_format($shippingTotal, 2) : 'Gratis' }}
+                        </span>
                     </div>
                     <div class="summary-row">
-                        <span>Tax</span>
-                        <span class="val">$0.00</span>
+                        <span>Impuesto</span>
+                        <span class="val" id="summary-tax">${{ number_format($taxTotal, 2) }}</span>
                     </div>
                     <div class="summary-row total">
                         <span>Total</span>
-                        <span class="val" id="summary-total">${{ number_format($total, 2) }}</span>
+                        <span class="val" id="summary-total">${{ number_format($grandTotal, 2) }}</span>
                     </div>
 
                     <a href="{{ url('/checkout') }}" class="btn-checkout">
@@ -260,9 +272,7 @@ function updateQty(cartId, qty) {
     .then(data => {
         if (data.status === 'success') {
             document.getElementById('subtotal-' + cartId).textContent = '$' + data.subtotal;
-            document.getElementById('summary-subtotal').textContent = '$' + data.cart_total;
-            document.getElementById('summary-total').textContent = '$' + data.cart_total;
-            updateCartCount(data.cart_count);
+            updateSummary(data);
         }
     });
 }
@@ -283,9 +293,7 @@ function removeItem(cartId) {
             row.style.transition = 'opacity 0.3s';
             setTimeout(() => {
                 row.remove();
-                document.getElementById('summary-subtotal').textContent = '$' + data.cart_total;
-                document.getElementById('summary-total').textContent = '$' + data.cart_total;
-                updateCartCount(data.cart_count);
+                updateSummary(data);
                 if (data.cart_count === 0) location.reload();
             }, 300);
             showToast('Item removed from cart');
@@ -297,6 +305,17 @@ function applyCoupon() {
     const code = document.getElementById('couponCode').value.trim();
     if (!code) { showToast('Enter a coupon code', 'error'); return; }
     showToast('Coupon feature coming soon', 'error');
+}
+
+// El envío es un costo fijo por producto, así que cambia al quitar líneas:
+// el resumen se repinta entero con lo que devuelve el servidor.
+function updateSummary(data) {
+    document.getElementById('summary-subtotal').textContent = '$' + data.cart_total;
+    document.getElementById('summary-shipping').textContent =
+        parseFloat(data.cart_shipping.replace(/,/g, '')) > 0 ? '$' + data.cart_shipping : 'Gratis';
+    document.getElementById('summary-tax').textContent = '$' + data.cart_tax;
+    document.getElementById('summary-total').textContent = '$' + data.cart_grand;
+    updateCartCount(data.cart_count);
 }
 
 function updateCartCount(count) {

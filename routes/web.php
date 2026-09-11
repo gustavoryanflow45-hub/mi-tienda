@@ -72,8 +72,10 @@ Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])-
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
 Route::post('/checkout/shipping', [CheckoutController::class, 'saveShipping'])->name('checkout.shipping');
 
-Route::post('/payments/stripe/intent', [StripeController::class, 'createIntent'])->name('payments.stripe.intent');
-Route::post('/payments/kushki/charge',  [KushkiController::class, 'charge'])->name('payments.kushki.charge');
+// El pedido se crea aquí, al iniciar el cobro, a partir del carrito del
+// usuario autenticado: por eso ambos exigen sesión.
+Route::post('/payments/stripe/intent', [StripeController::class, 'createIntent'])->middleware('auth')->name('payments.stripe.intent');
+Route::post('/payments/kushki/charge',  [KushkiController::class, 'charge'])->middleware('auth')->name('payments.kushki.charge');
 Route::post('/webhooks/stripe', [StripeController::class, 'webhook']);
 Route::post('/webhooks/kushki', [KushkiController::class, 'webhook']);
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Payments;
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\Order;
+use App\Services\CheckoutService;
 use App\Services\Payments\StripeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,29 +22,28 @@ class StripeController extends Controller
     /** Estados en los que el dinero ya está comprometido: nunca crear otro intent. */
     private const SETTLING_STATUSES = ['processing', 'succeeded', 'requires_capture'];
 
-    public function __construct(private readonly StripeService $stripe) {}
+    public function __construct(
+        private readonly StripeService $stripe,
+        private readonly CheckoutService $checkout,
+    ) {}
 
+    /**
+     * Se llama al pulsar "Pagar", no al abrir /checkout: el pedido nace aquí,
+     * a partir del carrito, para que salir del checkout sin pagar no deje un
+     * pedido registrado al comprador ni una venta al vendedor.
+     */
     public function createIntent(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'order_id' => ['required', 'integer', 'exists:orders,id'],
-        ]);
+        $order = $this->checkout->pendingOrderFor($request->user());
 
-        $order = Order::findOrFail($validated['order_id']);
-
-        if ($order->session_id !== session()->getId() &&
-            $order->user_id !== $request->user()?->id) {
-            abort(403);
-        }
-
-        if ($order->isPaid()) {
-            return response()->json(['message' => 'El pedido ya está pagado.'], 409);
+        if (! $order) {
+            return response()->json(['message' => 'Tu carrito está vacío.'], 422);
         }
 
         $amountInCents = (int) round($order->grand_total * 100);
 
         // El pedido ya tiene un intent: reutilízalo en vez de crear otro en cada
-        // carga de /checkout, que dejaba el dashboard lleno de "incomplete".
+        // intento de pago, que dejaba el dashboard lleno de "incomplete".
         if ($order->payment_intent_id) {
             try {
                 $intent = $this->stripe->retrieveIntent($order->payment_intent_id);
@@ -61,7 +61,7 @@ class StripeController extends Controller
                         $intent = $this->stripe->updateIntent($intent->id, ['amount' => $amountInCents]);
                     }
 
-                    return response()->json(['clientSecret' => $intent->client_secret]);
+                    return $this->intentResponse($order, $intent->client_secret);
                 }
 
                 // Cancelado o en cualquier otro estado terminal: cae y crea uno nuevo.
@@ -93,7 +93,17 @@ class StripeController extends Controller
 
         $order->update(['payment_intent_id' => $intent->id]);
 
-        return response()->json(['clientSecret' => $intent->client_secret]);
+        return $this->intentResponse($order, $intent->client_secret);
+    }
+
+    /** El front necesita el secret y a dónde volver tras aprobar el pago. */
+    private function intentResponse(Order $order, ?string $clientSecret): JsonResponse
+    {
+        return response()->json([
+            'clientSecret' => $clientSecret,
+            'orderId' => $order->id,
+            'returnUrl' => route('checkout.success', $order),
+        ]);
     }
 
     public function webhook(Request $request): JsonResponse
