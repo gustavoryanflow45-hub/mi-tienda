@@ -140,13 +140,54 @@
                 <p>Respondemos a todas las consultas en un plazo máximo de 24 horas hábiles.</p>
 
             @elseif($type === 'privacy-policy')
-                <p>Tu privacidad es importante para nosotros. Esta política describe cómo recopilamos y usamos tu información.</p>
-                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">Información que recopilamos</h3>
-                <p>Recopilamos nombre, correo electrónico, dirección de envío y datos de pago (procesados de forma segura por Stripe/Kushki).</p>
-                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">Uso de la información</h3>
-                <p>Usamos tu información para procesar pedidos, enviarte actualizaciones y mejorar nuestros servicios.</p>
-                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">Cookies</h3>
-                <p>Utilizamos cookies para mejorar tu experiencia de navegación. Puedes desactivarlas en la configuración de tu navegador.</p>
+                <p>Esta política explica qué datos personales tratamos en guStore, para qué los usamos, con quién los compartimos y cómo puedes ejercer tus derechos. Se aplica a compradores, vendedores y visitantes del sitio, y se rige por la Ley Orgánica de Protección de Datos Personales del Ecuador.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">1. Responsable del tratamiento</h3>
+                <p>El responsable es guStore S.A.S., con domicilio en Cuenca, Ecuador. Para cualquier asunto relacionado con tus datos personales puedes escribirnos a soporte@gustore.com.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">2. Datos que tratamos</h3>
+                <p><strong>De tu cuenta:</strong> nombre, correo electrónico, teléfono, foto de perfil y contraseña, que se almacena cifrada y que nadie —tampoco nosotros— puede leer.</p>
+                <p><strong>De tus compras:</strong> los productos que pides, la dirección y los datos de contacto para la entrega, el estado del pedido y el historial de compras.</p>
+                <p><strong>Si registras una tienda:</strong> el nombre, correo y dirección del negocio, y las imágenes del documento de identidad que nos envías para verificar quién eres. Estas imágenes se usan únicamente para aprobar o rechazar la tienda, y solo el personal autorizado de guStore puede consultarlas.</p>
+                <p><strong>De los pagos:</strong> el monto, la fecha, el estado y la referencia que devuelve la pasarela. <strong>No almacenamos números de tarjeta ni códigos de seguridad</strong>: esos datos viajan directamente a Kushki o Stripe. Si usas la billetera, tratamos además los datos de la cuenta de destino y los comprobantes que adjuntes.</p>
+                <p><strong>Técnicos:</strong> dirección IP, navegador, país aproximado deducido de la IP —que usamos para elegir la pasarela de pago— y las cookies necesarias para mantener tu sesión y tu idioma.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">3. Para qué los usamos</h3>
+                <ul style="margin:0 0 12px 18px; padding:0;">
+                    <li>Crear y administrar tu cuenta, y verificar tu correo electrónico.</li>
+                    <li>Procesar pedidos y pagos, coordinar la entrega y gestionar devoluciones.</li>
+                    <li>Enviarte avisos sobre el estado de tus pedidos, tu tienda o tu cuenta.</li>
+                    <li>Verificar la identidad de quienes venden en la plataforma y prevenir fraudes.</li>
+                    <li>Cumplir obligaciones tributarias, contables y de protección al consumidor.</li>
+                    <li>Mantener la seguridad del sitio y corregir fallas.</li>
+                </ul>
+                <p>Tratamos estos datos porque son necesarios para ejecutar el contrato que aceptas al usar la plataforma, para cumplir obligaciones legales o porque nos diste tu consentimiento. Solo te enviaremos comunicaciones comerciales si lo autorizas, y puedes retirar esa autorización cuando quieras.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">4. Con quién los compartimos</h3>
+                <p>Cuando compras, entregamos a la tienda vendedora los datos que necesita para prepararte y enviarte el pedido: tu nombre, teléfono, correo y dirección de entrega. El vendedor solo puede usarlos para esa venta y su posterior servicio postventa.</p>
+                <p>También los compartimos con las pasarelas de pago Kushki y Stripe, con nuestro proveedor de correo electrónico, con las empresas de transporte encargadas de la entrega, y con autoridades competentes cuando la ley lo exija. No vendemos datos personales ni los cedemos con fines publicitarios de terceros.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">5. Transferencias internacionales</h3>
+                <p>Algunos de estos proveedores están fuera del Ecuador, de modo que ciertos datos pueden tratarse en el exterior. En esos casos exigimos que apliquen niveles de protección equivalentes a los que establece la ley ecuatoriana.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">6. Cuánto tiempo los conservamos</h3>
+                <p>Conservamos los datos de tu cuenta mientras esta siga activa. La información de pedidos, pagos y facturación se guarda durante el plazo que exige la normativa tributaria y mercantil, aunque cierres tu cuenta. Los documentos de identidad de los vendedores se conservan mientras la tienda esté vigente y por el tiempo necesario para acreditar la verificación.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">7. Seguridad</h3>
+                <p>Aplicamos medidas técnicas y organizativas para proteger tu información: cifrado del tráfico, contraseñas almacenadas mediante funciones de hash y acceso restringido al personal que lo necesita. Ningún sistema es infalible; si ocurre una vulneración que afecte tus datos, te lo comunicaremos y lo notificaremos a la autoridad de protección de datos conforme a la ley.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">8. Cookies</h3>
+                <p>Usamos cookies propias imprescindibles para que el sitio funcione: mantener tu sesión iniciada, conservar el contenido de tu carrito y recordar el idioma que elegiste. Puedes bloquearlas desde tu navegador, pero en ese caso no podrás iniciar sesión ni completar una compra.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">9. Tus derechos</h3>
+                <p>Puedes solicitar en cualquier momento el acceso a tus datos, su rectificación cuando sean inexactos, su eliminación, la oposición o suspensión de su tratamiento, y la portabilidad de la información que nos entregaste. También puedes pedir que no se tomen decisiones automatizadas que te afecten.</p>
+                <p>Para ejercerlos escríbenos a soporte@gustore.com desde el correo registrado en tu cuenta. Responderemos dentro de los plazos legales. Si consideras que no atendimos tu solicitud, puedes reclamar ante la Superintendencia de Protección de Datos Personales.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">10. Menores de edad</h3>
+                <p>La plataforma está dirigida a mayores de 18 años y no recopilamos datos de menores de forma consciente. Si detectamos una cuenta creada por un menor, la eliminaremos junto con su información.</p>
+
+                <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">11. Cambios en esta política</h3>
+                <p>Si modificamos esta política, publicaremos la nueva versión en esta página con su fecha de actualización y, cuando el cambio sea significativo, te lo informaremos por correo electrónico.</p>
             @endif
 
             <div style="margin-top:32px; padding-top:20px; border-top:1px solid #f0f0f0; font-size:.82rem; color:#aaa;">
