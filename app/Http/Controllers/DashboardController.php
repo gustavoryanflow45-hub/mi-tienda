@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Address;
 use App\Models\Product;
 use App\Models\Order;
+use App\Models\OrderDetail;
 use App\Models\Wishlist;
 use App\Notifications\ShopStatusUpdatedNotification;
 use Illuminate\Support\Facades\Auth;
@@ -50,16 +51,23 @@ class DashboardController extends Controller
         }
 
         // ── Usuario VERIFICADO → vista completa con stats ─────────
+        // Las ventas se cuentan sobre las líneas del vendedor y solo cuando el
+        // pedido está pagado: antes sumaba el grand_total completo de cualquier
+        // pedido —incluidos los pendientes y lo vendido por otros vendedores—,
+        // así que abrir el checkout sin pagar ya inflaba el total.
+        $soldLines = OrderDetail::where('seller_id', $user->id)
+                                ->where('payment_status', 'paid');
+
         $stats = [
             'products'       => Product::where('added_by', $user->id)->count(),
-            'total_sale'     => Order::whereHas('orderDetails', fn($q) => $q->where('seller_id', $user->id))
-                                     ->sum('grand_total'),
-            'total_profits'  => Order::whereHas('orderDetails', fn($q) => $q->where('seller_id', $user->id)
-                                     ->where('payment_status', 'paid'))
-                                     ->sum('grand_total'),
-            'success_orders' => Order::whereHas('orderDetails', fn($q) => $q->where('seller_id', $user->id)
-                                     ->where('delivery_status', 'delivered'))
-                                     ->count(),
+            'total_sale'     => (clone $soldLines)
+                                    ->selectRaw('COALESCE(SUM((price * quantity) + shipping_cost + tax - discount_on_product), 0) AS total')
+                                    ->value('total'),
+            'total_profits'  => (clone $soldLines)
+                                    ->selectRaw('COALESCE(SUM((price * quantity) - discount_on_product), 0) AS total')
+                                    ->value('total'),
+            'success_orders' => (clone $soldLines)->where('delivery_status', 'delivered')
+                                    ->distinct()->count('order_id'),
             'visitors'       => 0, // implementar con analytics si se desea
         ];
 
