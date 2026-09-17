@@ -305,7 +305,10 @@
                                     'sku'   => $s->sku,
                                 ])->values());
                             @endphp
-                            @include('partials.variant-builder', ['initialStocks' => $initialStocks])
+                            @include('partials.variant-builder', [
+                                'initialStocks'      => $initialStocks,
+                                'initialVariantType' => $product->variant_type,
+                            ])
                         </div>
                     </div>
 

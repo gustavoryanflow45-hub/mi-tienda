@@ -13,7 +13,7 @@ class Product extends Model
         'name', 'slug', 'category_id', 'brand_id', 'added_by',
         'unit_price', 'purchase_price', 'discount', 'discount_type',
         'thumbnail', 'photos', 'description', 'short_description',
-        'unit', 'min_qty', 'low_stock_qty', 'variant_product',
+        'unit', 'min_qty', 'low_stock_qty', 'variant_product', 'variant_type',
         'choice_options', 'colors', 'variations', 'shipping_cost',
         'num_of_sale', 'rating', 'reviews_count',
         'featured', 'todays_deal', 'published', 'approved', 'digital',
@@ -33,6 +33,49 @@ class Product extends Model
     public function scopeActive($query)   { return $query->where('published', 1)->where('approved', 1); }
     public function scopeFeatured($query) { return $query->where('featured', 1); }
 
+    /**
+     * Configuración de variantes que aplica a este producto.
+     *
+     * Manda su propio variant_type y, si no tiene, el de su categoría. El
+     * override por producto existe porque las categorías reales son mixtas:
+     * unas zapatillas y una carpa cuelgan las dos de "Sports & outdoor", y
+     * marcar footwear en la categoría entera ofrecería tallas de calzado
+     * también para la carpa. Así cada producto declara qué es.
+     *
+     * Un tipo desconocido (dato viejo o mal escrito) se ignora y se cae a la
+     * categoría, igual que hace Category con el suyo.
+     */
+    public function variantConfig(): array
+    {
+        $types = config('variants.types', []);
+
+        if (isset($types[$this->variant_type])) {
+            return $types[$this->variant_type];
+        }
+
+        return $this->category?->variantConfig()
+            ?? $types[config('variants.default_type', 'none')]
+            ?? ['label' => 'Sin tallas', 'sizes' => []];
+    }
+
+    /** Tallas que este producto puede ofrecer. */
+    public function sizeOptions(): array
+    {
+        return $this->variantConfig()['sizes'] ?? [];
+    }
+
+    /** Si este producto se vende por talla además de por color. */
+    public function usesSizes(): bool
+    {
+        return count($this->sizeOptions()) > 0;
+    }
+
+    /** Etiqueta del selector ("Talla", "Talla US", "Cintura"). */
+    public function sizeLabel(): string
+    {
+        return $this->variantConfig()['size_label'] ?? 'Talla';
+    }
+
     /** Tallas con al menos una fila de stock, en el orden de config/variants.php. */
     public function availableSizes(): array
     {
@@ -42,7 +85,7 @@ class Product extends Model
             return [];
         }
 
-        $order = $this->category?->sizeOptions() ?? [];
+        $order = $this->sizeOptions();
 
         return $used->sortBy(fn ($size) => array_search($size, $order, true) === false
             ? PHP_INT_MAX

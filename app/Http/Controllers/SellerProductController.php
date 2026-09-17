@@ -107,6 +107,7 @@ class SellerProductController extends Controller
             'description' => $request->description,
             'short_description' => $request->short_description,
             'unit' => $request->unit,
+            'variant_type' => $request->variant_type ?: null,
             'min_qty' => $request->min_qty ?? 1,
             'low_stock_qty' => $request->low_stock_qty ?? 5,
             'shipping_cost' => $request->shipping_cost ?? 0,
@@ -140,21 +141,34 @@ class SellerProductController extends Controller
             return; // la regla exists: del validate() ya se encargó
         }
 
-        $allowedSizes  = $category->sizeOptions();
+        $request->validate([
+            'variant_type' => ['nullable', Rule::in(array_keys(config('variants.types', [])))],
+        ], [
+            'variant_type.in' => 'Tipo de talla no válido.',
+        ]);
+
+        // Se resuelven las tallas sobre un producto en memoria, el mismo objeto
+        // que usa la vista: manda el variant_type declarado y, si no viene, el
+        // de la categoría. Así la regla del servidor no puede divergir de las
+        // tallas que el formulario acaba de pintar.
+        $resolver = new Product(['variant_type' => $request->input('variant_type')]);
+        $resolver->setRelation('category', $category);
+
+        $allowedSizes  = $resolver->sizeOptions();
         $allowedColors = array_keys(config('variants.colors', []));
         $rules         = [];
 
         foreach (array_keys($request->stocks ?? []) as $i) {
             $rules["stocks.$i.color"] = ['nullable', Rule::in($allowedColors)];
 
-            $rules["stocks.$i.size"] = $category->usesSizes()
+            $rules["stocks.$i.size"] = $resolver->usesSizes()
                 ? ['nullable', Rule::in($allowedSizes)]
                 : ['nullable', 'prohibited'];
         }
 
         $request->validate($rules, [
-            'stocks.*.size.prohibited' => "La categoría \"{$category->name}\" no maneja tallas, solo color.",
-            'stocks.*.size.in'         => 'Talla no válida para esta categoría.',
+            'stocks.*.size.prohibited' => "Este producto no maneja tallas. La categoría \"{$category->name}\" no las trae por defecto: elige un tipo de talla para ofrecerlas, o deja solo el color.",
+            'stocks.*.size.in'         => 'Talla no válida para el tipo de talla elegido.',
             'stocks.*.color.in'        => 'Color no válido.',
         ]);
 
@@ -261,6 +275,7 @@ class SellerProductController extends Controller
             'description' => $request->description,
             'short_description' => $request->short_description,
             'unit' => $request->unit,
+            'variant_type' => $request->variant_type ?: null,
             'min_qty' => $request->min_qty ?? 1,
             'low_stock_qty' => $request->low_stock_qty ?? 5,
             'shipping_cost' => $request->shipping_cost ?? 0,
@@ -298,14 +313,14 @@ class SellerProductController extends Controller
             'name', 'category_id', 'unit_price', 'stock_qty', 'stock_price',
             'brand_id', 'purchase_price', 'discount', 'discount_type',
             'unit', 'shipping_cost', 'short_description', 'description',
-            'sku', 'size', 'color', 'published', 'featured',
+            'sku', 'variant_type', 'size', 'color', 'published', 'featured',
         ];
 
         $example = [
             'Camiseta Azul', '1', '29.99', '50', '29.99',
             '', '15.00', '10', 'percent',
             'pieza', '5.00', 'Algodón 100%', 'Descripción completa del producto',
-            'CAM-AZU-001', 'L', 'azul', '1', '0',
+            'CAM-AZU-001', 'apparel', 'L', 'azul', '1', '0',
         ];
 
         $callback = function () use ($columns, $example) {
@@ -355,6 +370,13 @@ class SellerProductController extends Controller
             }
 
             try {
+                // Antes del create: un tipo inventado dejaría el producto
+                // guardado con un variant_type que no resuelve a nada.
+                if (filled($d['variant_type'] ?? null)
+                    && ! array_key_exists(trim($d['variant_type']), config('variants.types', []))) {
+                    throw new \RuntimeException('variant_type "'.trim($d['variant_type']).'" no existe.');
+                }
+
                 $product = Product::create([
                     'name' => trim($d['name']),
                     'slug' => $slug,
@@ -367,6 +389,7 @@ class SellerProductController extends Controller
                     'discount_type' => in_array($d['discount_type'] ?? '', ['percent', 'amount']) ? $d['discount_type'] : 'percent',
                     'unit' => $d['unit'] ?? 'pieza',
                     'shipping_cost' => ! empty($d['shipping_cost']) ? (float) $d['shipping_cost'] : 0,
+                    'variant_type' => filled($d['variant_type'] ?? null) ? trim($d['variant_type']) : null,
                     'short_description' => $d['short_description'] ?? null,
                     'description' => $d['description'] ?? null,
                     'published' => isset($d['published']) ? (int) $d['published'] : 1,
@@ -376,10 +399,11 @@ class SellerProductController extends Controller
                 $size  = filled($d['size'] ?? null) ? trim($d['size']) : null;
                 $color = filled($d['color'] ?? null) ? Str::lower(trim($d['color'])) : null;
 
-                // Mismas reglas que el formulario: sin tallas donde la
-                // categoría no las usa, y colores dentro de la paleta.
-                if ($size !== null && ! in_array($size, $product->category?->sizeOptions() ?? [], true)) {
-                    throw new \RuntimeException("talla \"{$size}\" no válida para la categoría.");
+                // Mismas reglas que el formulario: la talla se valida contra
+                // el tipo del producto (su variant_type o, si no lo declara,
+                // el de la categoría), y el color contra la paleta.
+                if ($size !== null && ! in_array($size, $product->sizeOptions(), true)) {
+                    throw new \RuntimeException("talla \"{$size}\" no válida para este producto.");
                 }
                 if ($color !== null && ! array_key_exists($color, config('variants.colors', []))) {
                     throw new \RuntimeException("color \"{$color}\" no está en la paleta.");

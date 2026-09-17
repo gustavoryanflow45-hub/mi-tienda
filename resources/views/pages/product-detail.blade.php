@@ -329,7 +329,7 @@
                             $sizes     = $product->availableSizes();
                             $colors    = $product->availableColors();
                             $palette   = config('variants.colors', []);
-                            $sizeLabel = $product->category?->sizeLabel() ?? 'Talla';
+                            $sizeLabel = $product->sizeLabel();
 
                             // Mapa combinación -> stock, para que el JS pueda desactivar
                             // las que no existen o están agotadas sin pedir nada al servidor.

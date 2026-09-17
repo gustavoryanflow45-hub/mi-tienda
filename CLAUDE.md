@@ -83,9 +83,21 @@ Keys live in `config/services.php` (see its header comment for the expected `.en
 
 Note: `app/Contracts/PaymentGateway.php` defines an interface but nothing implements it yet; the two payment controllers are independent implementations.
 
-### Product Variants
+### Product Variants (size & color)
 
-Products with `variant_product = true` store variant data as JSON columns: `choice_options` (option names/values), `colors`, `variations` (SKU-level price/stock). Flat products use `unit_price` directly. Cart entries store the selected variation string to match the correct variation at checkout.
+Variants are **rows in `product_stocks`**, one per combination, with its own `size`, `color`, `price` and `qty`. `ProductStock::buildVariant($size, $color)` builds the key the cart speaks (`"40-negro"`, `"M"`, `"negro"`, or `''` for a flat product) and a `saving` hook keeps the denormalized `variant` column in sync, so the string is never composed by hand. Cart entries store that key in `carts.variation`. `products.variant_product` is a derived flag (`syncStocks()` recomputes it), not an input.
+
+The JSON columns `choice_options` / `colors` / `variations` are **legacy**, still on the table and still read by `legacy:restore`'s double-encoding repair, but nothing in the live flow uses them. `resources/views/pages/show.blade.php` is the dead old detail view that classified sizes by guessing at the variant string; the live page is `pages/product-detail.blade.php` (`ProductController@show`).
+
+`config/variants.php` is the single source for both the color palette and the size sets:
+
+- `types` — each entry has `sizes` and a `size_label` (`apparel`, `waist`, `footwear`, `headwear`, plus `none`). Adding a size set needs no migration.
+- `colors` — key (what `product_stocks.color` stores) → label + hex.
+- `category_types` — category slug → type. Applied by `Category::applyConfiguredVariantTypes()`, called from the migration **and from `legacy:restore`**: `categories.variant_type` defaults to `'none'` and every repopulation brings it back that way, so the assignment has to be re-appliable rather than a one-shot `UPDATE`. (The original migration did it once, against a table that was still empty because the schema was migrated before the rows were restored — which left all 10 categories on `'none'` and no product able to offer a size.)
+
+Which sizes a product offers is resolved by `Product::sizeOptions()` / `sizeLabel()` / `usesSizes()`: **`products.variant_type` wins, and the category's applies when it is null.** The per-product override exists because the catalog's categories are mixed — sneakers hang off "Sports & outdoor" next to tents — so the type cannot be decided per category without offering shoe sizes to half the shop. An unknown type falls back to the category, the same way an unknown category type falls back to "color only".
+
+`SellerProductController::validateVariants()` enforces this server-side by resolving through a throwaway `Product` carrying the submitted `variant_type` plus the category, so the rule cannot drift from the sizes the form just rendered. The seller picks the type in `partials/variant-builder.blade.php` (shared by create and edit), which also builds the size × color stock matrix; the bulk CSV import accepts a `variant_type` column.
 
 ### Key Models and Relationships
 

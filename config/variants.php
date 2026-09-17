@@ -24,6 +24,27 @@ return [
     // Tipo que se asume cuando la categoría no tiene variant_type asignado.
     'default_type' => 'none',
 
+    /*
+    |--------------------------------------------------------------------------
+    | Tipo de variante por categoría
+    |--------------------------------------------------------------------------
+    |
+    | Slug de categoría -> clave de 'types'. Es la asignación "de fábrica" del
+    | catálogo, y hay que poder reaplicarla: categories.variant_type nace en
+    | 'none' y cada repoblado (legacy:restore) vuelve a traerlo así, con lo que
+    | el tipo se perdería y ninguna categoría ofrecería tallas.
+    |
+    | La aplica Category::applyConfiguredVariantTypes(), que llaman la migración
+    | y legacy:restore. Un slug que no exista simplemente no hace nada.
+    |
+    */
+    'category_types' => [
+        'womens-fashion' => 'apparel',
+        'mens-fashion'   => 'apparel',
+        'zapatos'        => 'footwear',
+        'calzado'        => 'footwear',
+    ],
+
     'types' => [
 
         // Sin tallas: el producto solo se distingue por color.

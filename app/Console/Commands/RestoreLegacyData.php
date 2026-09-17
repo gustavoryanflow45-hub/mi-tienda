@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Category;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -86,6 +87,7 @@ class RestoreLegacyData extends Command
         if (! $this->option('pretend')) {
             $this->repairDoubleEncodedJson();
             $this->repairImageExtensions();
+            $this->applyVariantTypes();
         }
 
         $this->reportMissingFiles();
@@ -259,6 +261,27 @@ class RestoreLegacyData extends Command
     }
 
     // ── Reparaciones de datos heredados ──────────────────────────────────
+
+    /**
+     * Reasigna el variant_type de las categorías.
+     *
+     * Las filas heredadas no traen la columna (es posterior a la base vieja),
+     * así que entran con el default 'none' y las categorías de ropa y calzado
+     * dejarían de ofrecer tallas después de cada restore.
+     */
+    private function applyVariantTypes(): void
+    {
+        if (! $this->hasTable('categories')
+            || ! in_array('variant_type', $this->columns('categories'), true)) {
+            return;
+        }
+
+        $changed = Category::applyConfiguredVariantTypes();
+
+        if ($changed > 0) {
+            $this->line("  categorías con tipo de talla reasignado: {$changed}");
+        }
+    }
 
     /**
      * Algunas filas guardaron el JSON codificado dos veces ("\"[...]\""). Con
