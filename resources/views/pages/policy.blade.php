@@ -2,6 +2,19 @@
 
 @section('title', $title)
 
+@php
+    // Fecha del último cambio real de cada documento. Va a mano a propósito:
+    // con date() la página se refechaba sola cada día, y un texto legal debe
+    // mostrar cuándo se modificó, no cuándo se abrió. Actualiza la entrada que
+    // corresponda al editar su contenido.
+    $lastUpdated = [
+        'terms'          => '11/09/2026',
+        'return-policy'  => '11/09/2026',
+        'privacy-policy' => '11/09/2026',
+        'support-policy' => '11/09/2026',
+    ][$type] ?? null;
+@endphp
+
 @section('content')
 <div style="background:#f2f3f8; padding:30px 0 60px; min-height:60vh;">
     <div class="container" style="max-width:800px;">
@@ -219,7 +232,9 @@
             @endif
 
             <div style="margin-top:32px; padding-top:20px; border-top:1px solid #f0f0f0; font-size:.82rem; color:#aaa;">
-                Última actualización: {{ date('d/m/Y') }}
+                @if($lastUpdated)
+                    Última actualización: {{ $lastUpdated }}
+                @endif
             </div>
         </div>
 
