@@ -1,7 +1,11 @@
 @extends('layouts.app')
 
 @section('title', $product->name)
-@section('meta_description', $product->meta_description ?? $product->short_description)
+{{-- El '' final no es decorativo: con los dos campos en null, Blade toma el
+     @section como "de bloque", abre un buffer de salida y se queda esperando
+     un @endsection que no existe. El meta salía vacío y cada render dejaba un
+     nivel de ob_start() colgando. --}}
+@section('meta_description', $product->meta_description ?? $product->short_description ?? '')
 
 @section('extra_css')
 <style>
