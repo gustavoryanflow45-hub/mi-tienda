@@ -73,7 +73,7 @@ class Product extends Model
     /** Etiqueta del selector ("Talla", "Talla US", "Cintura"). */
     public function sizeLabel(): string
     {
-        return $this->variantConfig()['size_label'] ?? 'Talla';
+        return __($this->variantConfig()['size_label'] ?? 'Talla');
     }
 
     /** Tallas con al menos una fila de stock, en el orden de config/variants.php. */

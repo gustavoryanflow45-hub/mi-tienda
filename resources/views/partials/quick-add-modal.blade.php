@@ -100,7 +100,7 @@
                     @foreach($colors as $color)
                         @php
                             $hex   = $palette[$color]['hex']   ?? '#888';
-                            $label = $palette[$color]['label'] ?? ucfirst($color);
+                            $label = __($palette[$color]['label'] ?? ucfirst($color));
                         @endphp
                         <label style="cursor:pointer; margin:0;" title="{{ $label }}">
                             <input type="radio" name="qa-color" value="{{ $color }}" style="display:none;">

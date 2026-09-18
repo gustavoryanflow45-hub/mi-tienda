@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'My Shop Products')
+@section('title', __('Mis productos'))
 
 @section('extra_css')
 <style>
@@ -209,50 +209,6 @@
     }
     .locked-overlay .lock-icon i { font-size: 2rem; color: #fff; }
 
-    /* ── Logout modal ── */
-    .logout-modal-overlay {
-        display: none; position: fixed; inset: 0;
-        background: rgba(0,0,0,0.55); z-index: 9999;
-        align-items: center; justify-content: center;
-    }
-    .logout-modal-overlay.show { display: flex; }
-    .logout-modal-box {
-        background: #fff; border-radius: 16px; padding: 2rem 1.75rem;
-        width: 90%; max-width: 360px; text-align: center;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-        animation: modalIn 0.25s ease;
-    }
-    @keyframes modalIn {
-        from { transform: translateY(30px); opacity: 0; }
-        to   { transform: translateY(0);    opacity: 1; }
-    }
-    .logout-icon {
-        width: 64px; height: 64px;
-        background: linear-gradient(135deg, #f64f59, #c471ed);
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 1rem;
-    }
-    .logout-icon i { font-size: 2rem; color: #fff; }
-    .btn-logout-confirm {
-        display: block; width: 100%; padding: 0.65rem;
-        background: linear-gradient(135deg, #679941, #4e7a2e);
-        color: #fff; border: none; border-radius: 8px;
-        font-weight: 600; font-size: 1rem; cursor: pointer;
-        margin-bottom: 0.75rem; transition: opacity 0.2s;
-    }
-    .btn-logout-confirm:hover { opacity: 0.9; }
-    .btn-logout-cancel {
-        display: block; width: 100%; padding: 0.65rem;
-        background: #f1f3f5; color: #444; border: none;
-        border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer;
-    }
-    .btn-logout-cancel:hover { background: #e2e6ea; }
-
-    .aiz-mobile-bottom-nav {
-        border-radius: 16px 16px 0 0;
-        padding-bottom: env(safe-area-inset-bottom, 0);
-    }
 
     /* Badge status */
     .badge-published { background:#d4edda; color:#155724; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:600; }
@@ -340,56 +296,35 @@
                                 <a href="{{ url('/dashboard') }}"
                                    class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-home mr-2 fs-16"></i>
-                                    <span>Dashboard</span>
+                                    <span>{{ __('dashboard.nav.dashboard') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/orders') }}"
                                    class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-file-invoice mr-2 fs-16"></i>
-                                    <span>Purchase History</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#"
-                                   class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-reply mr-2 fs-16"></i>
-                                    <span>Sent Refund Request</span>
+                                    <span>{{ __('dashboard.nav.purchase_history') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/wishlist') }}"
                                    class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-heart mr-2 fs-16"></i>
-                                    <span>Wishlist</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#"
-                                   class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-sliders-h mr-2 fs-16"></i>
-                                    <span>Comparar</span>
+                                    <span>{{ __('dashboard.nav.wishlist') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/seller/products') }}"
                                    class="aiz-side-nav-link bg-soft-primary active d-flex align-items-center text-reset p-2">
                                     <i class="las la-box mr-2 fs-16"></i>
-                                    <span>Products</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#"
-                                   class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-boxes mr-2 fs-16"></i>
-                                    <span>Wholesale Products</span>
+                                    <span>{{ __('dashboard.nav.products') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('seller.orders.index') }}"
                                    class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-shopping-cart mr-2 fs-16"></i>
-                                    <span>Pedidos</span>
+                                    <span>{{ __('dashboard.nav.orders') }}</span>
                                     @php $newOrders = Auth::user()->newOrderNotificationsCount(); @endphp
                                     @if($newOrders > 0)
                                         <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ $newOrders }}</span>
@@ -400,14 +335,14 @@
                                 <a href="{{ route('wallet.index') }}"
                                    class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-wallet mr-2 fs-16"></i>
-                                    <span>Mi Billetera</span>
+                                    <span>{{ __('dashboard.nav.wallet') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/profile') }}"
                                    class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-user-cog mr-2 fs-16"></i>
-                                    <span>Administrar Perfil</span>
+                                    <span>{{ __('dashboard.nav.manage_profile') }}</span>
                                 </a>
                             </li>
                         </ul>
@@ -422,7 +357,7 @@
             ══════════════════════════════════════ --}}
             <div class="col-lg-9">
 
-                <h3 class="h4 fw-700 mb-4">Products</h3>
+                <h3 class="h4 fw-700 mb-4">{{ __('Productos') }}</h3>
 
                 @php
                     $isVerified = Auth::user()->email_verified_at || Auth::user()->email_verified;
@@ -438,16 +373,16 @@
                                 <div class="icon-circle">
                                     <i class="las la-list-alt"></i>
                                 </div>
-                                <h5>My Shop Products</h5>
+                                <h5>{{ __('Mis productos') }}</h5>
                             </a>
                         @else
-                            <div class="action-card locked" title="Verify your email to access this feature">
+                            <div class="action-card locked" title="{{ __('Verifica tu correo para usar esta función') }}">
                                 <div class="icon-circle" style="background:#ccc;">
                                     <i class="las la-lock"></i>
                                 </div>
-                                <h5>My Shop Products</h5>
+                                <h5>{{ __('Mis productos') }}</h5>
                                 <small class="text-danger d-block mt-1" style="font-size:11px;">
-                                    <i class="las la-exclamation-circle"></i> Requiere verificación
+                                    <i class="las la-exclamation-circle"></i> {{ __('Requiere verificación') }}
                                 </small>
                             </div>
                         @endif
@@ -460,16 +395,16 @@
                                 <div class="icon-circle">
                                     <i class="las la-list-alt"></i>
                                 </div>
-                                <h5>Product</h5>
+                                <h5>{{ __('Agregar producto') }}</h5>
                             </div>
                         @else
-                            <div class="action-card locked" title="Verify your email to access this feature">
+                            <div class="action-card locked" title="{{ __('Verifica tu correo para usar esta función') }}">
                                 <div class="icon-circle" style="background:#ccc;">
                                     <i class="las la-lock"></i>
                                 </div>
-                                <h5>Product</h5>
+                                <h5>{{ __('Agregar producto') }}</h5>
                                 <small class="text-danger d-block mt-1" style="font-size:11px;">
-                                    <i class="las la-exclamation-circle"></i> Requiere verificación
+                                    <i class="las la-exclamation-circle"></i> {{ __('Requiere verificación') }}
                                 </small>
                             </div>
                         @endif
@@ -484,12 +419,12 @@
                         <div class="lock-icon">
                             <i class="las la-lock"></i>
                         </div>
-                        <h5 class="fw-700 mb-2">Funciones bloqueadas</h5>
+                        <h5 class="fw-700 mb-2">{{ __('Funciones bloqueadas') }}</h5>
                         <p class="opacity-60 fs-14 mb-3">
-                            Debes verificar tu correo electrónico para poder agregar y gestionar productos en tu tienda.
+                            {{ __('Debes verificar tu correo electrónico para poder agregar y gestionar productos en tu tienda.') }}
                         </p>
                         <a href="{{ route('verification.notice') }}" class="btn btn-warning fw-600 px-4">
-                            <i class="las la-envelope mr-1"></i> Verificar Email
+                            <i class="las la-envelope mr-1"></i> {{ __('Verificar correo') }}
                         </a>
                     </div>
                 @endif
@@ -498,13 +433,13 @@
                 @if($isVerified)
                     <div class="products-panel">
                         <div class="products-panel-header">
-                            <h5>My Shop Products</h5>
+                            <h5>{{ __('Mis productos') }}</h5>
                             <form method="GET" action="{{ url('/seller/products') }}" class="search-bar">
                                 <input type="text"
                                        name="search"
                                        value="{{ request('search') }}"
-                                       placeholder="Search products">
-                                <button type="submit" class="btn-search">Submit</button>
+                                       placeholder="{{ __('Buscar productos...') }}">
+                                <button type="submit" class="btn-search">{{ __('Buscar') }}</button>
                             </form>
                         </div>
 
@@ -513,14 +448,14 @@
                                 <thead>
                                     <tr>
                                         <th>#</th>
-                                        <th>Name</th>
-                                        <th>Category</th>
-                                        <th>Current Qty</th>
+                                        <th>{{ __('Nombre') }}</th>
+                                        <th>{{ __('Categoría') }}</th>
+                                        <th>{{ __('Stock') }}</th>
                                         <th>SKU</th>
-                                        <th>Price</th>
-                                        <th>Published</th>
-                                        <th>Featured</th>
-                                        <th class="text-right">Acciones</th>
+                                        <th>{{ __('Precio') }}</th>
+                                        <th>{{ __('Publicado') }}</th>
+                                        <th>{{ __('Destacado') }}</th>
+                                        <th class="text-right">{{ __('Acciones') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -548,31 +483,31 @@
                                                         class="publish-toggle"
                                                         data-product-id="{{ $product->id }}"
                                                         data-toggle-published
-                                                        title="{{ $product->published ? 'Clic para despublicar' : 'Clic para publicar y mostrar de nuevo en el home' }}">
+                                                        title="{{ $product->published ? __('Clic para despublicar') : __('Clic para publicar y mostrar de nuevo en el home') }}">
                                                     <span class="publish-badge">
                                                         @if($product->published)
-                                                            <span class="badge-published">Yes</span>
+                                                            <span class="badge-published">{{ __('Sí') }}</span>
                                                         @else
-                                                            <span class="badge-unpublished">No</span>
+                                                            <span class="badge-unpublished">{{ __('No') }}</span>
                                                         @endif
                                                     </span>
                                                     <span class="hover-hint">
-                                                        <i class="las la-sync-alt"></i>{{ $product->published ? 'Despublicar' : 'Publicar' }}
+                                                        <i class="las la-sync-alt"></i>{{ $product->published ? __('Despublicar') : __('Publicar') }}
                                                     </span>
                                                 </button>
                                             </td>
                                             <td>
                                                 @if($product->featured)
-                                                    <span class="badge-featured">Yes</span>
+                                                    <span class="badge-featured">{{ __('Sí') }}</span>
                                                 @else
-                                                    <span style="color:#aaa;">No</span>
+                                                    <span style="color:#aaa;">{{ __('No') }}</span>
                                                 @endif
                                             </td>
                                             <td class="text-right">
                                                 <a href="{{ route('seller.products.edit', $product->id) }}"
                                                    class="btn-edit-product"
-                                                   title="Editar producto">
-                                                    <i class="las la-edit"></i> Editar
+                                                   title="{{ __('Editar producto') }}">
+                                                    <i class="las la-edit"></i> {{ __('Editar') }}
                                                 </a>
                                             </td>
                                         </tr>
@@ -581,7 +516,7 @@
                                             <td colspan="9">
                                                 <div class="nothing-found">
                                                     <i class="las la-frown-open"></i>
-                                                    <span>Nothing found</span>
+                                                    <span>{{ __('No se encontró nada') }}</span>
                                                 </div>
                                             </td>
                                         </tr>
@@ -615,13 +550,13 @@
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content" style="border-radius:14px; overflow:hidden;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-700">Agregar Producto</h5>
+                <h5 class="modal-title fw-700">{{ __('Agregar producto') }}</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body pt-2 pb-4">
-                <p class="opacity-60 fs-14 mb-4">¿Cómo deseas agregar el producto?</p>
+                <p class="opacity-60 fs-14 mb-4">{{ __('¿Cómo deseas agregar el producto?') }}</p>
                 <div class="row gutters-10">
 
                     {{-- Por unidad --}}
@@ -634,8 +569,8 @@
                             <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#679941,#4e7a2e);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
                                 <i class="las la-box" style="font-size:1.6rem;color:#fff;"></i>
                             </div>
-                            <h6 class="fw-700 mb-1">Por Unidad</h6>
-                            <small class="opacity-60">Agrega un producto individual con sus variantes y stock</small>
+                            <h6 class="fw-700 mb-1">{{ __('Por unidad') }}</h6>
+                            <small class="opacity-60">{{ __('Agrega un producto individual con sus variantes y stock') }}</small>
                         </a>
                     </div>
 
@@ -649,8 +584,8 @@
                             <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#4776e6,#8e54e9);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
                                 <i class="las la-boxes" style="font-size:1.6rem;color:#fff;"></i>
                             </div>
-                            <h6 class="fw-700 mb-1">Por Lote</h6>
-                            <small class="opacity-60">Sube múltiples productos a la vez mediante un archivo CSV</small>
+                            <h6 class="fw-700 mb-1">{{ __('Por lote') }}</h6>
+                            <small class="opacity-60">{{ __('Sube múltiples productos a la vez mediante un archivo CSV') }}</small>
                         </a>
                     </div>
 
@@ -661,76 +596,10 @@
 </div>
 @endif
 
-{{-- ── Mobile bottom nav ── --}}
-<div class="aiz-mobile-bottom-nav d-xl-none fixed-bottom bg-white shadow-lg border-top">
-    <div class="row align-items-center gutters-5">
-        <div class="col">
-            <a href="{{ url('/') }}" class="text-reset d-block text-center pb-2 pt-3">
-                <i class="las la-home fs-20 opacity-60"></i>
-                <span class="d-block fs-10 fw-600 opacity-60">Home</span>
-            </a>
-        </div>
-        <div class="col">
-            <a href="{{ url('/categories') }}" class="text-reset d-block text-center pb-2 pt-3">
-                <i class="las la-list-ul fs-20 opacity-60"></i>
-                <span class="d-block fs-10 fw-600 opacity-60">Categories</span>
-            </a>
-        </div>
-        <div class="col-auto">
-            <a href="{{ url('/cart') }}" class="text-reset d-block text-center pb-2 pt-3">
-                <span class="align-items-center bg-primary border border-white border-width-4 d-flex justify-content-center position-relative rounded-circle size-50px"
-                      style="margin-top:-33px;">
-                    <i class="las la-shopping-bag la-2x text-white"></i>
-                </span>
-                <span class="d-block mt-1 fs-10 fw-600 opacity-60">Cart (0)</span>
-            </a>
-        </div>
-        <div class="col">
-            <a href="#" class="text-reset d-block text-center pb-2 pt-3">
-                <i class="las la-bell fs-20 opacity-60"></i>
-                <span class="d-block fs-10 fw-600 opacity-60">Alerts</span>
-            </a>
-        </div>
-        <div class="col">
-            <button onclick="document.getElementById('logoutModal').classList.add('show')"
-                    class="btn p-0 d-block w-100 text-center pb-2 pt-3"
-                    style="background:none;border:none;">
-                <i class="las la-user-circle fs-20 opacity-60"></i>
-                <span class="d-block fs-10 fw-600 opacity-60">Account</span>
-            </button>
-        </div>
-    </div>
-</div>
-
-{{-- ── Modal Logout ── --}}
-<div class="logout-modal-overlay" id="logoutModal">
-    <div class="logout-modal-box">
-        <div class="logout-icon">
-            <i class="las la-sign-out-alt"></i>
-        </div>
-        <h5 class="fw-700 mb-1">Sign out?</h5>
-        <p class="opacity-60 fs-14 mb-4">Are you sure you want to log out of your account?</p>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" class="btn-logout-confirm">
-                <i class="las la-sign-out-alt mr-1"></i> Yes, sign out
-            </button>
-        </form>
-        <button class="btn-logout-cancel"
-                onclick="document.getElementById('logoutModal').classList.remove('show')">
-            Cancel
-        </button>
-    </div>
-</div>
-
 @endsection
 
 @section('extra_js')
 <script>
-    document.getElementById('logoutModal').addEventListener('click', function (e) {
-        if (e.target === this) this.classList.remove('show');
-    });
-
     // ── Toggle "Published" desde la tabla de My Shop Products ──
     document.querySelectorAll('[data-toggle-published]').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -749,7 +618,7 @@
                 },
             })
                 .then(res => {
-                    if (!res.ok) throw new Error('No se pudo actualizar el estado.');
+                    if (!res.ok) throw new Error(@json(__('No se pudo actualizar el estado.')));
                     return res.json();
                 })
                 .then(data => {
@@ -757,17 +626,17 @@
                     const hint = btn.querySelector('.hover-hint');
 
                     if (data.published) {
-                        badgeSpan.innerHTML = '<span class="badge-published">Yes</span>';
+                        badgeSpan.innerHTML = '<span class="badge-published">' + @json(__('Sí')) + '</span>';
                         hint.innerHTML = '<i class="las la-sync-alt"></i>Despublicar';
-                        btn.title = 'Clic para despublicar';
+                        btn.title = @json(__('Clic para despublicar'));
                     } else {
-                        badgeSpan.innerHTML = '<span class="badge-unpublished">No</span>';
+                        badgeSpan.innerHTML = '<span class="badge-unpublished">' + @json(__('No')) + '</span>';
                         hint.innerHTML = '<i class="las la-sync-alt"></i>Publicar';
-                        btn.title = 'Clic para publicar y mostrar de nuevo en el home';
+                        btn.title = @json(__('Clic para publicar y mostrar de nuevo en el home'));
                     }
                 })
                 .catch(() => {
-                    alert('No se pudo actualizar el estado de publicación. Intenta de nuevo.');
+                    alert(@json(__('No se pudo actualizar el estado de publicación. Intenta de nuevo.')));
                 })
                 .finally(() => {
                     btn.classList.remove('is-loading');

@@ -73,10 +73,10 @@ class ProductStock extends Model
         ['size' => $size, 'color' => $color] = static::parseVariant($variant);
 
         $colors    = config('variants.colors', []);
-        $sizeLabel = $product?->sizeLabel() ?? 'Talla';
+        $sizeLabel = $product?->sizeLabel() ?? __('Talla');
 
         $colorLabel = filled($color)
-            ? ($colors[$color]['label'] ?? ucfirst($color))
+            ? __($colors[$color]['label'] ?? ucfirst($color))
             : null;
 
         return [

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Panel de Almacén')
+@section('title', __('Panel de almacén'))
 
 @section('extra_css')
 <style>
@@ -137,8 +137,8 @@
         {{-- ── Header ── --}}
         <div class="warehouse-header">
             <div>
-                <h2><i class="las la-warehouse mr-2"></i>Panel de Almacén</h2>
-                <p>Recibe los pedidos que llegan al almacén, despáchalos y confirma su entrega.</p>
+                <h2><i class="las la-warehouse mr-2"></i>{{ __('Panel de almacén') }}</h2>
+                <p>{{ __('Recibe los pedidos que llegan al almacén, despáchalos y confirma su entrega.') }}</p>
             </div>
             <span class="header-icon"><i class="las la-dolly-flatbed"></i></span>
         </div>
@@ -149,21 +149,21 @@
                 <div class="stat-icon warehouse"><i class="las la-warehouse"></i></div>
                 <div>
                     <div class="stat-value">{{ $stats['warehouse'] }}</div>
-                    <div class="stat-label">En almacén — por despachar</div>
+                    <div class="stat-label">{{ __('En almacén — por despachar') }}</div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon on_the_way"><i class="las la-shipping-fast"></i></div>
                 <div>
                     <div class="stat-value">{{ $stats['on_the_way'] }}</div>
-                    <div class="stat-label">En camino al cliente</div>
+                    <div class="stat-label">{{ __('En camino al cliente') }}</div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon delivered"><i class="las la-check-circle"></i></div>
                 <div>
                     <div class="stat-value">{{ $stats['delivered_today'] }}</div>
-                    <div class="stat-label">Entregados hoy</div>
+                    <div class="stat-label">{{ __('Entregados hoy') }}</div>
                 </div>
             </div>
         </div>
@@ -185,7 +185,7 @@
         {{-- ── Llegadas nuevas (notificaciones sin leer) ── --}}
         @if($arrivals->isNotEmpty())
             <div class="arrivals-box">
-                <h6><i class="las la-bell"></i> Nuevas llegadas al almacén ({{ $arrivals->count() }})</h6>
+                <h6><i class="las la-bell"></i> {{ __('Nuevas llegadas al almacén') }} ({{ $arrivals->count() }})</h6>
                 <ul>
                     @foreach($arrivals as $arrival)
                         <li>
@@ -203,16 +203,16 @@
         {{-- ── Tabla ── --}}
         <div class="orders-panel">
             <div class="orders-panel-header">
-                <h5>Pedidos en gestión de almacén</h5>
+                <h5>{{ __('Pedidos en gestión de almacén') }}</h5>
                 <form method="GET" action="{{ route('warehouse.index') }}" class="filter-bar">
-                    <input type="text" name="code" value="{{ request('code') }}" placeholder="Código de pedido">
+                    <input type="text" name="code" value="{{ request('code') }}" placeholder="{{ __('Código de pedido') }}">
                     <select name="delivery_status" onchange="this.form.submit()">
-                        <option value="">Activos (almacén + en camino)</option>
-                        <option value="warehouse"  @selected(request('delivery_status') === 'warehouse')>En almacén</option>
-                        <option value="on_the_way" @selected(request('delivery_status') === 'on_the_way')>En camino</option>
-                        <option value="delivered"  @selected(request('delivery_status') === 'delivered')>Entregados</option>
+                        <option value="">{{ __('Activos (almacén + en camino)') }}</option>
+                        <option value="warehouse"  @selected(request('delivery_status') === 'warehouse')>{{ __('En almacén') }}</option>
+                        <option value="on_the_way" @selected(request('delivery_status') === 'on_the_way')>{{ __('En camino') }}</option>
+                        <option value="delivered"  @selected(request('delivery_status') === 'delivered')>{{ __('Entregados') }}</option>
                     </select>
-                    <button type="submit" class="btn-search">Buscar</button>
+                    <button type="submit" class="btn-search">{{ __('Buscar') }}</button>
                 </form>
             </div>
 
@@ -221,15 +221,15 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Código</th>
-                            <th>Cliente</th>
-                            <th>Artículos a despachar</th>
-                            <th>Dirección de envío</th>
-                            <th>Llegó al almacén</th>
-                            <th>Despachado</th>
-                            <th>Total</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
+                            <th>{{ __('Código') }}</th>
+                            <th>{{ __('Cliente') }}</th>
+                            <th>{{ __('Artículos a despachar') }}</th>
+                            <th>{{ __('Dirección de envío') }}</th>
+                            <th>{{ __('Llegó al almacén') }}</th>
+                            <th>{{ __('Despachado') }}</th>
+                            <th>{{ __('Total') }}</th>
+                            <th>{{ __('Estado') }}</th>
+                            <th>{{ __('Acciones') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -255,7 +255,7 @@
                                             <br><i class="las la-envelope"></i> {{ $addr['email'] }}
                                         @endif
                                     @else
-                                        <span style="color:#e74c3c;"><i class="las la-exclamation-triangle"></i> Sin datos de envío</span>
+                                        <span style="color:#e74c3c;"><i class="las la-exclamation-triangle"></i> {{ __('Sin datos de envío') }}</span>
                                     @endif
                                 </td>
                                 <td style="white-space:nowrap; color:#888;">
@@ -274,23 +274,23 @@
                                     <div class="d-flex align-items-center" style="gap:10px;">
                                         @if($order->delivery_status === 'warehouse')
                                             <form method="POST" action="{{ route('warehouse.dispatch', $order->id) }}"
-                                                  onsubmit="return confirm('¿Despachar el pedido #{{ $order->code }}? El cliente será notificado de que va en camino.')">
+                                                  onsubmit="return confirm({{ json_encode(__('¿Despachar el pedido #:code? El cliente será notificado de que va en camino.', ['code' => $order->code])) }})">
                                                 @csrf
                                                 <button type="submit" class="btn-dispatch">
-                                                    <i class="las la-shipping-fast"></i> Despachar
+                                                    <i class="las la-shipping-fast"></i> {{ __('Despachar') }}
                                                 </button>
                                             </form>
                                         @elseif($order->delivery_status === 'on_the_way')
                                             <form method="POST" action="{{ route('warehouse.deliver', $order->id) }}"
-                                                  onsubmit="return confirm('¿Marcar el pedido #{{ $order->code }} como entregado?')">
+                                                  onsubmit="return confirm({{ json_encode(__('¿Marcar el pedido #:code como entregado?', ['code' => $order->code])) }})">
                                                 @csrf
                                                 <button type="submit" class="btn-deliver">
-                                                    <i class="las la-check"></i> Entregado
+                                                    <i class="las la-check"></i> {{ __('Entregado') }}
                                                 </button>
                                             </form>
                                         @endif
                                         <a href="{{ route('orders.show', $order->id) }}" class="btn-view">
-                                            Ver <i class="las la-arrow-right"></i>
+                                            {{ __('Ver') }} <i class="las la-arrow-right"></i>
                                         </a>
                                     </div>
                                 </td>
@@ -300,7 +300,7 @@
                                 <td colspan="10">
                                     <div class="nothing-found">
                                         <i class="las la-dolly"></i>
-                                        <span>No hay pedidos en el almacén por ahora</span>
+                                        <span>{{ __('No hay pedidos en el almacén por ahora') }}</span>
                                     </div>
                                 </td>
                             </tr>

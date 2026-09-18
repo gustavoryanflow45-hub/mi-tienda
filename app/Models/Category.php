@@ -53,7 +53,7 @@ class Category extends Model
     /** Etiqueta del selector de talla ("Talla", "Talla US", "Cintura"). */
     public function sizeLabel(): string
     {
-        return $this->variantConfig()['size_label'] ?? 'Talla';
+        return __($this->variantConfig()['size_label'] ?? 'Talla');
     }
 
     /**
