@@ -94,6 +94,6 @@ class SellerController extends Controller
 
         // ── Redirigir con mensaje de éxito ─────────────────────────
         return redirect()->route('home')
-            ->with('success', '¡Tienda registrada exitosamente! Tu solicitud está pendiente de aprobación.');
+            ->with('success', __('¡Tienda registrada exitosamente! Tu solicitud está pendiente de aprobación.'));
     }
 }

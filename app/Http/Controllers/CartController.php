@@ -106,8 +106,8 @@ class CartController extends Controller
             return response()->json([
                 'status'  => 'error',
                 'message' => $variant
-                    ? 'Esa combinación no está disponible.'
-                    : 'Elige talla y color antes de agregar al carrito.',
+                    ? __('Esa combinación no está disponible.')
+                    : __('Elige talla y color antes de agregar al carrito.'),
             ]);
         }
 
@@ -115,14 +115,14 @@ class CartController extends Controller
         if (! $stock || $stock->qty <= 0) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Producto agotado.',
+                'message' => __('Producto agotado.'),
             ]);
         }
 
         if ($quantity > $stock->qty) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Not enough stock. Only ' . $stock->qty . ' available.',
+                'message' => __('Solo hay :max unidades en stock', ['max' => $stock->qty]),
             ]);
         }
 
@@ -161,7 +161,7 @@ class CartController extends Controller
 
         return response()->json($this->summaryPayload() + [
             'status'  => 'success',
-            'message' => 'Product added to cart',
+            'message' => __('Producto añadido al carrito'),
         ]);
     }
 
@@ -181,7 +181,7 @@ class CartController extends Controller
 
         return response()->json($this->summaryPayload() + [
             'status'  => 'success',
-            'message' => 'Item removed',
+            'message' => __('Artículo quitado del carrito'),
         ]);
     }
 

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Admin — Liquidación de Ventas')
+@section('title', __('Admin — Liquidación de ventas'))
 
 @section('extra_css')
 <style>
@@ -109,8 +109,8 @@
 <div class="container">
 
     <div class="as-header">
-        <h1>Liquidación de <span>Ventas</span></h1>
-        <span style="font-size:.82rem;color:var(--muted);">Panel de administración · comisión del {{ round($commissionRate * 100) }}%</span>
+        <h1>{!! __('Liquidación de <span>ventas</span>') !!}</h1>
+        <span style="font-size:.82rem;color:var(--muted);">{{ __('Panel de administración') }} · {{ __('comisión del :rate%', ['rate' => round($commissionRate * 100)]) }}</span>
     </div>
 
     @if(session('success'))
@@ -126,48 +126,48 @@
     <div class="as-stats">
         <div class="as-stat yellow">
             <div class="stat-val">{{ $totals['sellers_pending'] }}</div>
-            <div class="stat-lbl">Tiendas por liquidar</div>
+            <div class="stat-lbl">{{ __('Tiendas por liquidar') }}</div>
         </div>
         <div class="as-stat blue">
             <div class="stat-val">${{ number_format($totals['total_sales'], 2) }}</div>
-            <div class="stat-lbl">Ventas pendientes</div>
+            <div class="stat-lbl">{{ __('Ventas pendientes') }}</div>
         </div>
         <div class="as-stat red">
             <div class="stat-val">${{ number_format($totals['commission'], 2) }}</div>
-            <div class="stat-lbl">Comisión ({{ round($commissionRate * 100) }}%)</div>
+            <div class="stat-lbl">{{ __('Comisión') }} ({{ round($commissionRate * 100) }}%)</div>
         </div>
         <div class="as-stat green">
             <div class="stat-val">${{ number_format($totals['net_amount'], 2) }}</div>
-            <div class="stat-lbl">Neto a acreditar</div>
+            <div class="stat-lbl">{{ __('Neto a acreditar') }}</div>
         </div>
     </div>
 
     <form method="GET" action="{{ route('admin.settlements') }}" class="as-filters">
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar tienda o vendedor">
-        <button type="submit" class="btn-filter">Filtrar</button>
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('Buscar tienda o vendedor') }}">
+        <button type="submit" class="btn-filter">{{ __('Filtrar') }}</button>
         @if(request('search'))
-            <a href="{{ route('admin.settlements') }}" class="btn-clear">Limpiar</a>
+            <a href="{{ route('admin.settlements') }}" class="btn-clear">{{ __('Limpiar') }}</a>
         @endif
     </form>
 
     <div class="as-card">
         <div class="as-card-header">
-            <span class="dot"></span> Ventas pendientes por tienda
-            <span class="hint">Solo cuentan los pedidos cobrados y ya entregados. Liquidar acredita el neto en la billetera del vendedor y deja sus ventas y ganancias en cero.</span>
+            <span class="dot"></span> {{ __('Ventas pendientes por tienda') }}
+            <span class="hint">{{ __('Solo cuentan los pedidos cobrados y ya entregados. Liquidar acredita el neto en la billetera del vendedor y deja sus ventas y ganancias en cero.') }}</span>
         </div>
         <div class="table-responsive">
             <table class="as-table">
                 <thead>
                     <tr>
-                        <th>Tienda</th>
-                        <th>Vendedor</th>
-                        <th>Estado</th>
-                        <th class="num">Líneas</th>
-                        <th class="num">Ventas</th>
-                        <th class="num">Comisión</th>
-                        <th class="num">A acreditar</th>
-                        <th>Última liquidación</th>
-                        <th>Acción</th>
+                        <th>{{ __('Tienda') }}</th>
+                        <th>{{ __('Vendedor') }}</th>
+                        <th>{{ __('Estado') }}</th>
+                        <th class="num">{{ __('Líneas') }}</th>
+                        <th class="num">{{ __('Ventas') }}</th>
+                        <th class="num">{{ __('Comisión') }}</th>
+                        <th class="num">{{ __('A acreditar') }}</th>
+                        <th>{{ __('Última liquidación') }}</th>
+                        <th>{{ __('Acción') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -179,7 +179,7 @@
                             $shop    = $seller->shop;
                             $label   = $shop->name ?? $seller->name;
                             $confirm = sprintf(
-                                "¿Liquidar «%s»?\n\nVentas: $%s\nComisión (%d%%): -$%s\nA acreditar en su billetera: $%s\n\nSus ventas y ganancias quedarán en cero.",
+                                __("¿Liquidar «%s»?\n\nVentas: $%s\nComisión (%d%%): -$%s\nA acreditar en su billetera: $%s\n\nSus ventas y ganancias quedarán en cero."),
                                 $label,
                                 number_format($pending['total_sales'], 2),
                                 round($pending['commission_rate'] * 100),
@@ -188,11 +188,11 @@
                             );
                         @endphp
                         <tr class="{{ $pending['lines_count'] === 0 ? 'settled-zero' : '' }}">
-                            <td data-label="Tienda">
+                            <td data-label="{{ __('Tienda') }}">
                                 <div class="user-name">{{ $shop->name ?? '— sin tienda —' }}</div>
                                 <div class="user-email">{{ $shop->email ?? '' }}</div>
                             </td>
-                            <td data-label="Vendedor">
+                            <td data-label="{{ __('Vendedor') }}">
                                 <div class="user-cell">
                                     <div class="user-avatar">{{ strtoupper(substr($seller->name ?? 'U', 0, 1)) }}</div>
                                     <div>
@@ -201,34 +201,34 @@
                                     </div>
                                 </div>
                             </td>
-                            <td data-label="Estado">
+                            <td data-label="{{ __('Estado') }}">
                                 @if($shop && (int) $shop->status === 1)
-                                    <span class="badge-pill badge-approved"><i class="las la-check-circle"></i> Aprobada</span>
+                                    <span class="badge-pill badge-approved"><i class="las la-check-circle"></i> {{ __('Aprobada') }}</span>
                                 @elseif($shop && (int) $shop->status === 2)
-                                    <span class="badge-pill badge-rejected"><i class="las la-times-circle"></i> Rechazada</span>
+                                    <span class="badge-pill badge-rejected"><i class="las la-times-circle"></i> {{ __('Rechazada') }}</span>
                                 @else
-                                    <span class="badge-pill badge-pending"><i class="las la-clock"></i> Pendiente</span>
+                                    <span class="badge-pill badge-pending"><i class="las la-clock"></i> {{ __('Pendiente') }}</span>
                                 @endif
                             </td>
-                            <td data-label="Líneas" class="num">{{ $pending['lines_count'] }}</td>
-                            <td data-label="Ventas" class="num">${{ number_format($pending['total_sales'], 2) }}</td>
-                            <td data-label="Comisión" class="num fee">-${{ number_format($pending['commission'], 2) }}</td>
-                            <td data-label="A acreditar" class="num net">${{ number_format($pending['net_amount'], 2) }}</td>
-                            <td data-label="Última liquidación">
+                            <td data-label="{{ __('Líneas') }}" class="num">{{ $pending['lines_count'] }}</td>
+                            <td data-label="{{ __('Ventas') }}" class="num">${{ number_format($pending['total_sales'], 2) }}</td>
+                            <td data-label="{{ __('Comisión') }}" class="num fee">-${{ number_format($pending['commission'], 2) }}</td>
+                            <td data-label="{{ __('A acreditar') }}" class="num net">${{ number_format($pending['net_amount'], 2) }}</td>
+                            <td data-label="{{ __('Última liquidación') }}">
                                 @if($last)
                                     <div class="user-name">{{ $last->settled_at->format('d/m/Y H:i') }}</div>
-                                    <div class="user-email">${{ number_format($last->net_amount, 2) }} acreditados</div>
+                                    <div class="user-email">${{ number_format($last->net_amount, 2) }} {{ __('acreditados') }}</div>
                                 @else
-                                    <span class="user-email">Nunca</span>
+                                    <span class="user-email">{{ __('Nunca') }}</span>
                                 @endif
                             </td>
-                            <td data-label="Acción">
+                            <td data-label="{{ __('Acción') }}">
                                 <form method="POST" action="{{ route('admin.settlements.settle', $seller->id) }}"
                                       data-confirm="{{ $confirm }}"
                                       onsubmit="return confirm(this.dataset.confirm);">
                                     @csrf
                                     <button type="submit" class="btn-settle" @disabled($pending['lines_count'] === 0)>
-                                        <i class="las la-hand-holding-usd"></i> Liquidar
+                                        <i class="las la-hand-holding-usd"></i> {{ __('Liquidar') }}
                                     </button>
                                 </form>
                             </td>
@@ -238,7 +238,7 @@
                             <td colspan="9">
                                 <div class="as-empty">
                                     <i class="las la-store-slash"></i>
-                                    No hay vendedores que coincidan con el filtro.
+                                    {{ __('No hay vendedores que coincidan con el filtro.') }}
                                 </div>
                             </td>
                         </tr>
@@ -250,43 +250,43 @@
 
     <div class="as-card">
         <div class="as-card-header">
-            <span class="dot" style="background:var(--blue);"></span> Historial de liquidaciones
+            <span class="dot" style="background:var(--blue);"></span> {{ __('Historial de liquidaciones') }}
         </div>
         <div class="table-responsive">
             <table class="as-table">
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Fecha</th>
-                        <th>Tienda</th>
-                        <th class="num">Líneas</th>
-                        <th class="num">Ventas</th>
-                        <th class="num">Comisión</th>
-                        <th class="num">Acreditado</th>
-                        <th>Liquidó</th>
+                        <th>{{ __('Fecha') }}</th>
+                        <th>{{ __('Tienda') }}</th>
+                        <th class="num">{{ __('Líneas') }}</th>
+                        <th class="num">{{ __('Ventas') }}</th>
+                        <th class="num">{{ __('Comisión') }}</th>
+                        <th class="num">{{ __('Acreditado') }}</th>
+                        <th>{{ __('Liquidó') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($history as $settlement)
                         <tr>
                             <td data-label="#">{{ $settlement->id }}</td>
-                            <td data-label="Fecha">{{ $settlement->settled_at->format('d/m/Y H:i') }}</td>
-                            <td data-label="Tienda">
+                            <td data-label="{{ __('Fecha') }}">{{ $settlement->settled_at->format('d/m/Y H:i') }}</td>
+                            <td data-label="{{ __('Tienda') }}">
                                 <div class="user-name">{{ $settlement->seller?->shop?->name ?? $settlement->seller?->name ?? '—' }}</div>
                                 <div class="user-email">{{ $settlement->seller?->email }}</div>
                             </td>
-                            <td data-label="Líneas" class="num">{{ $settlement->lines_count }}</td>
-                            <td data-label="Ventas" class="num">${{ number_format($settlement->total_sales, 2) }}</td>
-                            <td data-label="Comisión" class="num fee">-${{ number_format($settlement->commission, 2) }} ({{ round($settlement->commission_rate * 100) }}%)</td>
-                            <td data-label="Acreditado" class="num net">${{ number_format($settlement->net_amount, 2) }}</td>
-                            <td data-label="Liquidó">{{ $settlement->admin?->name ?? '—' }}</td>
+                            <td data-label="{{ __('Líneas') }}" class="num">{{ $settlement->lines_count }}</td>
+                            <td data-label="{{ __('Ventas') }}" class="num">${{ number_format($settlement->total_sales, 2) }}</td>
+                            <td data-label="{{ __('Comisión') }}" class="num fee">-${{ number_format($settlement->commission, 2) }} ({{ round($settlement->commission_rate * 100) }}%)</td>
+                            <td data-label="{{ __('Acreditado') }}" class="num net">${{ number_format($settlement->net_amount, 2) }}</td>
+                            <td data-label="{{ __('Liquidó') }}">{{ $settlement->admin?->name ?? '—' }}</td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="8">
                                 <div class="as-empty">
                                     <i class="las la-file-invoice-dollar"></i>
-                                    Todavía no se ha liquidado ninguna tienda.
+                                    {{ __('Todavía no se ha liquidado ninguna tienda.') }}
                                 </div>
                             </td>
                         </tr>

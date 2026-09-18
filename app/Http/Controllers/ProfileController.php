@@ -47,7 +47,7 @@ class ProfileController extends Controller
 
         $user->save();
 
-        return back()->with('success', 'Perfil actualizado correctamente.');
+        return back()->with('success', __('Perfil actualizado correctamente.'));
     }
 
     // PUT /profile/password
@@ -63,13 +63,13 @@ class ProfileController extends Controller
         ]);
 
         if (!Hash::check($request->current_password, Auth::user()->password)) {
-            return back()->withErrors(['current_password' => 'La contraseña actual no es correcta.']);
+            return back()->withErrors(['current_password' => __('La contraseña actual no es correcta.')]);
         }
 
         Auth::user()->update([
             'password' => Hash::make($request->password),
         ]);
 
-        return back()->with('success', 'Contraseña actualizada correctamente.');
+        return back()->with('success', __('Contraseña actualizada correctamente.'));
     }
 }

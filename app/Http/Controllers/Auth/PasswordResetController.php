@@ -43,7 +43,7 @@ class PasswordResetController extends Controller
             return back()->withInput()->withErrors(['email' => __($status)]);
         }
 
-        return back()->with('status', self::SENT_MESSAGE);
+        return back()->with('status', __(self::SENT_MESSAGE));
     }
 
     /** GET /password/reset/{token} — formulario de nueva contraseña. */
@@ -85,6 +85,6 @@ class PasswordResetController extends Controller
         }
 
         return redirect()->route('dashboard')
-            ->with('success', 'Contraseña actualizada. Ya has iniciado sesión.');
+            ->with('success', __('Contraseña actualizada. Ya has iniciado sesión.'));
     }
 }

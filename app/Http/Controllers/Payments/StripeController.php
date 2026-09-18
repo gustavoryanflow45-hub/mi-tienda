@@ -37,7 +37,7 @@ class StripeController extends Controller
         $order = $this->checkout->pendingOrderFor($request->user());
 
         if (! $order) {
-            return response()->json(['message' => 'Tu carrito está vacío.'], 422);
+            return response()->json(['message' => __('Tu carrito está vacío.')], 422);
         }
 
         $amountInCents = (int) round($order->grand_total * 100);
@@ -52,7 +52,7 @@ class StripeController extends Controller
                 // permitiría cobrarle dos veces al comprador.
                 if (in_array($intent->status, self::SETTLING_STATUSES, true)) {
                     return response()->json([
-                        'message' => 'Ya hay un pago en curso para este pedido. Espera unos segundos y recarga la página.',
+                        'message' => __('Ya hay un pago en curso para este pedido. Espera unos segundos y recarga la página.'),
                     ], 409);
                 }
 
@@ -88,7 +88,7 @@ class StripeController extends Controller
                 'error'    => $e->getMessage(),
             ]);
 
-            return response()->json(['message' => 'No se pudo iniciar el pago. Intenta de nuevo.'], 422);
+            return response()->json(['message' => __('No se pudo iniciar el pago. Intenta de nuevo.')], 422);
         }
 
         $order->update(['payment_intent_id' => $intent->id]);

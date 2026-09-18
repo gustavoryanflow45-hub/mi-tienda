@@ -20,11 +20,11 @@ class SellerProductController extends Controller
         $this->middleware(function ($request, $next) {
             $user = Auth::user();
             if (! in_array($user->user_type, ['seller', 'admin'])) {
-                abort(403, 'No autorizado.');
+                abort(403, __('No autorizado.'));
             }
             if (! $user->isVerified()) {
                 return redirect()->route('verification.notice')
-                    ->with('warning', 'Debes verificar tu correo electrónico antes de usar el panel de vendedor.');
+                    ->with('warning', __('Debes verificar tu correo electrónico antes de usar el panel de vendedor.'));
             }
 
             return $next($request);
@@ -123,7 +123,7 @@ class SellerProductController extends Controller
         $this->syncStocks($product, $request->stocks);
 
         return redirect()->route('seller.products.index')
-            ->with('success', '¡Producto "'.$product->name.'" creado exitosamente!');
+            ->with('success', __('¡Producto ":name" creado exitosamente!', ['name' => $product->name]));
     }
 
     /**
@@ -217,7 +217,7 @@ class SellerProductController extends Controller
 
         // Solo el dueño (o un admin) puede editar
         if ($product->added_by !== Auth::id() && Auth::user()->user_type !== 'admin') {
-            abort(403, 'No autorizado.');
+            abort(403, __('No autorizado.'));
         }
 
         $categories = Category::where('status', 1)->orderBy('name')->get();
@@ -232,7 +232,7 @@ class SellerProductController extends Controller
         $product = Product::with('stocks')->findOrFail($id);
 
         if ($product->added_by !== Auth::id() && Auth::user()->user_type !== 'admin') {
-            abort(403, 'No autorizado.');
+            abort(403, __('No autorizado.'));
         }
 
         $request->validate([
@@ -292,7 +292,7 @@ class SellerProductController extends Controller
         $this->syncStocks($product, $request->stocks);
 
         return redirect()->route('seller.products.index')
-            ->with('success', '¡Producto "'.$product->name.'" actualizado exitosamente!');
+            ->with('success', __('¡Producto ":name" actualizado exitosamente!', ['name' => $product->name]));
     }
 
     // ── GET /seller/products/bulk ────────────────────────────────
@@ -429,7 +429,7 @@ class SellerProductController extends Controller
         fclose($handle);
 
         return redirect()->route('seller.products.index')
-            ->with('bulk_success', "Se importaron {$created} producto(s) exitosamente.")
+            ->with('bulk_success', __('Se importaron :count producto(s) exitosamente.', ['count' => $created]))
             ->with('bulk_errors', $errors);
     }
 }

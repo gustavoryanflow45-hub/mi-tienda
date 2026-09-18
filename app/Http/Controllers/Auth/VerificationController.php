@@ -23,7 +23,7 @@ class VerificationController extends Controller
     {
         if (Auth::user()->isVerified()) {
             return redirect()->route('dashboard')
-                ->with('success', 'Tu correo ya está verificado.');
+                ->with('success', __('Tu correo ya está verificado.'));
         }
 
         return view('auth.verify-email');
@@ -37,12 +37,12 @@ class VerificationController extends Controller
         // El hash ata el enlace al correo actual: si el usuario cambió de
         // correo después de pedirlo, el enlace viejo deja de servir.
         if (! hash_equals($hash, sha1($user->email))) {
-            abort(403, 'El enlace de verificación no es válido.');
+            abort(403, __('El enlace de verificación no es válido.'));
         }
 
         if ($user->isVerified()) {
             return redirect()->route('dashboard')
-                ->with('success', 'Tu correo ya estaba verificado.');
+                ->with('success', __('Tu correo ya estaba verificado.'));
         }
 
         $user->email_verified_at = now();
@@ -56,7 +56,7 @@ class VerificationController extends Controller
         }
 
         return redirect()->route('dashboard')
-            ->with('success', '¡Correo verificado correctamente! Ya tienes acceso completo.');
+            ->with('success', __('¡Correo verificado correctamente! Ya tienes acceso completo.'));
     }
 
     /** POST /email/resend — vuelve a enviar el enlace. */
@@ -66,11 +66,11 @@ class VerificationController extends Controller
 
         if ($user->isVerified()) {
             return redirect()->route('dashboard')
-                ->with('success', 'Tu correo ya está verificado.');
+                ->with('success', __('Tu correo ya está verificado.'));
         }
 
         $user->notify(new VerifyEmailNotification);
 
-        return back()->with('success', 'Te enviamos un nuevo enlace de verificación a '.$user->email.'.');
+        return back()->with('success', __('Te enviamos un nuevo enlace de verificación a :email.', ['email' => $user->email]));
     }
 }

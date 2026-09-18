@@ -17,7 +17,7 @@
             </div>
             @if($approved)
                 <a href="{{ route('seller.products.index') }}" class="btn btn-sm btn-primary fw-600">
-                    Ir a mis productos
+                    {{ __('Ir a mis productos') }}
                 </a>
             @endif
         </div>

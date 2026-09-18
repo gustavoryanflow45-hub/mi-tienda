@@ -24,7 +24,7 @@ class AdminShopController extends Controller
         $this->middleware('auth');
         $this->middleware(function ($request, $next) {
             if (! $request->user()?->isAdmin()) {
-                abort(403, 'No autorizado.');
+                abort(403, __('No autorizado.'));
             }
 
             return $next($request);
@@ -68,14 +68,14 @@ class AdminShopController extends Controller
         $shop = Shop::with('user')->findOrFail($id);
 
         if ((int) $shop->status === self::APPROVED) {
-            return back()->with('warning', "La tienda «{$shop->name}» ya estaba aprobada.");
+            return back()->with('warning', __('La tienda «:name» ya estaba aprobada.', ['name' => $shop->name]));
         }
 
         $shop->update(['status' => self::APPROVED]);
 
         $shop->user?->notify(new ShopStatusUpdatedNotification($shop, self::APPROVED));
 
-        return back()->with('success', "Tienda «{$shop->name}» aprobada. Ya puede publicar productos. Se notificó al vendedor.");
+        return back()->with('success', __('Tienda «:name» aprobada. Ya puede publicar productos. Se notificó al vendedor.', ['name' => $shop->name]));
     }
 
     // ── POST /admin/shops/{id}/reject ────────────────────────────
@@ -84,13 +84,13 @@ class AdminShopController extends Controller
         $shop = Shop::with('user')->findOrFail($id);
 
         if ((int) $shop->status === self::REJECTED) {
-            return back()->with('warning', "La tienda «{$shop->name}» ya estaba rechazada.");
+            return back()->with('warning', __('La tienda «:name» ya estaba rechazada.', ['name' => $shop->name]));
         }
 
         $shop->update(['status' => self::REJECTED]);
 
         $shop->user?->notify(new ShopStatusUpdatedNotification($shop, self::REJECTED));
 
-        return back()->with('error', "Tienda «{$shop->name}» rechazada. Su acceso al panel de vendedor queda bloqueado. Se notificó al vendedor.");
+        return back()->with('error', __('Tienda «:name» rechazada. Su acceso al panel de vendedor queda bloqueado. Se notificó al vendedor.', ['name' => $shop->name]));
     }
 }

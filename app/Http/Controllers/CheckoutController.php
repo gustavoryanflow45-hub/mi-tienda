@@ -21,14 +21,14 @@ class CheckoutController extends Controller
     public function index(Request $request)
     {
         if (! auth()->check()) {
-            return redirect()->route('login')->with('error', 'Debes iniciar sesión para continuar.');
+            return redirect()->route('login')->with('error', __('Debes iniciar sesión para continuar.'));
         }
 
         $user = $request->user();
         $cartItems = $this->checkout->items($user);
 
         if ($cartItems->isEmpty()) {
-            return redirect('/')->with('error', 'Tu carrito está vacío.');
+            return redirect('/')->with('error', __('Tu carrito está vacío.'));
         }
 
         // Aquí no se crea ningún pedido: se materializa recién cuando el
@@ -64,7 +64,7 @@ class CheckoutController extends Controller
     public function saveShipping(Request $request)
     {
         if (! auth()->check()) {
-            return response()->json(['message' => 'Debes iniciar sesión.'], 401);
+            return response()->json(['message' => __('Debes iniciar sesión.')], 401);
         }
 
         $data = $request->validate([

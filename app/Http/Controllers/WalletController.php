@@ -72,7 +72,7 @@ class WalletController extends Controller
             'approval'       => 0,
         ]);
 
-        return back()->with('success', 'Solicitud de recarga enviada. Está pendiente de aprobación.');
+        return back()->with('success', __('Solicitud de recarga enviada. Está pendiente de aprobación.'));
     }
 
     public function approve($id)
@@ -80,7 +80,7 @@ class WalletController extends Controller
         $recharge = WalletRecharge::findOrFail($id);
 
         if ($recharge->approval == 1) {
-            return back()->with('warning', 'Esta recarga ya fue aprobada.');
+            return back()->with('warning', __('Esta recarga ya fue aprobada.'));
         }
 
         DB::transaction(function () use ($recharge) {
@@ -89,7 +89,7 @@ class WalletController extends Controller
                 ->increment('balance', $recharge->amount);
         });
 
-        return back()->with('success', "Recarga #{$recharge->id} aprobada. Se sumaron \${$recharge->amount} al saldo del usuario.");
+        return back()->with('success', __('Recarga #:id aprobada. Se sumaron $:amount al saldo del usuario.', ['id' => $recharge->id, 'amount' => $recharge->amount]));
     }
 
     public function reject($id)
@@ -97,12 +97,12 @@ class WalletController extends Controller
         $recharge = WalletRecharge::findOrFail($id);
 
         if ($recharge->approval == 1) {
-            return back()->with('warning', 'No se puede rechazar una recarga ya aprobada.');
+            return back()->with('warning', __('No se puede rechazar una recarga ya aprobada.'));
         }
 
         $recharge->update(['approval' => -1]);
 
-        return back()->with('error', "Recarga #{$recharge->id} rechazada.");
+        return back()->with('error', __('Recarga #:id rechazada.', ['id' => $recharge->id]));
     }
 
     /* ─────────────────────────────────────────
@@ -121,7 +121,7 @@ class WalletController extends Controller
         $balance = Auth::user()->balance ?? 0;
 
         if ($request->amount > $balance) {
-            return back()->withErrors(['amount' => 'Saldo insuficiente.'])->withInput();
+            return back()->withErrors(['amount' => __('Saldo insuficiente.')])->withInput();
         }
 
         // Si el monto cabe en lo que viene de liquidaciones, el admin ya lo
@@ -146,8 +146,8 @@ class WalletController extends Controller
         });
 
         return back()->with('success', $fromSettlement
-            ? 'Retiro aprobado: proviene de ventas ya liquidadas, no necesita otra aprobación.'
-            : 'Solicitud de retiro enviada. Está pendiente de aprobación.');
+            ? __('Retiro aprobado: proviene de ventas ya liquidadas, no necesita otra aprobación.')
+            : __('Solicitud de retiro enviada. Está pendiente de aprobación.'));
     }
 
     public function approveWithdrawal($id)
@@ -155,13 +155,13 @@ class WalletController extends Controller
         $withdrawal = WalletWithdrawal::findOrFail($id);
 
         if ($withdrawal->status !== 'pending') {
-            return back()->with('warning', 'Este retiro ya fue procesado.');
+            return back()->with('warning', __('Este retiro ya fue procesado.'));
         }
 
         // Solo marcar como aprobado — el saldo ya se descontó al crear la solicitud
         $withdrawal->update(['status' => 'approved']);
 
-        return back()->with('success', "Retiro #{$withdrawal->id} aprobado por \${$withdrawal->amount}.");
+        return back()->with('success', __('Retiro #:id aprobado por $:amount.', ['id' => $withdrawal->id, 'amount' => $withdrawal->amount]));
     }
 
     public function rejectWithdrawal($id)
@@ -169,7 +169,7 @@ class WalletController extends Controller
         $withdrawal = WalletWithdrawal::findOrFail($id);
 
         if ($withdrawal->status !== 'pending') {
-            return back()->with('warning', 'Este retiro ya fue procesado.');
+            return back()->with('warning', __('Este retiro ya fue procesado.'));
         }
 
         DB::transaction(function () use ($withdrawal) {
@@ -180,6 +180,6 @@ class WalletController extends Controller
                 ->increment('balance', $withdrawal->amount);
         });
 
-        return back()->with('success', "Retiro #{$withdrawal->id} rechazado. Saldo devuelto al usuario.");
+        return back()->with('success', __('Retiro #:id rechazado. Saldo devuelto al usuario.', ['id' => $withdrawal->id]));
     }
 }

@@ -9,22 +9,22 @@ class PageController extends Controller
 {
     public function terms()
     {
-        return view('pages.policy', ['title' => 'Términos y Condiciones', 'type' => 'terms']);
+        return view('pages.policy', ['title' => __('Términos y condiciones'), 'type' => 'terms']);
     }
 
     public function returnPolicy()
     {
-        return view('pages.policy', ['title' => 'Política de Devoluciones', 'type' => 'return-policy']);
+        return view('pages.policy', ['title' => __('Política de devoluciones'), 'type' => 'return-policy']);
     }
 
     public function supportPolicy()
     {
-        return view('pages.policy', ['title' => 'Política de Soporte', 'type' => 'support-policy']);
+        return view('pages.policy', ['title' => __('Política de soporte'), 'type' => 'support-policy']);
     }
 
     public function privacyPolicy()
     {
-        return view('pages.policy', ['title' => 'Política de Privacidad', 'type' => 'privacy-policy']);
+        return view('pages.policy', ['title' => __('Política de privacidad'), 'type' => 'privacy-policy']);
     }
 
     public function trackOrder(Request $request)

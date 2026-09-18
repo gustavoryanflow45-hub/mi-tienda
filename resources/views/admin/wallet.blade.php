@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Admin — Gestión de Wallet')
+@section('title', __('Admin — Gestión de billetera'))
 
 @section('extra_css')
 <style>
@@ -276,9 +276,9 @@
 
     {{-- Header --}}
     <div class="aw-header">
-        <h1>Gestión de <span>Wallet</span></h1>
+        <h1>{!! __('Gestión de <span>billetera</span>') !!}</h1>
         <span style="font-size:.82rem;color:var(--muted);">
-            Panel de administración
+            {{ __('Panel de administración') }}
         </span>
     </div>
 
@@ -302,7 +302,7 @@
     {{-- Tabs --}}
     <div class="aw-tabs">
         <button class="aw-tab active" onclick="switchTab('recharges', this)">
-            <i class="las la-arrow-circle-down"></i> Recargas
+            <i class="las la-arrow-circle-down"></i> {{ __('Recargas') }}
             @php $pendingR = $recharges->where('approval', 0)->count(); @endphp
             @if($pendingR > 0)
                 <span style="background:#e53e3e;color:#fff;border-radius:20px;
@@ -312,7 +312,7 @@
             @endif
         </button>
         <button class="aw-tab" onclick="switchTab('withdrawals', this)">
-            <i class="las la-arrow-circle-up"></i> Retiros
+            <i class="las la-arrow-circle-up"></i> {{ __('Retiros') }}
             @php $pendingW = $withdrawals->where('status', 'pending')->count(); @endphp
             @if($pendingW > 0)
                 <span style="background:#e53e3e;color:#fff;border-radius:20px;
@@ -332,53 +332,53 @@
         <div class="aw-stats">
             <div class="aw-stat">
                 <div class="stat-val">{{ $recharges->count() }}</div>
-                <div class="stat-lbl">Total solicitudes</div>
+                <div class="stat-lbl">{{ __('Total solicitudes') }}</div>
             </div>
             <div class="aw-stat yellow">
                 <div class="stat-val">{{ $recharges->where('approval', 0)->count() }}</div>
-                <div class="stat-lbl">Pendientes</div>
+                <div class="stat-lbl">{{ __('Pendientes') }}</div>
             </div>
             <div class="aw-stat green">
                 <div class="stat-val">{{ $recharges->where('approval', 1)->count() }}</div>
-                <div class="stat-lbl">Aprobadas</div>
+                <div class="stat-lbl">{{ __('Aprobadas') }}</div>
             </div>
             <div class="aw-stat red">
                 <div class="stat-val">{{ $recharges->where('approval', -1)->count() }}</div>
-                <div class="stat-lbl">Rechazadas</div>
+                <div class="stat-lbl">{{ __('Rechazadas') }}</div>
             </div>
             <div class="aw-stat green">
                 <div class="stat-val">
                     ${{ number_format($recharges->where('approval', 1)->sum('amount'), 2) }}
                 </div>
-                <div class="stat-lbl">Total aprobado</div>
+                <div class="stat-lbl">{{ __('Total aprobado') }}</div>
             </div>
         </div>
 
         {{-- Tabla recargas --}}
         <div class="aw-card">
             <div class="aw-card-header">
-                <span class="dot"></span> Solicitudes de Recarga Offline
+                <span class="dot"></span> {{ __('Solicitudes de recarga') }}
             </div>
             <div class="table-responsive">
                 <table class="aw-table">
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Usuario</th>
-                            <th>Red</th>
-                            <th>Monto</th>
+                            <th>{{ __('Usuario') }}</th>
+                            <th>{{ __('Red') }}</th>
+                            <th>{{ __('Monto') }}</th>
                             <th>TX ID</th>
-                            <th>Comprobante</th>
-                            <th>Estado</th>
-                            <th>Fecha</th>
-                            <th>Acciones</th>
+                            <th>{{ __('Comprobante') }}</th>
+                            <th>{{ __('Estado') }}</th>
+                            <th>{{ __('Fecha') }}</th>
+                            <th>{{ __('Acciones') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($recharges as $r)
                         <tr>
                             <td data-label="#">{{ $r->id }}</td>
-                            <td data-label="Usuario">
+                            <td data-label="{{ __('Usuario') }}">
                                 <div class="user-cell">
                                     <div class="user-avatar">
                                         {{ strtoupper(substr($r->user->name ?? 'U', 0, 1)) }}
@@ -389,17 +389,17 @@
                                     </div>
                                 </div>
                             </td>
-                            <td data-label="Red">
+                            <td data-label="{{ __('Red') }}">
                                 @if($r->network)
                                     <span class="badge-pill badge-approved">{{ $r->network }}</span>
                                 @else
                                     <span style="color:var(--muted)">—</span>
                                 @endif
                             </td>
-                            <td data-label="Monto">
+                            <td data-label="{{ __('Monto') }}">
                                 <strong>${{ number_format($r->amount, 2) }}</strong>
                             </td>
-                            <td data-label="TX ID">
+                            <td data-label="{{ __('TX ID') }}">
                                 @if($r->transaction_id)
                                     <span class="mono" title="{{ $r->transaction_id }}">
                                         {{ $r->transaction_id }}
@@ -408,56 +408,56 @@
                                     <span style="color:var(--muted)">—</span>
                                 @endif
                             </td>
-                            <td data-label="Comprobante">
+                            <td data-label="{{ __('Comprobante') }}">
                                 @if($r->payment_proof)
                                     <a href="{{ asset('storage/' . $r->payment_proof) }}"
                                        target="_blank" class="proof-link">
-                                        <i class="las la-image"></i> Ver
+                                        <i class="las la-image"></i> {{ __('Ver') }}
                                     </a>
                                 @else
                                     <span style="color:var(--muted)">—</span>
                                 @endif
                             </td>
-                            <td data-label="Estado">
+                            <td data-label="{{ __('Estado') }}">
                                 @if($r->approval == 1)
                                     <span class="badge-pill badge-approved">
-                                        <i class="las la-check"></i> Aprobado
+                                        <i class="las la-check"></i> {{ __('Aprobado') }}
                                     </span>
                                 @elseif($r->approval == 0)
                                     <span class="badge-pill badge-pending">
-                                        <i class="las la-clock"></i> Pendiente
+                                        <i class="las la-clock"></i> {{ __('Pendiente') }}
                                     </span>
                                 @else
                                     <span class="badge-pill badge-rejected">
-                                        <i class="las la-times"></i> Rechazado
+                                        <i class="las la-times"></i> {{ __('Rechazado') }}
                                     </span>
                                 @endif
                             </td>
-                            <td data-label="Fecha" style="color:var(--muted);font-size:.78rem;">
+                            <td data-label="{{ __('Fecha') }}" style="color:var(--muted);font-size:.78rem;">
                                 {{ $r->created_at->format('d/m/Y H:i') }}
                             </td>
-                            <td data-label="Acciones">
+                            <td data-label="{{ __('Acciones') }}">
                                 @if($r->approval == 0)
                                 <div style="display:flex;gap:6px;">
                                     <form method="POST"
                                           action="{{ route('wallet.approve', $r->id) }}"
-                                          onsubmit="return confirm('¿Aprobar esta recarga de ${{ number_format($r->amount,2) }}?')">
+                                          onsubmit="return confirm({{ json_encode(__('¿Aprobar esta recarga de $:amount?', ['amount' => number_format($r->amount, 2)])) }})">
                                         @csrf
                                         <button type="submit" class="btn-approve">
-                                            <i class="las la-check"></i> Aprobar
+                                            <i class="las la-check"></i> {{ __('Aprobar') }}
                                         </button>
                                     </form>
                                     <form method="POST"
                                           action="{{ route('wallet.reject', $r->id) }}"
-                                          onsubmit="return confirm('¿Rechazar esta recarga?')">
+                                          onsubmit="return confirm({{ json_encode(__('¿Rechazar esta recarga?')) }})">
                                         @csrf
                                         <button type="submit" class="btn-reject">
-                                            <i class="las la-times"></i> Rechazar
+                                            <i class="las la-times"></i> {{ __('Rechazar') }}
                                         </button>
                                     </form>
                                 </div>
                                 @else
-                                    <span style="color:var(--muted);font-size:.8rem;">Sin acción</span>
+                                    <span style="color:var(--muted);font-size:.8rem;">{{ __('Sin acción') }}</span>
                                 @endif
                             </td>
                         </tr>
@@ -466,7 +466,7 @@
                             <td colspan="9">
                                 <div class="aw-empty">
                                     <i class="las la-inbox"></i>
-                                    No hay solicitudes de recarga.
+                                    {{ __('No hay solicitudes de recarga.') }}
                                 </div>
                             </td>
                         </tr>
@@ -486,25 +486,25 @@
         <div class="aw-stats">
             <div class="aw-stat">
                 <div class="stat-val">{{ $withdrawals->count() }}</div>
-                <div class="stat-lbl">Total solicitudes</div>
+                <div class="stat-lbl">{{ __('Total solicitudes') }}</div>
             </div>
             <div class="aw-stat yellow">
                 <div class="stat-val">{{ $withdrawals->where('status','pending')->count() }}</div>
-                <div class="stat-lbl">Pendientes</div>
+                <div class="stat-lbl">{{ __('Pendientes') }}</div>
             </div>
             <div class="aw-stat green">
                 <div class="stat-val">{{ $withdrawals->where('status','approved')->count() }}</div>
-                <div class="stat-lbl">Aprobados</div>
+                <div class="stat-lbl">{{ __('Aprobados') }}</div>
             </div>
             <div class="aw-stat red">
                 <div class="stat-val">{{ $withdrawals->where('status','rejected')->count() }}</div>
-                <div class="stat-lbl">Rechazados</div>
+                <div class="stat-lbl">{{ __('Rechazados') }}</div>
             </div>
             <div class="aw-stat red">
                 <div class="stat-val">
                     ${{ number_format($withdrawals->where('status','approved')->sum('amount'), 2) }}
                 </div>
-                <div class="stat-lbl">Total retirado</div>
+                <div class="stat-lbl">{{ __('Total retirado') }}</div>
             </div>
         </div>
 
@@ -512,28 +512,28 @@
         <div class="aw-card">
             <div class="aw-card-header">
                 <span class="dot" style="background:var(--red);"></span>
-                Solicitudes de Retiro
+                {{ __('Solicitudes de retiro') }}
             </div>
             <div class="table-responsive">
                 <table class="aw-table">
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Usuario</th>
-                            <th>Monto</th>
-                            <th>Nombre completo</th>
-                            <th>Red / Banco</th>
-                            <th>Dirección / Cuenta</th>
-                            <th>Estado</th>
-                            <th>Fecha</th>
-                            <th>Acciones</th>
+                            <th>{{ __('Usuario') }}</th>
+                            <th>{{ __('Monto') }}</th>
+                            <th>{{ __('Nombre completo') }}</th>
+                            <th>{{ __('Red / Banco') }}</th>
+                            <th>{{ __('Dirección / Cuenta') }}</th>
+                            <th>{{ __('Estado') }}</th>
+                            <th>{{ __('Fecha') }}</th>
+                            <th>{{ __('Acciones') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($withdrawals as $w)
                         <tr>
                             <td data-label="#">{{ $w->id }}</td>
-                            <td data-label="Usuario">
+                            <td data-label="{{ __('Usuario') }}">
                                 <div class="user-cell">
                                     <div class="user-avatar">
                                         {{ strtoupper(substr($w->user->name ?? 'U', 0, 1)) }}
@@ -544,65 +544,65 @@
                                     </div>
                                 </div>
                             </td>
-                            <td data-label="Monto">
+                            <td data-label="{{ __('Monto') }}">
                                 <strong style="color:var(--red);">
                                     ${{ number_format($w->amount, 2) }}
                                 </strong>
                             </td>
-                            <td data-label="Nombre">{{ $w->full_name }}</td>
-                            <td data-label="Red/Banco">
+                            <td data-label="{{ __('Nombre') }}">{{ $w->full_name }}</td>
+                            <td data-label="{{ __('Red/Banco') }}">
                                 <span class="badge-pill badge-pending">{{ $w->bank_name }}</span>
                             </td>
-                            <td data-label="Dirección">
+                            <td data-label="{{ __('Dirección') }}">
                                 <span class="mono" title="{{ $w->account_number }}">
                                     {{ $w->account_number }}
                                 </span>
                             </td>
-                            <td data-label="Estado">
+                            <td data-label="{{ __('Estado') }}">
                                 @if($w->status == 'approved')
                                     <span class="badge-pill badge-approved">
-                                        <i class="las la-check"></i> Aprobado
+                                        <i class="las la-check"></i> {{ __('Aprobado') }}
                                     </span>
                                     @if($w->from_settlement)
-                                        <span class="badge-pill badge-approved" title="Cubierto por ventas liquidadas: aprobado automáticamente al solicitarlo">
-                                            <i class="las la-bolt"></i> Liquidación
+                                        <span class="badge-pill badge-approved" title="{{ __('Cubierto por ventas liquidadas: aprobado automáticamente al solicitarlo') }}">
+                                            <i class="las la-bolt"></i> {{ __('Liquidación') }}
                                         </span>
                                     @endif
                                 @elseif($w->status == 'pending')
                                     <span class="badge-pill badge-pending">
-                                        <i class="las la-clock"></i> Pendiente
+                                        <i class="las la-clock"></i> {{ __('Pendiente') }}
                                     </span>
                                 @else
                                     <span class="badge-pill badge-rejected">
-                                        <i class="las la-times"></i> Rechazado
+                                        <i class="las la-times"></i> {{ __('Rechazado') }}
                                     </span>
                                 @endif
                             </td>
-                            <td data-label="Fecha" style="color:var(--muted);font-size:.78rem;">
+                            <td data-label="{{ __('Fecha') }}" style="color:var(--muted);font-size:.78rem;">
                                 {{ $w->created_at->format('d/m/Y H:i') }}
                             </td>
-                            <td data-label="Acciones">
+                            <td data-label="{{ __('Acciones') }}">
                                 @if($w->status == 'pending')
                                 <div style="display:flex;gap:6px;">
                                     <form method="POST"
                                           action="{{ route('wallet.withdrawal.approve', $w->id) }}"
-                                          onsubmit="return confirm('¿Confirmar retiro de ${{ number_format($w->amount,2) }}?')">
+                                          onsubmit="return confirm({{ json_encode(__('¿Confirmar retiro de $:amount?', ['amount' => number_format($w->amount, 2)])) }})">
                                         @csrf
                                         <button type="submit" class="btn-approve">
-                                            <i class="las la-check"></i> Aprobar
+                                            <i class="las la-check"></i> {{ __('Aprobar') }}
                                         </button>
                                     </form>
                                     <form method="POST"
                                           action="{{ route('wallet.withdrawal.reject', $w->id) }}"
-                                          onsubmit="return confirm('¿Rechazar este retiro? El saldo será devuelto.')">
+                                          onsubmit="return confirm({{ json_encode(__('¿Rechazar este retiro? El saldo será devuelto.')) }})">
                                         @csrf
                                         <button type="submit" class="btn-reject">
-                                            <i class="las la-times"></i> Rechazar
+                                            <i class="las la-times"></i> {{ __('Rechazar') }}
                                         </button>
                                     </form>
                                 </div>
                                 @else
-                                    <span style="color:var(--muted);font-size:.8rem;">Sin acción</span>
+                                    <span style="color:var(--muted);font-size:.8rem;">{{ __('Sin acción') }}</span>
                                 @endif
                             </td>
                         </tr>
@@ -611,7 +611,7 @@
                             <td colspan="9">
                                 <div class="aw-empty">
                                     <i class="las la-inbox"></i>
-                                    No hay solicitudes de retiro.
+                                    {{ __('No hay solicitudes de retiro.') }}
                                 </div>
                             </td>
                         </tr>

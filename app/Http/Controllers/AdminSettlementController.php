@@ -23,7 +23,7 @@ class AdminSettlementController extends Controller
         $this->middleware('auth');
         $this->middleware(function ($request, $next) {
             if (! $request->user()?->isAdmin()) {
-                abort(403, 'No autorizado.');
+                abort(403, __('No autorizado.'));
             }
 
             return $next($request);
@@ -99,16 +99,15 @@ class AdminSettlementController extends Controller
         $settlement = $this->settlements->settle($seller, $request->user());
 
         if (! $settlement) {
-            return back()->with('warning', "«{$label}» no tiene ventas pendientes de liquidar.");
+            return back()->with('warning', __('«:label» no tiene ventas pendientes de liquidar.', ['label' => $label]));
         }
 
-        return back()->with('success', sprintf(
-            'Liquidación de «%s» registrada: $%s vendidos, $%s de comisión (%d%%), $%s acreditados en la billetera del vendedor. Su panel vuelve a cero y se le notificó.',
-            $label,
-            number_format($settlement->total_sales, 2),
-            number_format($settlement->commission, 2),
-            round($settlement->commission_rate * 100),
-            number_format($settlement->net_amount, 2),
-        ));
+        return back()->with('success', __('Liquidación de «:label» registrada: $:sales vendidos, $:commission de comisión (:rate%), $:net acreditados en la billetera del vendedor. Su panel vuelve a cero y se le notificó.', [
+            'label' => $label,
+            'sales' => number_format($settlement->total_sales, 2),
+            'commission' => number_format($settlement->commission, 2),
+            'rate' => round($settlement->commission_rate * 100),
+            'net' => number_format($settlement->net_amount, 2),
+        ]));
     }
 }

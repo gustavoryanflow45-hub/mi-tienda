@@ -21,7 +21,7 @@ class CompareController extends Controller
             ->count();
 
         if ($count >= 4) {
-            return response()->json(['status' => 'error', 'message' => 'Máximo 4 productos para comparar.'], 422);
+            return response()->json(['status' => 'error', 'message' => __('Máximo 4 productos para comparar.')], 422);
         }
 
         $exists = DB::table('compare_lists')
@@ -40,6 +40,6 @@ class CompareController extends Controller
             ]);
         }
 
-        return response()->json(['status' => 'success', 'message' => 'Producto añadido para comparar.']);
+        return response()->json(['status' => 'success', 'message' => __('Producto añadido a comparar')]);
     }
 }
