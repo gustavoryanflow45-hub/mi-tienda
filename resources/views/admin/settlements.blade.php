@@ -138,7 +138,7 @@
         </div>
         <div class="as-stat green">
             <div class="stat-val">${{ number_format($totals['net_amount'], 2) }}</div>
-            <div class="stat-lbl">Neto a pagar</div>
+            <div class="stat-lbl">Neto a acreditar</div>
         </div>
     </div>
 
@@ -153,7 +153,7 @@
     <div class="as-card">
         <div class="as-card-header">
             <span class="dot"></span> Ventas pendientes por tienda
-            <span class="hint">Solo cuentan los pedidos cobrados y ya entregados. Liquidar deja las ventas y ganancias del vendedor en cero.</span>
+            <span class="hint">Solo cuentan los pedidos cobrados y ya entregados. Liquidar acredita el neto en la billetera del vendedor y deja sus ventas y ganancias en cero.</span>
         </div>
         <div class="table-responsive">
             <table class="as-table">
@@ -165,7 +165,7 @@
                         <th class="num">Líneas</th>
                         <th class="num">Ventas</th>
                         <th class="num">Comisión</th>
-                        <th class="num">A pagar</th>
+                        <th class="num">A acreditar</th>
                         <th>Última liquidación</th>
                         <th>Acción</th>
                     </tr>
@@ -179,7 +179,7 @@
                             $shop    = $seller->shop;
                             $label   = $shop->name ?? $seller->name;
                             $confirm = sprintf(
-                                "¿Liquidar «%s»?\n\nVentas: $%s\nComisión (%d%%): -$%s\nA pagar: $%s\n\nSus ventas y ganancias quedarán en cero.",
+                                "¿Liquidar «%s»?\n\nVentas: $%s\nComisión (%d%%): -$%s\nA acreditar en su billetera: $%s\n\nSus ventas y ganancias quedarán en cero.",
                                 $label,
                                 number_format($pending['total_sales'], 2),
                                 round($pending['commission_rate'] * 100),
@@ -213,11 +213,11 @@
                             <td data-label="Líneas" class="num">{{ $pending['lines_count'] }}</td>
                             <td data-label="Ventas" class="num">${{ number_format($pending['total_sales'], 2) }}</td>
                             <td data-label="Comisión" class="num fee">-${{ number_format($pending['commission'], 2) }}</td>
-                            <td data-label="A pagar" class="num net">${{ number_format($pending['net_amount'], 2) }}</td>
+                            <td data-label="A acreditar" class="num net">${{ number_format($pending['net_amount'], 2) }}</td>
                             <td data-label="Última liquidación">
                                 @if($last)
                                     <div class="user-name">{{ $last->settled_at->format('d/m/Y H:i') }}</div>
-                                    <div class="user-email">${{ number_format($last->net_amount, 2) }} pagados</div>
+                                    <div class="user-email">${{ number_format($last->net_amount, 2) }} acreditados</div>
                                 @else
                                     <span class="user-email">Nunca</span>
                                 @endif
@@ -262,7 +262,7 @@
                         <th class="num">Líneas</th>
                         <th class="num">Ventas</th>
                         <th class="num">Comisión</th>
-                        <th class="num">Pagado</th>
+                        <th class="num">Acreditado</th>
                         <th>Liquidó</th>
                     </tr>
                 </thead>
@@ -278,7 +278,7 @@
                             <td data-label="Líneas" class="num">{{ $settlement->lines_count }}</td>
                             <td data-label="Ventas" class="num">${{ number_format($settlement->total_sales, 2) }}</td>
                             <td data-label="Comisión" class="num fee">-${{ number_format($settlement->commission, 2) }} ({{ round($settlement->commission_rate * 100) }}%)</td>
-                            <td data-label="Pagado" class="num net">${{ number_format($settlement->net_amount, 2) }}</td>
+                            <td data-label="Acreditado" class="num net">${{ number_format($settlement->net_amount, 2) }}</td>
                             <td data-label="Liquidó">{{ $settlement->admin?->name ?? '—' }}</td>
                         </tr>
                     @empty

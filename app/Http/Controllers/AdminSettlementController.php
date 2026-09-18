@@ -103,7 +103,7 @@ class AdminSettlementController extends Controller
         }
 
         return back()->with('success', sprintf(
-            'Liquidación de «%s» registrada: $%s vendidos, $%s de comisión (%d%%), $%s a pagar al vendedor. Su panel vuelve a cero.',
+            'Liquidación de «%s» registrada: $%s vendidos, $%s de comisión (%d%%), $%s acreditados en la billetera del vendedor. Su panel vuelve a cero y se le notificó.',
             $label,
             number_format($settlement->total_sales, 2),
             number_format($settlement->commission, 2),

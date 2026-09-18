@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\SellerSettlement;
 use App\Models\WalletRecharge;
 use App\Models\WalletWithdrawal;
 use App\Models\User;
@@ -24,7 +25,9 @@ class WalletController extends Controller
     {
         $recharges   = WalletRecharge::where('user_id', Auth::id())->latest()->get();
         $withdrawals = WalletWithdrawal::where('user_id', Auth::id())->latest()->get();
-        return view('users.wallet', compact('recharges', 'withdrawals'));
+        // Liquidaciones de ventas acreditadas por el admin (solo vendedores las tienen).
+        $settlements = SellerSettlement::where('seller_id', Auth::id())->latest('settled_at')->get();
+        return view('users.wallet', compact('recharges', 'withdrawals', 'settlements'));
     }
 
     /* ─────────────────────────────────────────

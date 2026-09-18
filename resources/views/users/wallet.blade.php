@@ -174,6 +174,37 @@
                     <div class="action-label">{{ __('Enviar solicitud de retiro') }}</div>
                 </div>
 
+                {{-- Liquidaciones de ventas acreditadas por el admin (solo vendedores) --}}
+                @if(isset($settlements) && $settlements->isNotEmpty())
+                <div class="wallet-history-card">
+                    <div class="history-header">{{ __('Liquidaciones de ventas acreditadas') }}</div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>{{ __('Fecha') }}</th>
+                                    <th>{{ __('Ventas') }}</th>
+                                    <th>{{ __('Comisión') }}</th>
+                                    <th>{{ __('Acreditado') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($settlements as $key => $settlement)
+                                <tr>
+                                    <td>{{ $key + 1 }}</td>
+                                    <td>{{ $settlement->settled_at->format('d/m/Y H:i') }}</td>
+                                    <td>${{ number_format($settlement->total_sales, 2) }}</td>
+                                    <td>-${{ number_format($settlement->commission, 2) }} ({{ round($settlement->commission_rate * 100) }}%)</td>
+                                    <td class="fw-700">${{ number_format($settlement->net_amount, 2) }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @endif
+
                 {{-- Recharge History --}}
                 <div class="wallet-history-card">
                     <div class="history-header">{{ __('Wallet Recharge History') }}</div>

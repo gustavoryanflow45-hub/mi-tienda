@@ -5,14 +5,17 @@ namespace Tests\Feature;
 use App\Models\Order;
 use App\Models\SellerSettlement;
 use App\Models\User;
+use App\Notifications\SellerSettledNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\Concerns\BuildsCheckoutData;
 use Tests\TestCase;
 
 /**
  * Ganancias del vendedor = ventas − comisión del marketplace, contando solo
  * pedidos cobrados y entregados; solo el admin puede liquidarlas y, al
- * hacerlo, ventas y ganancias vuelven a cero.
+ * hacerlo, el neto se acredita en la billetera del vendedor y ventas y
+ * ganancias vuelven a cero.
  */
 class SellerSettlementTest extends TestCase
 {
@@ -24,6 +27,7 @@ class SellerSettlementTest extends TestCase
         parent::setUp();
 
         config(['app.seller_commission_rate' => 0.25]);
+        Notification::fake();
     }
 
     protected function makeAdmin(): User
@@ -147,6 +151,18 @@ class SellerSettlementTest extends TestCase
         $this->assertSame(2, $settlement->orderDetails()->count());
         $this->assertDatabaseHas('order_details', ['seller_id' => $other->id, 'settlement_id' => null]);
 
+        // El neto se acredita en la billetera del vendedor, no en la del otro.
+        $this->assertSame('120.00', $seller->fresh()->balance);
+        $this->assertSame('0.00', $other->fresh()->balance);
+
+        // Y se le avisa por base de datos y correo.
+        Notification::assertSentTo($seller, SellerSettledNotification::class, function ($notification, $channels) use ($settlement) {
+            return $notification->settlement->is($settlement)
+                && in_array('database', $channels, true)
+                && in_array('mail', $channels, true);
+        });
+        Notification::assertNotSentTo($other, SellerSettledNotification::class);
+
         // El panel del vendedor vuelve a cero...
         $this->actingAs($seller)->get('/dashboard')
             ->assertOk()
@@ -193,6 +209,26 @@ class SellerSettlementTest extends TestCase
         $this->assertSame('75.00', SellerSettlement::sole()->net_amount);
     }
 
+    public function test_seller_wallet_lists_credited_settlements(): void
+    {
+        $admin = $this->makeAdmin();
+        $seller = $this->makeVerifiedSeller();
+        $customer = $this->makeCustomer();
+
+        $this->makeDeliveredOrder($customer, $seller, 100.00);
+        $this->actingAs($admin)->post('/admin/settlements/'.$seller->id)->assertSessionHas('success');
+
+        $this->actingAs($seller)->get('/wallet')
+            ->assertOk()
+            ->assertSee('Liquidaciones de ventas acreditadas')
+            ->assertSee('$75.00');
+
+        // Un cliente sin liquidaciones no ve la tabla.
+        $this->actingAs($customer)->get('/wallet')
+            ->assertOk()
+            ->assertDontSee('Liquidaciones de ventas acreditadas');
+    }
+
     public function test_settling_with_nothing_pending_records_nothing(): void
     {
         $admin = $this->makeAdmin();
@@ -219,5 +255,6 @@ class SellerSettlementTest extends TestCase
 
         $this->assertDatabaseCount('seller_settlements', 1);
         $this->assertEqualsWithDelta(75.0, (float) SellerSettlement::sum('net_amount'), 0.001);
+        $this->assertSame('75.00', $seller->fresh()->balance);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\OrderDetail;
 use App\Models\SellerSettlement;
 use App\Models\User;
+use App\Notifications\SellerSettledNotification;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -64,13 +65,14 @@ class SettlementService
     }
 
     /**
-     * Cierra el ciclo: marca las líneas pendientes con la nueva liquidación,
-     * de modo que el panel del vendedor vuelve a cero. Devuelve null si no
+     * Cierra el ciclo: marca las líneas pendientes con la nueva liquidación
+     * (el panel del vendedor vuelve a cero) y acredita el neto en su
+     * billetera, desde donde puede pedir el retiro. Devuelve null si no
      * había nada que liquidar.
      */
     public function settle(User $seller, User $admin): ?SellerSettlement
     {
-        return DB::transaction(function () use ($seller, $admin) {
+        $settlement = DB::transaction(function () use ($seller, $admin) {
             // Se bloquean las líneas concretas (no un agregado, que PostgreSQL
             // no deja bloquear) para que dos admins no liquiden lo mismo.
             $lines = OrderDetail::query()
@@ -97,8 +99,19 @@ class SettlementService
             OrderDetail::whereIn('id', $lines->pluck('id'))
                 ->update(['settlement_id' => $settlement->id]);
 
+            // El pago es saldo de la billetera: mismo mecanismo que una recarga
+            // aprobada (WalletController@approve); el retiro sale de ahí.
+            User::whereKey($seller->id)->increment('balance', $settlement->net_amount);
+
             return $settlement;
         });
+
+        if ($settlement) {
+            // Fuera de la transacción: si el correo falla, la liquidación ya quedó.
+            $seller->notify(new SellerSettledNotification($settlement));
+        }
+
+        return $settlement;
     }
 
     /**
