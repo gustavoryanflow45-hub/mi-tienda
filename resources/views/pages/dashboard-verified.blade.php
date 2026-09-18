@@ -164,6 +164,7 @@
                 <h3 class="h4 fw-700 mb-4">{{ __('dashboard.heading', ['name' => Auth::user()->name]) }}</h3>
 
                 @include('partials.shop-status-banner')
+                @include('partials.settlement-banner')
 
                 <div class="row gutters-10 mb-3">
                     <div class="col-6 col-md-3 mb-3">

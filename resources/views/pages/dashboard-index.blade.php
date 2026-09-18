@@ -109,6 +109,7 @@
                 <h3 class="h4 fw-700 mb-4">{{ __('dashboard.greeting', ['name' => Auth::user()->name]) }}</h3>
 
                 @include('partials.shop-status-banner')
+                @include('partials.settlement-banner')
 
                 <div class="verify-alert d-flex align-items-start mb-4">
                     <i class="las la-exclamation-triangle verify-icon mr-3 mt-1"></i>

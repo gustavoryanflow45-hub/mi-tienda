@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\SellerSettlement;
 use App\Models\Wishlist;
+use App\Notifications\SellerSettledNotification;
 use App\Notifications\ShopStatusUpdatedNotification;
 use App\Services\SettlementService;
 use Illuminate\Support\Facades\Auth;
@@ -37,6 +38,17 @@ class DashboardController extends Controller
                  ->update(['read_at' => now()]);
         }
 
+        // Aviso de liquidación acreditada en la billetera: mismo patrón, una vez.
+        $settlementUpdates = $user->unreadNotifications()
+                                  ->where('type', SellerSettledNotification::class)
+                                  ->get();
+
+        if ($settlementUpdates->isNotEmpty()) {
+            $user->unreadNotifications()
+                 ->where('type', SellerSettledNotification::class)
+                 ->update(['read_at' => now()]);
+        }
+
         // ── Usuario NO verificado → vista simple ─────────────────
         if (!$user->isVerified()) {
             $cartCount     = session('cart') ? count(session('cart')) : 0;
@@ -49,6 +61,7 @@ class DashboardController extends Controller
                 'wishlistCount',
                 'orderCount',
                 'shopUpdates',
+                'settlementUpdates',
             ));
         }
 
@@ -81,6 +94,6 @@ class DashboardController extends Controller
                                           ->latest('settled_at')
                                           ->first();
 
-        return view('pages.dashboard-verified', compact('address', 'stats', 'shopUpdates', 'lastSettlement'));
+        return view('pages.dashboard-verified', compact('address', 'stats', 'shopUpdates', 'settlementUpdates', 'lastSettlement'));
     }
 }

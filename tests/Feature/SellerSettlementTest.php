@@ -27,7 +27,6 @@ class SellerSettlementTest extends TestCase
         parent::setUp();
 
         config(['app.seller_commission_rate' => 0.25]);
-        Notification::fake();
     }
 
     protected function makeAdmin(): User
@@ -125,6 +124,8 @@ class SellerSettlementTest extends TestCase
 
     public function test_settling_resets_the_seller_dashboard_and_records_the_payout(): void
     {
+        Notification::fake();
+
         $admin = $this->makeAdmin();
         $seller = $this->makeVerifiedSeller();
         $other = $this->makeVerifiedSeller();
@@ -207,6 +208,40 @@ class SellerSettlementTest extends TestCase
             ->assertSessionHas('success');
         $this->assertDatabaseCount('seller_settlements', 1);
         $this->assertSame('75.00', SellerSettlement::sole()->net_amount);
+    }
+
+    /**
+     * La copia 'database' del aviso se muestra en el panel una sola vez, como
+     * el aviso de aprobación de tienda.
+     */
+    public function test_seller_dashboard_shows_settlement_banner_once(): void
+    {
+        $admin = $this->makeAdmin();
+        $seller = $this->makeVerifiedSeller();
+        $customer = $this->makeCustomer();
+
+        $this->makeDeliveredOrder($customer, $seller, 100.00);
+        $this->actingAs($admin)->post('/admin/settlements/'.$seller->id)->assertSessionHas('success');
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $seller->id,
+            'type' => SellerSettledNotification::class,
+            'read_at' => null,
+        ]);
+
+        $this->actingAs($seller)->get('/dashboard')
+            ->assertOk()
+            ->assertSee('Se liquidaron tus ventas: $75.00 acreditados en tu billetera')
+            ->assertSee('Ver mi billetera');
+
+        // Al verse queda marcada como leída y no vuelve a salir.
+        $this->assertDatabaseMissing('notifications', [
+            'notifiable_id' => $seller->id,
+            'type' => SellerSettledNotification::class,
+            'read_at' => null,
+        ]);
+        $this->actingAs($seller)->get('/dashboard')
+            ->assertDontSee('Se liquidaron tus ventas');
     }
 
     public function test_seller_wallet_lists_credited_settlements(): void
