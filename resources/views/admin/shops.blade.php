@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Admin — Aprobación de Tiendas')
+@section('title', __('Admin — Aprobación de tiendas'))
 
 @section('extra_css')
 <style>
@@ -102,8 +102,8 @@
 <div class="container">
 
     <div class="as-header">
-        <h1>Aprobación de <span>Tiendas</span></h1>
-        <span style="font-size:.82rem;color:var(--muted);">Panel de administración</span>
+        <h1>{!! __('Aprobación de <span>tiendas</span>') !!}</h1>
+        <span style="font-size:.82rem;color:var(--muted);">{{ __('Panel de administración') }}</span>
     </div>
 
     @if(session('success'))
@@ -119,63 +119,63 @@
     <div class="as-stats">
         <div class="as-stat">
             <div class="stat-val">{{ $counts['total'] }}</div>
-            <div class="stat-lbl">Tiendas</div>
+            <div class="stat-lbl">{{ __('Tiendas') }}</div>
         </div>
         <div class="as-stat yellow">
             <div class="stat-val">{{ $counts['pending'] }}</div>
-            <div class="stat-lbl">Pendientes</div>
+            <div class="stat-lbl">{{ __('Pendientes') }}</div>
         </div>
         <div class="as-stat green">
             <div class="stat-val">{{ $counts['approved'] }}</div>
-            <div class="stat-lbl">Aprobadas</div>
+            <div class="stat-lbl">{{ __('Aprobadas') }}</div>
         </div>
         <div class="as-stat red">
             <div class="stat-val">{{ $counts['rejected'] }}</div>
-            <div class="stat-lbl">Rechazadas</div>
+            <div class="stat-lbl">{{ __('Rechazadas') }}</div>
         </div>
     </div>
 
     <form method="GET" action="{{ route('admin.shops') }}" class="as-filters">
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar tienda o vendedor">
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('Buscar tienda o vendedor') }}">
         <select name="status" onchange="this.form.submit()">
-            <option value="">Todos los estados</option>
-            <option value="0" @selected(request('status') === '0')>Pendientes</option>
-            <option value="1" @selected(request('status') === '1')>Aprobadas</option>
-            <option value="2" @selected(request('status') === '2')>Rechazadas</option>
+            <option value="">{{ __('Todos los estados') }}</option>
+            <option value="0" @selected(request('status') === '0')>{{ __('Pendientes') }}</option>
+            <option value="1" @selected(request('status') === '1')>{{ __('Aprobadas') }}</option>
+            <option value="2" @selected(request('status') === '2')>{{ __('Rechazadas') }}</option>
         </select>
-        <button type="submit" class="btn-filter">Filtrar</button>
+        <button type="submit" class="btn-filter">{{ __('Filtrar') }}</button>
         @if(request('search') || request('status') !== null)
-            <a href="{{ route('admin.shops') }}" class="btn-clear">Limpiar</a>
+            <a href="{{ route('admin.shops') }}" class="btn-clear">{{ __('Limpiar') }}</a>
         @endif
     </form>
 
     <div class="as-card">
         <div class="as-card-header">
-            <span class="dot"></span> Solicitudes de registro de tienda
+            <span class="dot"></span> {{ __('Solicitudes de registro de tienda') }}
         </div>
         <div class="table-responsive">
             <table class="as-table">
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Tienda</th>
-                        <th>Vendedor</th>
-                        <th>Dirección</th>
-                        <th>Documento</th>
-                        <th>Estado</th>
-                        <th>Registrada</th>
-                        <th>Acciones</th>
+                        <th>{{ __('Tienda') }}</th>
+                        <th>{{ __('Vendedor') }}</th>
+                        <th>{{ __('Dirección') }}</th>
+                        <th>{{ __('Documento') }}</th>
+                        <th>{{ __('Estado') }}</th>
+                        <th>{{ __('Registrada') }}</th>
+                        <th>{{ __('Acciones') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($shops as $shop)
                         <tr>
                             <td data-label="#">{{ $shop->id }}</td>
-                            <td data-label="Tienda">
+                            <td data-label="{{ __('Tienda') }}">
                                 <div class="user-name">{{ $shop->name }}</div>
                                 <div class="user-email">{{ $shop->email }}</div>
                             </td>
-                            <td data-label="Vendedor">
+                            <td data-label="{{ __('Vendedor') }}">
                                 <div class="user-cell">
                                     <div class="user-avatar">{{ strtoupper(substr($shop->user->name ?? 'U', 0, 1)) }}</div>
                                     <div>
@@ -183,47 +183,47 @@
                                         <div class="user-email">
                                             {{ $shop->user->email ?? '' }}
                                             @if($shop->user && ! $shop->user->isVerified())
-                                                <span class="badge-pill badge-pending" style="margin-left:4px;">correo sin verificar</span>
+                                                <span class="badge-pill badge-pending" style="margin-left:4px;">{{ __('correo sin verificar') }}</span>
                                             @endif
                                         </div>
                                     </div>
                                 </div>
                             </td>
-                            <td data-label="Dirección">{{ $shop->address }}</td>
-                            <td data-label="Documento">
+                            <td data-label="{{ __('Dirección') }}">{{ $shop->address }}</td>
+                            <td data-label="{{ __('Documento') }}">
                                 <a href="{{ uploaded_asset($shop->id_front_image) }}" target="_blank" rel="noopener">
-                                    <img src="{{ uploaded_asset($shop->id_front_image) }}" alt="Frente del documento" class="id-thumb">
+                                    <img src="{{ uploaded_asset($shop->id_front_image) }}" alt="{{ __('Frente del documento') }}" class="id-thumb">
                                 </a>
                                 <a href="{{ uploaded_asset($shop->id_back_image) }}" target="_blank" rel="noopener">
-                                    <img src="{{ uploaded_asset($shop->id_back_image) }}" alt="Reverso del documento" class="id-thumb">
+                                    <img src="{{ uploaded_asset($shop->id_back_image) }}" alt="{{ __('Reverso del documento') }}" class="id-thumb">
                                 </a>
                             </td>
-                            <td data-label="Estado">
+                            <td data-label="{{ __('Estado') }}">
                                 @if((int) $shop->status === 1)
-                                    <span class="badge-pill badge-approved"><i class="las la-check-circle"></i> Aprobada</span>
+                                    <span class="badge-pill badge-approved"><i class="las la-check-circle"></i> {{ __('Aprobada') }}</span>
                                 @elseif((int) $shop->status === 2)
-                                    <span class="badge-pill badge-rejected"><i class="las la-times-circle"></i> Rechazada</span>
+                                    <span class="badge-pill badge-rejected"><i class="las la-times-circle"></i> {{ __('Rechazada') }}</span>
                                 @else
-                                    <span class="badge-pill badge-pending"><i class="las la-clock"></i> Pendiente</span>
+                                    <span class="badge-pill badge-pending"><i class="las la-clock"></i> {{ __('Pendiente') }}</span>
                                 @endif
                             </td>
-                            <td data-label="Registrada">{{ $shop->created_at?->format('d/m/Y') }}</td>
-                            <td data-label="Acciones">
+                            <td data-label="{{ __('Registrada') }}">{{ $shop->created_at?->format('d/m/Y') }}</td>
+                            <td data-label="{{ __('Acciones') }}">
                                 <div style="display:flex;gap:6px;flex-wrap:wrap;">
                                     @if((int) $shop->status !== 1)
                                         <form method="POST" action="{{ route('admin.shops.approve', $shop->id) }}">
                                             @csrf
                                             <button type="submit" class="btn-approve">
-                                                <i class="las la-check"></i> Aprobar
+                                                <i class="las la-check"></i> {{ __('Aprobar') }}
                                             </button>
                                         </form>
                                     @endif
                                     @if((int) $shop->status !== 2)
                                         <form method="POST" action="{{ route('admin.shops.reject', $shop->id) }}"
-                                              onsubmit="return confirm('¿Rechazar la tienda «{{ $shop->name }}»? El vendedor perderá el acceso a su panel.');">
+                                              onsubmit="return confirm({{ json_encode(__('¿Rechazar la tienda «:name»? El vendedor perderá el acceso a su panel.', ['name' => $shop->name])) }});">
                                             @csrf
                                             <button type="submit" class="btn-reject">
-                                                <i class="las la-times"></i> Rechazar
+                                                <i class="las la-times"></i> {{ __('Rechazar') }}
                                             </button>
                                         </form>
                                     @endif
@@ -235,7 +235,7 @@
                             <td colspan="8">
                                 <div class="as-empty">
                                     <i class="las la-store-slash"></i>
-                                    No hay tiendas que coincidan con el filtro.
+                                    {{ __('No hay tiendas que coincidan con el filtro.') }}
                                 </div>
                             </td>
                         </tr>

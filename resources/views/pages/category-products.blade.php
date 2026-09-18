@@ -203,9 +203,9 @@
 
         {{-- Breadcrumb --}}
         <div class="cat-breadcrumb">
-            <a href="{{ url('/') }}">Home</a>
+            <a href="{{ url('/') }}">{{ __('Inicio') }}</a>
             <span>/</span>
-            <a href="{{ url('/categories') }}">All Categories</a>
+            <a href="{{ url('/categories') }}">{{ __('Todas las categorías') }}</a>
             <span>/</span>
             <strong style="color:#333;">{{ $category->name }}</strong>
         </div>
@@ -219,11 +219,11 @@
 
                 {{-- Categorías --}}
                 <div class="sidebar-card">
-                    <div class="sidebar-card-header">Categories</div>
+                    <div class="sidebar-card-header">{{ __('Categorías') }}</div>
                     <div class="sidebar-card-body p-2">
                         <a href="{{ url('/categories') }}"
                            class="cat-link {{ !request('cat') ? 'active' : '' }}">
-                            <span class="dot"></span> All categories
+                            <span class="dot"></span> {{ __('Todas las categorías') }}
                         </a>
                         @foreach($allCategories as $cat)
                             <a href="{{ route('category.show', $cat->slug) }}"
@@ -237,7 +237,7 @@
 
                 {{-- Rango de precio --}}
                 <div class="sidebar-card">
-                    <div class="sidebar-card-header">Price range</div>
+                    <div class="sidebar-card-header">{{ __('Rango de precio') }}</div>
                     <div class="sidebar-card-body">
                         <form method="GET" action="{{ route('category.show', $category->slug) }}" id="price-form">
                             @foreach(request()->except(['min_price','max_price','page']) as $k => $v)
@@ -276,7 +276,7 @@
 
                 <div class="top-bar">
                     <div class="top-bar-left">
-                        {{ $products->total() }} result(s) found
+                        {{ __(':count resultados', ['count' => $products->total()]) }}
                     </div>
                     <div class="top-bar-right">
                         {{-- Selector de resultados por página --}}
@@ -287,7 +287,7 @@
                             <select name="per_page" class="sort-select" onchange="this.form.submit()">
                                 @foreach([12, 24, 48] as $n)
                                     <option value="{{ $n }}" {{ request('per_page', 12) == $n ? 'selected' : '' }}>
-                                        {{ $n }} Results
+                                        {{ __(':count por página', ['count' => $n]) }}
                                     </option>
                                 @endforeach
                             </select>
@@ -299,10 +299,10 @@
                                 <input type="hidden" name="{{ $k }}" value="{{ $v }}">
                             @endforeach
                             <select name="sort" class="sort-select" onchange="this.form.submit()">
-                                <option value="newest"     {{ request('sort','newest')=='newest'     ? 'selected':'' }}>Newest</option>
-                                <option value="popular"    {{ request('sort')=='popular'    ? 'selected':'' }}>Most Popular</option>
-                                <option value="price_asc"  {{ request('sort')=='price_asc'  ? 'selected':'' }}>Price: Low to High</option>
-                                <option value="price_desc" {{ request('sort')=='price_desc' ? 'selected':'' }}>Price: High to Low</option>
+                                <option value="newest"     {{ request('sort','newest')=='newest'     ? 'selected':'' }}>{{ __('Más recientes') }}</option>
+                                <option value="popular"    {{ request('sort')=='popular'    ? 'selected':'' }}>{{ __('Más vendidos') }}</option>
+                                <option value="price_asc"  {{ request('sort')=='price_asc'  ? 'selected':'' }}>{{ __('Precio: menor a mayor') }}</option>
+                                <option value="price_desc" {{ request('sort')=='price_desc' ? 'selected':'' }}>{{ __('Precio: mayor a menor') }}</option>
                             </select>
                         </form>
                     </div>
@@ -398,8 +398,8 @@
                 @else
                     <div class="empty-state">
                         <i class="las la-box-open"></i>
-                        <p style="font-size:.95rem; font-weight:600; color:#888;">No products found in this category.</p>
-                        <a href="{{ url('/') }}" style="color:#679941; font-size:.85rem;">← Back to Home</a>
+                        <p style="font-size:.95rem; font-weight:600; color:#888;">{{ __('No hay productos en esta categoría.') }}</p>
+                        <a href="{{ url('/') }}" style="color:#679941; font-size:.85rem;">← {{ __('Volver al inicio') }}</a>
                     </div>
                 @endif
 

@@ -11,6 +11,14 @@
                 {{ $title }}
             </h1>
 
+            {{-- Los textos legales solo existen en español: son contenido que
+                 revisa el titular, no cadenas de interfaz. --}}
+            @if(app()->getLocale() !== 'es')
+                <p style="background:#fff8e1; border:1px solid #ffe08a; border-radius:8px; padding:10px 14px; font-size:.85rem; color:#7a5c00;">
+                    {{ __('Este documento solo está disponible en español. La versión en español es la que tiene validez.') }}
+                </p>
+            @endif
+
             @if($type === 'terms')
                 <p>Estos Términos y Condiciones regulan el acceso y el uso de guStore, el mercado en línea donde vendedores independientes ofrecen sus productos a los compradores. Al registrarse, navegar o realizar una compra, usted declara haber leído, comprendido y aceptado íntegramente este documento, y se obliga a cumplirlo en su totalidad. Si no está de acuerdo con alguno de sus puntos, debe abstenerse de utilizar la plataforma.</p>
 

@@ -14,22 +14,16 @@ return [
     'nav' => [
         'dashboard' => 'Panel',
         'purchase_history' => 'Historial de Compras',
-        'downloads' => 'Descargas',
-        'refund_sent' => 'Solicitud de Reembolso Enviada',
-        'refund_received' => 'Solicitud de Reembolso Recibida',
         'wishlist' => 'Lista de Deseos',
         'wallet' => 'Mi Billetera',
         'profile' => 'Perfil',
         'manage_profile' => 'Administrar Perfil',
         'products' => 'Productos',
-        'wholesale' => 'Productos al por Mayor',
-        'coupons' => 'Cupones',
-        'classified' => 'Productos Clasificados',
         'orders' => 'Pedidos',
         'warehouse' => 'Almacén / Despacho',
         'shop_approvals' => 'Aprobar Tiendas',
-        'reviews' => 'Reseña de Productos',
-        'support' => 'Ticket de Soporte',
+        'settlements' => 'Liquidaciones',
+        'support' => 'Soporte',
     ],
 
     'verify' => [
@@ -46,8 +40,11 @@ return [
         'products' => 'Productos',
         'total_sale' => 'Ventas Totales',
         'total_profits' => 'Ganancias Totales',
+        'commission_note' => 'Ventas menos :rate% de comisión',
+        'since_settlement' => 'Solo pedidos entregados, desde la última liquidación del :date ($:amount acreditados en tu billetera). El admin las pone en cero al liquidar.',
+        'no_settlement' => 'Solo cuentan los pedidos ya entregados; al liquidar, el admin acredita las ganancias en tu billetera y pone ventas y ganancias en cero.',
         'success_orders' => 'Pedidos Exitosos',
-        'visitors' => 'Visitantes de Hoy',
+        'pending_orders' => 'Pedidos por Confirmar',
     ],
 
     'address' => [

@@ -1,7 +1,7 @@
 @if($cartItems->count() > 0)
     <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-        <span class="fw-700 fs-14">Cart ({{ $cartItems->sum('quantity') }} items)</span>
-        <a href="{{ route('cart.index') }}" class="text-primary fs-13">View All</a>
+        <span class="fw-700 fs-14">{{ __('Carrito') }} ({{ __(':count artículos', ['count' => $cartItems->sum('quantity')]) }})</span>
+        <a href="{{ route('cart.index') }}" class="text-primary fs-13">{{ __('Ver todo') }}</a>
     </div>
     <div style="max-height: 300px; overflow-y: auto;">
         @foreach($cartItems as $item)
@@ -24,8 +24,8 @@
                    class="d-block text-reset fw-600 fs-13 text-truncate">
                     {{ $item->product->name }}
                 </a>
-                @if($item->variation)
-                    <span class="fs-11 text-muted">{{ $item->variation }}</span>
+                @if($item->hasVariant())
+                    @include('partials.variant-badge', ['parts' => $item->variant_parts, 'small' => true])
                 @endif
                 <div class="fs-13 mt-1">
                     <span class="text-muted">{{ $item->quantity }} ×</span>
@@ -35,7 +35,7 @@
             {{-- Eliminar --}}
             <button class="btn p-1 ml-2 text-muted"
                     onclick="miniCartRemove({{ $item->id }})"
-                    title="Remove">
+                    title="{{ __('Quitar') }}">
                 <i class="las la-times"></i>
             </button>
         </div>
@@ -44,26 +44,26 @@
     {{-- Total + botón --}}
     <div class="p-3">
         <div class="d-flex justify-content-between fs-13 text-muted mb-1">
-            <span>Subtotal</span>
+            <span>{{ __('Subtotal') }}</span>
             <span>${{ number_format($total, 2) }}</span>
         </div>
         <div class="d-flex justify-content-between fs-13 text-muted mb-2">
-            <span>Envío</span>
-            <span>{{ $shippingTotal > 0 ? '$'.number_format($shippingTotal, 2) : 'Gratis' }}</span>
+            <span>{{ __('Envío') }}</span>
+            <span>{{ $shippingTotal > 0 ? '$'.number_format($shippingTotal, 2) : __('Gratis') }}</span>
         </div>
         <div class="d-flex justify-content-between mb-3">
-            <span class="fw-700">Total</span>
+            <span class="fw-700">{{ __('Total') }}</span>
             <span class="fw-700 text-primary">${{ number_format($grandTotal, 2) }}</span>
         </div>
         <a href="{{ route('cart.index') }}"
            class="btn btn-primary btn-block fw-700">
-            <i class="las la-shopping-cart mr-1"></i> View Cart
+            <i class="las la-shopping-cart mr-1"></i> {{ __('Ver carrito') }}
         </a>
     </div>
 @else
     <div class="text-center p-4">
         <i class="las la-frown la-3x opacity-60 mb-3 d-block"></i>
-        <h3 class="h6 fw-700">Your Cart is empty</h3>
-        <a href="{{ route('products.index') }}" class="btn btn-sm btn-primary mt-2">Shop Now</a>
+        <h3 class="h6 fw-700">{{ __('Tu carrito está vacío') }}</h3>
+        <a href="{{ route('products.index') }}" class="btn btn-sm btn-primary mt-2">{{ __('Comprar ahora') }}</a>
     </div>
 @endif

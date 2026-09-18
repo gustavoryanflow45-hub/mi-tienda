@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $order->isPaid() ? 'Pago Confirmado' : 'Procesando Pago')
+@section('title', $order->isPaid() ? __('Pago confirmado') : __('Procesando pago'))
 
 @section('extra_css')
 <style>
@@ -28,32 +28,37 @@
 
             @if($order->isPaid())
                 <div class="success-icon ok"><i class="las la-check"></i></div>
-                <h2>¡Pago confirmado!</h2>
-                <p>Gracias por tu compra. Recibimos tu pago correctamente.</p>
+                <h2>{{ __('¡Pago confirmado!') }}</h2>
+                <p>{{ __('Gracias por tu compra. Recibimos tu pago correctamente.') }}</p>
             @else
                 <div class="success-icon wait"><i class="las la-hourglass-half"></i></div>
-                <h2>Confirmando tu pago…</h2>
-                <p>Esto toma solo unos segundos. La página se actualizará automáticamente.</p>
+                <h2>{{ __('Confirmando tu pago…') }}</h2>
+                <p>{{ __('Esto toma solo unos segundos. La página se actualizará automáticamente.') }}</p>
                 <script>setTimeout(() => location.reload(), 4000);</script>
             @endif
 
             <div class="order-detail">
-                <div class="d-row"><span>Pedido</span><span>#{{ $order->code }}</span></div>
-                <div class="d-row"><span>Subtotal</span><span>${{ number_format($order->subtotal, 2) }}</span></div>
+                <div class="d-row"><span>{{ __('Pedido') }}</span><span>#{{ $order->code }}</span></div>
+                <div class="d-row"><span>{{ __('Subtotal') }}</span><span>${{ number_format($order->subtotal, 2) }}</span></div>
                 <div class="d-row">
-                    <span>Envío</span>
-                    <span>{{ $order->shipping_total > 0 ? '$'.number_format($order->shipping_total, 2) : 'Gratis' }}</span>
+                    <span>{{ __('Envío') }}</span>
+                    <span>{{ $order->shipping_total > 0 ? '$'.number_format($order->shipping_total, 2) : __('Gratis') }}</span>
                 </div>
-                <div class="d-row"><span>Total</span><span>${{ number_format($order->grand_total, 2) }}</span></div>
+                <div class="d-row"><span>{{ __('Total') }}</span><span>${{ number_format($order->grand_total, 2) }}</span></div>
                 @if($order->payment_reference)
-                    <div class="d-row"><span>Referencia</span><span>{{ $order->payment_reference }}</span></div>
+                    <div class="d-row"><span>{{ __('Referencia') }}</span><span>{{ $order->payment_reference }}</span></div>
                 @endif
 
                 @if($order->orderDetails->count() > 0)
                     <div class="d-items">
                         @foreach($order->orderDetails as $item)
                             <div class="d-row">
-                                <span>{{ $item->product_name }} × {{ $item->quantity }}</span>
+                                <span>
+                                    {{ $item->product_name }} × {{ $item->quantity }}
+                                    @if($item->hasVariant())
+                                        <br>@include('partials.variant-badge', ['parts' => $item->variant_parts, 'small' => true])
+                                    @endif
+                                </span>
                                 <span>${{ number_format($item->price * $item->quantity, 2) }}</span>
                             </div>
                         @endforeach
@@ -63,11 +68,11 @@
 
             @auth
                 <a href="{{ route('orders.index') }}" class="btn-shop" style="margin-right:8px;">
-                    <i class="las la-file-invoice mr-1"></i> Mis Pedidos
+                    <i class="las la-file-invoice mr-1"></i> {{ __('Mis pedidos') }}
                 </a>
             @endauth
             <a href="{{ url('/products') }}" class="btn-shop">
-                <i class="las la-store mr-1"></i> Seguir comprando
+                <i class="las la-store mr-1"></i> {{ __('Seguir comprando') }}
             </a>
 
         </div>

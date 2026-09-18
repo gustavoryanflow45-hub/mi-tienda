@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Checkout')
+@section('title', __('Pagar'))
 
 @section('extra_css')
 <style>
@@ -69,55 +69,55 @@
 
                 {{-- Datos de envío: el almacén los necesita completos para despachar --}}
                 <div class="checkout-card mb-4">
-                    <h3><i class="las la-truck mr-1" style="color:#679941;"></i> Datos de envío</h3>
+                    <h3><i class="las la-truck mr-1" style="color:#679941;"></i> {{ __('Datos de envío') }}</h3>
 
                     <form id="shipping-form" novalidate>
                         <div class="ship-grid">
                             <div class="ship-field">
-                                <label for="ship-full_name">Nombre completo <span class="req">*</span></label>
+                                <label for="ship-full_name">{{ __('Nombre completo') }} <span class="req">*</span></label>
                                 <input type="text" id="ship-full_name" name="full_name" required
                                        value="{{ old('full_name', $shipping['full_name'] ?? '') }}" autocomplete="name">
                                 <span class="field-error"></span>
                             </div>
                             <div class="ship-field">
-                                <label for="ship-phone">Teléfono <span class="req">*</span></label>
+                                <label for="ship-phone">{{ __('Teléfono') }} <span class="req">*</span></label>
                                 <input type="tel" id="ship-phone" name="phone" required
                                        value="{{ old('phone', $shipping['phone'] ?? '') }}" autocomplete="tel">
                                 <span class="field-error"></span>
                             </div>
                             <div class="ship-field full">
-                                <label for="ship-email">Correo electrónico <span class="req">*</span></label>
+                                <label for="ship-email">{{ __('Correo electrónico') }} <span class="req">*</span></label>
                                 <input type="email" id="ship-email" name="email" required
                                        value="{{ old('email', $shipping['email'] ?? '') }}" autocomplete="email">
                                 <span class="field-error"></span>
                             </div>
                             <div class="ship-field full">
-                                <label for="ship-address">Dirección <span class="req">*</span></label>
+                                <label for="ship-address">{{ __('Dirección') }} <span class="req">*</span></label>
                                 <input type="text" id="ship-address" name="address" required
                                        value="{{ old('address', $shipping['address'] ?? '') }}"
-                                       placeholder="Calle, número, referencia" autocomplete="street-address">
+                                       placeholder="{{ __('Calle, número, referencia') }}" autocomplete="street-address">
                                 <span class="field-error"></span>
                             </div>
                             <div class="ship-field">
-                                <label for="ship-city">Ciudad <span class="req">*</span></label>
+                                <label for="ship-city">{{ __('Ciudad') }} <span class="req">*</span></label>
                                 <input type="text" id="ship-city" name="city" required
                                        value="{{ old('city', $shipping['city'] ?? '') }}" autocomplete="address-level2">
                                 <span class="field-error"></span>
                             </div>
                             <div class="ship-field">
-                                <label for="ship-state">Provincia / Estado</label>
+                                <label for="ship-state">{{ __('Provincia / Estado') }}</label>
                                 <input type="text" id="ship-state" name="state"
                                        value="{{ old('state', $shipping['state'] ?? '') }}" autocomplete="address-level1">
                                 <span class="field-error"></span>
                             </div>
                             <div class="ship-field">
-                                <label for="ship-country">País</label>
+                                <label for="ship-country">{{ __('País') }}</label>
                                 <input type="text" id="ship-country" name="country"
                                        value="{{ old('country', $shipping['country'] ?? ($detectedCountry === 'EC' ? 'Ecuador' : '')) }}" autocomplete="country-name">
                                 <span class="field-error"></span>
                             </div>
                             <div class="ship-field">
-                                <label for="ship-postal_code">Código postal</label>
+                                <label for="ship-postal_code">{{ __('Código postal') }}</label>
                                 <input type="text" id="ship-postal_code" name="postal_code"
                                        value="{{ old('postal_code', $shipping['postal_code'] ?? '') }}" autocomplete="postal-code">
                                 <span class="field-error"></span>
@@ -127,27 +127,27 @@
                 </div>
 
                 <div class="checkout-card">
-                    <h3>Payment Details</h3>
+                    <h3>{{ __('Datos de pago') }}</h3>
 
                     @if(str_starts_with($stripeKey ?? '', 'pk_test_'))
-                        <span class="test-badge">Modo prueba — tarjeta 4242 4242 4242 4242, fecha futura, CVC 123</span>
+                        <span class="test-badge">{{ __('Modo prueba — tarjeta 4242 4242 4242 4242, fecha futura, CVC 123') }}</span>
                     @endif
 
                     <div id="payment-element">
                         <div class="stripe-loading">
-                            <div class="spinner"></div> Cargando formulario de pago seguro…
+                            <div class="spinner"></div> {{ __('Cargando formulario de pago seguro…') }}
                         </div>
                     </div>
 
                     <button id="pay-button" class="btn-pay" type="button" disabled>
-                        Pay ${{ number_format($total, 2) }}
+                        {{ __('Pagar') }} ${{ number_format($total, 2) }}
                     </button>
 
                     <p id="payment-error" role="alert" aria-live="polite"></p>
 
                     <div class="secure-note">
                         <i class="las la-shield-alt"></i>
-                        Procesado por Stripe — tu tarjeta nunca pasa por nuestros servidores
+                        {{ __('Procesado por Stripe — tu tarjeta nunca pasa por nuestros servidores') }}
                     </div>
                 </div>
             </div>
@@ -155,7 +155,7 @@
             {{-- ── RESUMEN ── --}}
             <div class="col-lg-5">
                 <div class="checkout-card">
-                    <h3>Order Summary</h3>
+                    <h3>{{ __('Resumen del pedido') }}</h3>
 
                     @foreach($cartItems as $item)
                         <div class="co-item">
@@ -168,37 +168,40 @@
                             <div>
                                 <div class="co-item-name">{{ $item->product->name }}</div>
                                 <div class="co-item-meta">
-                                    @if($item->variation) {{ $item->variation }} · @endif
+                                    @if($item->hasVariant())
+                                        @include('partials.variant-badge', ['parts' => $item->variant_parts, 'small' => true])
+                                        ·
+                                    @endif
                                     × {{ $item->quantity }}
                                 </div>
                             </div>
                             <div class="co-item-price">
                                 ${{ number_format($item->price * $item->quantity, 2) }}
                                 @if($item->shipping_cost > 0)
-                                    <span class="co-item-ship">+ ${{ number_format($item->shipping_cost, 2) }} envío</span>
+                                    <span class="co-item-ship">+ ${{ number_format($item->shipping_cost, 2) }} {{ __('envío') }}</span>
                                 @endif
                             </div>
                         </div>
                     @endforeach
 
                     <div class="summary-row" style="margin-top:14px;">
-                        <span>Subtotal</span><span class="val">${{ number_format($subtotal, 2) }}</span>
+                        <span>{{ __('Subtotal') }}</span><span class="val">${{ number_format($subtotal, 2) }}</span>
                     </div>
                     <div class="summary-row">
-                        <span>Envío</span>
+                        <span>{{ __('Envío') }}</span>
                         <span class="val">
-                            {{ $shippingTotal > 0 ? '$'.number_format($shippingTotal, 2) : 'Gratis' }}
+                            {{ $shippingTotal > 0 ? '$'.number_format($shippingTotal, 2) : __('Gratis') }}
                         </span>
                     </div>
                     <div class="summary-row">
-                        <span>Impuesto</span><span class="val">${{ number_format($taxTotal, 2) }}</span>
+                        <span>{{ __('Impuesto') }}</span><span class="val">${{ number_format($taxTotal, 2) }}</span>
                     </div>
                     <div class="summary-row total">
-                        <span>Total</span><span class="val">${{ number_format($total, 2) }}</span>
+                        <span>{{ __('Total') }}</span><span class="val">${{ number_format($total, 2) }}</span>
                     </div>
 
                     <a href="{{ route('cart.index') }}" style="display:block; text-align:center; margin-top:16px; font-size:.82rem; color:#888;">
-                        ← Edit cart
+                        ← {{ __('Editar carrito') }}
                     </a>
                 </div>
             </div>
@@ -215,13 +218,13 @@
     const CSRF      = document.querySelector('meta[name="csrf-token"]').content;
     const stripeKey = @json($stripeKey);
     const amount    = @json((int) round($total * 100));
-    const payLabel  = 'Pay ${{ number_format($total, 2) }}';
+    const payLabel  = @json(__('Pagar')) + ' ${{ number_format($total, 2) }}';
     const errorBox  = document.getElementById('payment-error');
     const payBtn    = document.getElementById('pay-button');
 
     if (!stripeKey) {
         // Si esto aparece: falta STRIPE_KEY en .env → php artisan config:clear
-        errorBox.textContent = 'Configuración de pagos incompleta. Contacta al administrador.';
+        errorBox.textContent = @json(__('Configuración de pagos incompleta. Contacta al administrador.'));
         console.error('STRIPE_KEY es null: revisa .env y ejecuta php artisan config:clear');
         document.querySelector('.stripe-loading')?.remove();
         return;
@@ -274,12 +277,12 @@
         for (const name of requiredIds) {
             const input = document.getElementById('ship-' + name);
             if (!input.value.trim()) {
-                showFieldError(name, 'Este campo es obligatorio.');
+                showFieldError(name, @json(__('Este campo es obligatorio.')));
                 valid = false;
             }
         }
         if (!valid) {
-            throw new Error('Completa los datos de envío para continuar.');
+            throw new Error(@json(__('Completa los datos de envío para continuar.')));
         }
 
         const payload = Object.fromEntries(new FormData(shipForm).entries());
@@ -294,7 +297,7 @@
             if (data.errors) {
                 Object.entries(data.errors).forEach(([field, msgs]) => showFieldError(field, msgs[0]));
             }
-            throw new Error(data.message || 'No se pudieron guardar los datos de envío.');
+            throw new Error(data.message || @json(__('No se pudieron guardar los datos de envío.')));
         }
     }
 
@@ -306,7 +309,7 @@
             body: JSON.stringify({}),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.message || 'No se pudo iniciar el pago.');
+        if (!res.ok) throw new Error(data.message || @json(__('No se pudo iniciar el pago.')));
 
         return data;
     }
@@ -318,7 +321,7 @@
 
     payBtn.addEventListener('click', async () => {
         payBtn.disabled = true;
-        payBtn.textContent = 'Processing…';
+        payBtn.textContent = @json(__('Procesando…'));
         errorBox.textContent = '';
 
         try {

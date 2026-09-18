@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
 use App\Notifications\SellerNewOrderNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -45,6 +46,14 @@ class User extends Authenticatable
             'email_verified' => 'boolean',
             'banned' => 'boolean',
         ];
+    }
+
+    // ── Restablecimiento de contraseña ──────────────────────────
+
+    /** El correo de Laravel viene en inglés; este va en el idioma de la tienda. */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     // ── Helpers ─────────────────────────────────────────────────

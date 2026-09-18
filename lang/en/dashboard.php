@@ -14,22 +14,16 @@ return [
     'nav' => [
         'dashboard' => 'Dashboard',
         'purchase_history' => 'Purchase History',
-        'downloads' => 'Downloads',
-        'refund_sent' => 'Sent Refund Request',
-        'refund_received' => 'Received Refund Request',
         'wishlist' => 'Wishlist',
         'wallet' => 'My Wallet',
         'profile' => 'Profile',
         'manage_profile' => 'Manage Profile',
         'products' => 'Products',
-        'wholesale' => 'Wholesale Products',
-        'coupons' => 'Coupons',
-        'classified' => 'Classified Products',
         'orders' => 'Orders',
         'warehouse' => 'Warehouse / Dispatch',
         'shop_approvals' => 'Shop Approvals',
-        'reviews' => 'Product Reviews',
-        'support' => 'Support Ticket',
+        'settlements' => 'Settlements',
+        'support' => 'Support',
     ],
 
     'verify' => [
@@ -46,8 +40,11 @@ return [
         'products' => 'Products',
         'total_sale' => 'Total Sale',
         'total_profits' => 'Total Profits',
+        'commission_note' => 'Sales minus :rate% commission',
+        'since_settlement' => 'Delivered orders only, since the last settlement on :date ($:amount credited to your wallet). The admin resets them when settling.',
+        'no_settlement' => 'Only delivered orders count; when settling, the admin credits the profits to your wallet and resets sales and profits.',
         'success_orders' => 'Success Orders',
-        'visitors' => 'Today Visitors',
+        'pending_orders' => 'Orders to Confirm',
     ],
 
     'address' => [

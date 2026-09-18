@@ -13,7 +13,7 @@
             <div class="alert {{ $flash['class'] }} alert-dismissible fade show" role="alert">
                 <i class="las {{ $flash['icon'] }} mr-1"></i>
                 {{ session($key) }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+                <button type="button" class="close" data-dismiss="alert" aria-label="{{ __('Cerrar') }}">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>

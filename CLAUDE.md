@@ -67,6 +67,10 @@ Routes (`Auth\VerificationController`): `GET /email/verify` (`verification.notic
 
 `SellerProductController` bounces unverified sellers to `verification.notice`. `MAIL_MAILER=log` locally — verification emails land in `storage/logs/laravel.log`, not a real inbox.
 
+### Password Reset
+
+`Auth\PasswordResetController` runs Laravel's password broker (`Password::sendResetLink` / `Password::reset`; token in `password_reset_tokens`, 60-minute expiry and 60-second resend throttle from `config/auth.php`). Routes, all under `guest`: `GET /password/reset` (`password.request`), `POST /password/email` (`password.email`, `throttle:6,1`), `GET /password/reset/{token}` (`password.reset`, view `auth/passwords/reset.blade.php`), `POST /password/reset` (`password.update`, `throttle:6,1`) — on success the user is logged in and sent to `/dashboard`. `POST /password/email` answers the same "if that account exists…" line whether or not the email is registered, so it cannot be used to enumerate users; only `RESET_THROTTLED` is surfaced. The mail is `ResetPasswordNotification`, which extends Laravel's `ResetPassword` (same token) and only rewrites the text in Spanish; `User::sendPasswordResetNotification()` routes to it. Broker status strings live in `lang/es|en/passwords.php`. Covered by `tests/Feature/PasswordResetTest.php`.
+
 `app/Http/Middleware/SetLocale.php` runs on every `web` request and applies `session('locale')` (see Localization below).
 
 ### Checkout & Payment Flow
@@ -83,9 +87,27 @@ Keys live in `config/services.php` (see its header comment for the expected `.en
 
 Note: `app/Contracts/PaymentGateway.php` defines an interface but nothing implements it yet; the two payment controllers are independent implementations.
 
-### Product Variants
+### Product Variants (size & color)
 
-Products with `variant_product = true` store variant data as JSON columns: `choice_options` (option names/values), `colors`, `variations` (SKU-level price/stock). Flat products use `unit_price` directly. Cart entries store the selected variation string to match the correct variation at checkout.
+Variants are **rows in `product_stocks`**, one per combination, with its own `size`, `color`, `price` and `qty`. `ProductStock::buildVariant($size, $color)` builds the key the cart speaks (`"40-negro"`, `"M"`, `"negro"`, or `''` for a flat product) and a `saving` hook keeps the denormalized `variant` column in sync, so the string is never composed by hand. Cart entries store that key in `carts.variation`. `products.variant_product` is a derived flag (`syncStocks()` recomputes it), not an input.
+
+The JSON columns `choice_options` / `colors` / `variations` are **legacy**, still on the table and still read by `legacy:restore`'s double-encoding repair, but nothing in the live flow uses them. The product page is `pages/product-detail.blade.php` (`ProductController@show`); the old `pages/show.blade.php`, which classified sizes by guessing at the variant string, is deleted — no controller returned it and it had stopped rendering anyway, asking for `route('products.variant_price')`, a name that never existed.
+
+`config/variants.php` is the single source for both the color palette and the size sets:
+
+- `types` — each entry has `sizes` and a `size_label` (`apparel`, `waist`, `footwear`, `headwear`, plus `none`). Adding a size set needs no migration.
+- `colors` — key (what `product_stocks.color` stores) → label + hex.
+- `category_types` — category slug → type. Applied by `Category::applyConfiguredVariantTypes()`, called from the migration **and from `legacy:restore`**: `categories.variant_type` defaults to `'none'` and every repopulation brings it back that way, so the assignment has to be re-appliable rather than a one-shot `UPDATE`. (The original migration did it once, against a table that was still empty because the schema was migrated before the rows were restored — which left all 10 categories on `'none'` and no product able to offer a size.)
+
+Which sizes a product offers is resolved by `Product::sizeOptions()` / `sizeLabel()` / `usesSizes()`: **`products.variant_type` wins, and the category's applies when it is null.** The per-product override exists because the catalog's categories are mixed — sneakers hang off "Sports & outdoor" next to tents — so the type cannot be decided per category without offering shoe sizes to half the shop. An unknown type falls back to the category, the same way an unknown category type falls back to "color only".
+
+Going the other way — turning the stored key back into something a person reads — is `ProductStock::parseVariant()` / `describeVariant()`, the inverse of `buildVariant()`. `describeVariant($key, $product)` returns the size with its label, the color with its palette name and hex, and a `text` fallback (`"Talla US 9 · Negro"`). `Cart` and `OrderDetail` reach it through the `DescribesVariant` trait (`variant_parts`, `variant_label`, `hasVariant()`), and every screen renders it via `partials/variant-badge.blade.php` — cart, mini-cart, checkout, payment success, `/orders`, the order detail, `/seller/orders` and `/warehouse`. **Never print `variation` directly**; it is an internal key. A one-part key is ambiguous (`"M"` is a size, `"negro"` a color), so it is resolved against `config('variants.colors')`, and the size label needs the product *and its category*, which is why those views eager-load `product.category`.
+
+Buyers pick a combination in two places, and both are the same picker at different sizes, fed by `Product::stockMap()` (combination → `{qty, price}`) so neither can offer a combination the other has dropped: the full product page (`pages/product-detail.blade.php`) and the quick-add modal the product card opens (`partials/quick-add-modal.blade.php`, served already rendered by `CartController@modal`, behavior in `layouts/app.blade.php` delegated on `#qa-root`). The modal used to return JSON while the JS injected it with `.html()`, so it dumped raw JSON on screen and the grid had no way to choose a size at all. `CartController` is `auth`-wide, so the modal bails out to login for guests rather than injecting the login page into itself. Both pickers price combinations client-side from the stock map, so there is no per-selection round trip; `ProductController@variantPrice` / `product.variant_price`, which served that purpose, is deleted.
+
+The seller and warehouse tables list the order's lines through `partials/order-items-cell.blade.php`: neither showed them before, only the order total, so whoever picked the box had no way to know which size to pull. Covered by `tests/Feature/VariantVisibilityTest.php`.
+
+`SellerProductController::validateVariants()` enforces this server-side by resolving through a throwaway `Product` carrying the submitted `variant_type` plus the category, so the rule cannot drift from the sizes the form just rendered. The seller picks the type in `partials/variant-builder.blade.php` (shared by create and edit), which also builds the size × color stock matrix; the bulk CSV import accepts a `variant_type` column.
 
 ### Key Models and Relationships
 
@@ -97,6 +119,16 @@ Products with `variant_product = true` store variant data as JSON columns: `choi
 Common query scopes: `scopeActive()`, `scopePublished()`, `scopeFeatured()`, `scopeApproved()`.
 
 Wallet: `WalletRecharge` / `WalletWithdrawal` records with admin approve/reject routes under `/admin/wallet`.
+
+### Seller Earnings & Settlements
+
+The seller dashboard's "Ventas Totales" / "Ganancias Totales" are **per settlement cycle**, not all-time. A sale counts only once its line is **paid and delivered** (`order_details.payment_status = 'paid'` and `delivery_status = 'delivered'` — the warehouse's deliver action stamps the lines), and it stays in the cycle until an admin settles it (`order_details.settlement_id` is null). `OrderDetail::scopeSettleable()` is the one definition; a paid-but-undelivered order shows nowhere and cannot be settled, so a return or a lost parcel never gets paid out. Profits are sales minus the marketplace commission, `config('app.seller_commission_rate')` (0.25); the card shows the rate so the seller knows why the two numbers differ. "Pedidos Exitosos" is still an all-time count.
+
+`app/Services/SettlementService.php` owns the whole thing: `pendingFor($sellerId)` / `pendingForAll()` compute the `{total_sales, commission, net_amount, lines_count}` breakdown — the dashboard and the admin panel both read it, so the figure the seller sees is exactly the one the admin pays — and `settle($seller, $admin)` closes the cycle. It creates a `SellerSettlement` row (the payout record: gross, rate, commission, net, who settled), stamps `settlement_id` on the lines and **credits the net to `users.balance`** — the seller's wallet, the same mechanism as an approved recharge, so they withdraw it through the existing `/wallet` withdrawal flow — all inside one transaction, locking the rows rather than an aggregate (PostgreSQL refuses `FOR UPDATE` on aggregates), so two admins cannot pay the same sales twice; with nothing pending it returns null and nothing is written. After the commit it sends `SellerSettledNotification` (`database` + `mail`, like the shop decision — the seller need not be online) outside the transaction, so a mail failure cannot roll back a credit that already happened. `DashboardController` reads the unread `database` copies, marks them read and passes `$settlementUpdates` to both dashboard views, which render `partials/settlement-banner.blade.php` — the same read-once pattern as `$shopUpdates`. Lines never get re-opened: a settlement is final. `/wallet` lists the seller's credited settlements above the recharge history (hidden when there are none).
+
+Settled money needs no second approval to withdraw: the admin already approved it by settling. `SettlementService::withdrawableFor($user)` is the part of the balance that came from settlements and was not withdrawn yet (credited net − non-rejected `from_settlement` withdrawals, capped at the real balance because the user may have spent some). `WalletController@withdraw` creates a withdrawal covered by that amount already `approved` with `wallet_withdrawals.from_settlement = true` (`2026_09_18_150000_add_from_settlement_to_wallet_withdrawals.php`); anything beyond it — recharged balance — stays `pending` for `/admin/wallet` as before, where auto-approved rows carry a "Liquidación" badge. The wallet page shows the instantly-withdrawable figure on the balance card and in the withdrawal modal.
+
+The admin panel is `/admin/settlements` (`AdminSettlementController`, view `admin/settlements.blade.php`, under the `admin` route group): one row per seller with pending sales, commission, net, last settlement and a "Liquidar" button (`POST /admin/settlements/{seller}`, disabled at zero), plus the paginated payout history. The dashboard sidebar links it for admins. The seller dashboard shows the date and amount of the last settlement under the stat cards (`$lastSettlement`). Covered by `tests/Feature/SellerSettlementTest.php`.
 
 ### Delivery / Warehouse Flow
 
@@ -114,7 +146,16 @@ Note: much of the page JS (language/currency switchers, search autocomplete) liv
 
 Default locale is `es` (`config/app.php` + `.env`). The topbar switcher POSTs to `/language` (`LanguageController@change`, param name `locale`), which stores `session('locale')`; `SetLocale` middleware applies it on every `web` request. Supported locales are declared once in `SetLocale::SUPPORTED` — the topbar dropdown and the controller both read from it, so adding a language means adding it there plus a `lang/<code>/` directory.
 
-Migration to `__()` is partial: only `partials/topbar` and the two dashboard views use translation keys (`lang/es`, `lang/en`). Every other view still has hardcoded Spanish, so switching to English leaves them untranslated.
+Every user-facing string goes through `__()`. Two conventions coexist, and which one applies depends on where the string lives:
+
+- **Spanish string keys + `lang/en.json`** for views, controller flash/JSON/abort messages, notifications rendered in views and the labels in `config/variants.php`: write the Spanish text as the key (`__('Añadir al carrito')`, placeholders as `:name`) and add its English line to `lang/en.json`. Spanish needs no file — the key is the fallback. `tests/Feature/LocalizationTest.php` scans every Blade file and fails when a key is missing from `en.json`, so add the translation in the same change.
+- **PHP array files** (`lang/es|en/*.php`) for the framework's own strings — `validation.php` (with the form field names under `attributes`, in both languages: the fallback locale is `es`, so an `en` gap would surface Spanish field names inside English sentences), `auth.php`, `pagination.php`, `passwords.php` — plus the older `dashboard.php` / `topbar.php` keys the dashboards and topbar still use.
+
+Order and payment statuses are never printed raw: `delivery_status_label()` / `payment_status_label()` in `app/Helpers/helpers.php` map the stored keys through `__()` (before that, the views did `ucwords(str_replace('_', ' ', …))` and showed "On The Way" in a Spanish store). The size/color labels in `config/variants.php` stay Spanish in the file and are translated where they are read (`Product::sizeLabel()`, `Category::sizeLabel()`, `ProductStock::describeVariant()`, the two variant pickers, the variant builder), so `describeVariant()` already returns the localized label.
+
+What is deliberately **not** translated: the legal prose in `pages/policy.blade.php` (content the owner must vet, not UI — the page shows a "Spanish only" notice under other locales), and the mail notifications, which are sent in the app's default locale because users have no stored language preference (`HasLocalePreference` would be the hook if one is added).
+
+The dashboard sidebars (`pages/dashboard-verified`, `pages/dashboard-index`) only link to features that exist: the refund, wholesale, coupon, classified, reviews and downloads entries were `href="#"` placeholders inherited from the theme with no backend behind them (`Review` is a model with no routes or UI) and were removed together with their `dashboard.nav.*` keys; "Soporte" goes to the support-policy page. The old "Visitantes de Hoy" card, hard-wired to 0, is now "Pedidos por Confirmar" (`$stats['pending_orders']`: paid orders with a line of the seller still `delivery_status = 'pending'`), linking to `/seller/orders?delivery_status=pending`. `tests/Feature/SellerDashboardTest.php` fails if a `href="#"` comes back into either sidebar.
 
 ### Queue & Sessions
 
@@ -127,7 +168,7 @@ Ecuador IVA rate (15%) is read from `config/app.php` (key: `ec_iva_rate`). `Kush
 ## Database Notes
 
 - Tests use in-memory SQLite (configured in `phpunit.xml`); local/production uses PostgreSQL (migrated from MySQL 2026-07; the old XAMPP MySQL `woot_db` is kept as a backup — it holds the only copy of the seed data, see `legacy:restore` below). PostgreSQL runs as a Windows service independent of XAMPP.
-- `database/migrations/` has 19 migration files — always run `php artisan migrate` after pulling changes. `orders`/`order_details` come from `2026_06_10_200000_create_orders_table.php`; database notifications from `2026_06_22_184700_create_notifications_table.php`.
+- `database/migrations/` has 23 migration files — always run `php artisan migrate` after pulling changes. `orders`/`order_details` come from `2026_06_10_200000_create_orders_table.php`; database notifications from `2026_06_22_184700_create_notifications_table.php`; `seller_settlements` + `order_details.settlement_id` from `2026_09_18_120000_create_seller_settlements_table.php`.
 - File uploads go to `storage/app/public/`; the `public/storage` symlink must exist (`php artisan storage:link`).
 
 ### Restoring Seed Data (`legacy:restore`)

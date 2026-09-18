@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'All Categories')
-@section('meta_description', 'Explora todas las categorías de la tienda')
+@section('title', __('Todas las categorías'))
+@section('meta_description', __('Explora todas las categorías de la tienda'))
 
 @section('extra_css')
 <style>
@@ -125,14 +125,14 @@
     <div class="container">
 
         <div class="cat-breadcrumb">
-            <a href="{{ url('/') }}">Home</a>
+            <a href="{{ url('/') }}">{{ __('Inicio') }}</a>
             <span>/</span>
-            <strong style="color:#333;">All Categories</strong>
+            <strong style="color:#333;">{{ __('Todas las categorías') }}</strong>
         </div>
 
         <h1 class="cats-title">
-            All Categories
-            <small>{{ $categories->count() }} {{ Str::plural('categoría', $categories->count()) }}</small>
+            {{ __('Todas las categorías') }}
+            <small>{{ trans_choice(':count categoría|:count categorías', $categories->count()) }}</small>
         </h1>
 
         <div class="row gutters-10">
@@ -163,7 +163,7 @@
                                     @endforeach
                                 </ul>
                             @else
-                                <span class="subcat-empty">Sin subcategorías</span>
+                                <span class="subcat-empty">{{ __('Sin subcategorías') }}</span>
                             @endif
                         </div>
                     </div>
@@ -172,7 +172,7 @@
                 <div class="col-12">
                     <div class="cats-empty">
                         <i class="las la-folder-open"></i>
-                        Todavía no hay categorías publicadas.
+                        {{ __('Todavía no hay categorías publicadas.') }}
                     </div>
                 </div>
             @endforelse

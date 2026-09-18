@@ -7,25 +7,25 @@
             <div class="col-lg-3 col-md-6">
                 <a class="text-reset border-left text-center p-4 d-block" href="{{ route('terms') }}">
                     <i class="la la-file-text la-3x text-primary mb-2"></i>
-                    <h4 class="h6">Terms &amp; conditions</h4>
+                    <h4 class="h6">{{ __('Términos y condiciones') }}</h4>
                 </a>
             </div>
             <div class="col-lg-3 col-md-6">
                 <a class="text-reset border-left text-center p-4 d-block" href="{{ route('return-policy') }}">
                     <i class="la la-mail-reply la-3x text-primary mb-2"></i>
-                    <h4 class="h6">Return Policy</h4>
+                    <h4 class="h6">{{ __('Política de devoluciones') }}</h4>
                 </a>
             </div>
             <div class="col-lg-3 col-md-6">
                 <a class="text-reset border-left text-center p-4 d-block" href="{{ route('support-policy') }}">
                     <i class="la la-support la-3x text-primary mb-2"></i>
-                    <h4 class="h6">Support Policy</h4>
+                    <h4 class="h6">{{ __('Política de soporte') }}</h4>
                 </a>
             </div>
             <div class="col-lg-3 col-md-6">
                 <a class="text-reset border-left border-right text-center p-4 d-block" href="{{ route('privacy-policy') }}">
                     <i class="las la-exclamation-circle la-3x text-primary mb-2"></i>
-                    <h4 class="h6">Privacy Policy</h4>
+                    <h4 class="h6">{{ __('Política de privacidad') }}</h4>
                 </a>
             </div>
         </div>
@@ -48,9 +48,9 @@
                         <form class="form-inline" method="POST" action="{{ route('subscribers.store') }}">
                             @csrf
                             <div class="form-group mb-0">
-                                <input type="email" class="form-control" placeholder="Your Email Address" name="email" required>
+                                <input type="email" class="form-control" placeholder="{{ __('Tu correo electrónico') }}" name="email" required>
                             </div>
-                            <button type="submit" class="btn btn-primary">Subscribe</button>
+                            <button type="submit" class="btn btn-primary">{{ __('Suscribirme') }}</button>
                         </form>
                     </div>
                     <div class="w-300px mw-100 mx-auto mx-md-0">
@@ -67,18 +67,18 @@
             {{-- Contacto --}}
             <div class="col-lg-3 ml-xl-auto col-md-4 mr-0">
                 <div class="text-center text-md-left mt-4">
-                    <h4 class="fs-13 text-uppercase fw-600 border-bottom border-gray-900 pb-2 mb-4">Contact Info</h4>
+                    <h4 class="fs-13 text-uppercase fw-600 border-bottom border-gray-900 pb-2 mb-4">{{ __('Contacto') }}</h4>
                     <ul class="list-unstyled">
                         <li class="mb-2">
-                            <span class="d-block opacity-30">Address:</span>
+                            <span class="d-block opacity-30">{{ __('Dirección:') }}</span>
                             <span class="d-block opacity-70">Woot LLC 4121 International Parkway Carrollton, TX 75007</span>
                         </li>
                         <li class="mb-2">
-                            <span class="d-block opacity-30">Phone:</span>
+                            <span class="d-block opacity-30">{{ __('Teléfono:') }}</span>
                             <span class="d-block opacity-70">214-445-2819</span>
                         </li>
                         <li class="mb-2">
-                            <span class="d-block opacity-30">Email:</span>
+                            <span class="d-block opacity-30">{{ __('Correo:') }}</span>
                             <span class="d-block opacity-70">
                                 <a href="mailto:copyright@woot.com" class="text-reset">copyright@woot.com</a>
                             </span>
@@ -90,16 +90,16 @@
             {{-- Servicio al cliente --}}
             <div class="col-lg-2 col-md-4">
                 <div class="text-center text-md-left mt-4">
-                    <h4 class="fs-13 text-uppercase fw-600 border-bottom border-gray-900 pb-2 mb-4">Contact Customer Service</h4>
+                    <h4 class="fs-13 text-uppercase fw-600 border-bottom border-gray-900 pb-2 mb-4">{{ __('Atención al cliente') }}</h4>
                     <ul class="list-unstyled">
                         <li class="mb-2">
                             <a href="https://t.me/Woot_Hanna" class="opacity-50 hov-opacity-100 text-reset">
-                                Telegram-Customer Service 1
+                                {{ __('Telegram · Atención al cliente 1') }}
                             </a>
                         </li>
                         <li class="mb-2">
                             <a href="https://t.me/Hanna_Woot" class="opacity-50 hov-opacity-100 text-reset">
-                                Telegram-Customer Service 2
+                                {{ __('Telegram · Atención al cliente 2') }}
                             </a>
                         </li>
                     </ul>
@@ -109,28 +109,28 @@
             {{-- Mi cuenta --}}
             <div class="col-md-4 col-lg-2">
                 <div class="text-center text-md-left mt-4">
-                    <h4 class="fs-13 text-uppercase fw-600 border-bottom border-gray-900 pb-2 mb-4">My Account</h4>
+                    <h4 class="fs-13 text-uppercase fw-600 border-bottom border-gray-900 pb-2 mb-4">{{ __('Mi cuenta') }}</h4>
                     <ul class="list-unstyled">
                         <li class="mb-2">
-                            <a class="opacity-50 hov-opacity-100 text-reset" href="{{ route('login') }}">Login</a>
+                            <a class="opacity-50 hov-opacity-100 text-reset" href="{{ route('login') }}">{{ __('Iniciar sesión') }}</a>
                         </li>
                         <li class="mb-2">
-                            <a class="opacity-50 hov-opacity-100 text-reset" href="{{ route('orders.index') }}">Order History</a>
+                            <a class="opacity-50 hov-opacity-100 text-reset" href="{{ route('orders.index') }}">{{ __('Historial de pedidos') }}</a>
                         </li>
                         <li class="mb-2">
-                            <a class="opacity-50 hov-opacity-100 text-reset" href="{{ route('wishlist.index') }}">My Wishlist</a>
+                            <a class="opacity-50 hov-opacity-100 text-reset" href="{{ route('wishlist.index') }}">{{ __('Mi lista de deseos') }}</a>
                         </li>
                         <li class="mb-2">
-                            <a class="opacity-50 hov-opacity-100 text-reset" href="{{ route('track-order') }}">Track Order</a>
+                            <a class="opacity-50 hov-opacity-100 text-reset" href="{{ route('track-order') }}">{{ __('Rastrear pedido') }}</a>
                         </li>
                         <li class="mb-2">
-                            <a class="opacity-50 hov-opacity-100 text-light" href="{{ route('affiliate') }}">Be an affiliate partner</a>
+                            <a class="opacity-50 hov-opacity-100 text-light" href="{{ route('affiliate') }}">{{ __('Sé un afiliado') }}</a>
                         </li>
                     </ul>
                 </div>
                 <div class="text-center text-md-left mt-4">
-                    <h4 class="fs-13 text-uppercase fw-600 border-bottom border-gray-900 pb-2 mb-4">Be A Seller</h4>
-                    <a href="{{ route('shops.create') }}" class="btn btn-primary btn-sm shadow-md">Apply Now</a>
+                    <h4 class="fs-13 text-uppercase fw-600 border-bottom border-gray-900 pb-2 mb-4">{{ __('Vende con nosotros') }}</h4>
+                    <a href="{{ route('shops.create') }}" class="btn btn-primary btn-sm shadow-md">{{ __('Solicitar ahora') }}</a>
                 </div>
             </div>
         </div>

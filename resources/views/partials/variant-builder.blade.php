@@ -3,23 +3,50 @@
     crear y editar producto.
 
     Espera:
-      $initialStocks  Colección/array de ['size','color','price','qty','sku'].
-                      Vacío al crear; las filas existentes al editar.
+      $initialStocks       Colección/array de ['size','color','price','qty','sku'].
+                           Vacío al crear; las filas existentes al editar.
+      $initialVariantType  variant_type del producto al editar; null al crear.
 
-    Las tallas ofrecidas salen de config/variants.php según el variant_type de
-    la categoría elegida, que es la misma fuente que valida el servidor en
+    Las tallas ofrecidas salen de config/variants.php: manda el tipo que declara
+    el producto y, si no declara ninguno, el de la categoría elegida. Es la
+    misma resolución que aplica el servidor en Product::sizeOptions(), desde
     SellerProductController::validateVariants().
 --}}
 
-@php $initialStocks = collect($initialStocks ?? []); @endphp
+@php
+    $initialStocks      = collect($initialStocks ?? []);
+    $initialVariantType = old('variant_type', $initialVariantType ?? null);
+@endphp
 
 <div id="variant-builder" style="margin-bottom:14px;">
+
+    {{-- Tipo de talla: normalmente el de la categoría, pero un producto puede
+         declarar el suyo. Las categorías del catálogo son mixtas y unas
+         zapatillas cuelgan de "Sports & outdoor" junto a carpas: sin este
+         override no habría forma de darles talla sin dársela a todo el rubro. --}}
+    <div style="margin-bottom:14px;">
+        <div class="form-label mb-2">
+            {{ __('Tipo de talla') }}
+            <span style="color:#aaa;font-weight:400;">— {{ __('qué tallas ofrece este producto') }}</span>
+        </div>
+        <select name="variant_type" id="variant_type" class="form-control" onchange="onVariantTypeChange()">
+            <option value="" data-auto="1">{{ __('Según la categoría') }}</option>
+            @foreach(config('variants.types') as $key => $type)
+                <option value="{{ $key }}" {{ $initialVariantType === $key ? 'selected' : '' }}>
+                    {{ __($type['label']) }}
+                </option>
+            @endforeach
+        </select>
+        <div style="font-size:.8rem;color:#999;margin-top:6px;">
+            {{ __('Cámbialo si la categoría no ofrece las tallas que necesitas: unas zapatillas en “Sports & outdoor” se venden por talla de calzado aunque el resto de la categoría no use tallas.') }}
+        </div>
+    </div>
 
     {{-- Tallas: solo en categorías que las manejan --}}
     <div id="size-picker" style="display:none;margin-bottom:14px;">
         <div class="form-label mb-2">
-            <span id="size-picker-label">Tallas</span>
-            <span style="color:#aaa;font-weight:400;">— marca las que vendes</span>
+            <span id="size-picker-label">{{ __('Tallas') }}</span>
+            <span style="color:#aaa;font-weight:400;">— {{ __('marca las que vendes') }}</span>
         </div>
         <div class="quick-sizes" id="size-options"></div>
     </div>
@@ -27,13 +54,13 @@
     {{-- Colores: aplican a cualquier producto --}}
     <div style="margin-bottom:14px;">
         <div class="form-label mb-2">
-            Colores <span style="color:#aaa;font-weight:400;">— marca los que vendes</span>
+            {{ __('Colores') }} <span style="color:#aaa;font-weight:400;">— {{ __('marca los que vendes') }}</span>
         </div>
         <div class="color-picker-row">
             @foreach(config('variants.colors') as $key => $color)
                 <div class="color-swatch-btn"
                      style="background:{{ $color['hex'] }};"
-                     title="{{ $color['label'] }}"
+                     title="{{ __($color['label']) }}"
                      data-color="{{ $key }}"
                      onclick="toggleColor(this)"></div>
             @endforeach
@@ -41,31 +68,45 @@
     </div>
 
     <div id="no-category-hint" style="font-size:.8rem;color:#999;">
-        Selecciona primero una categoría para ver las tallas disponibles.
+        {{ __('Selecciona primero una categoría para ver las tallas disponibles.') }}
     </div>
 </div>
 
-<label class="form-label">Stock <span class="req">*</span></label>
+<label class="form-label">{{ __('Stock') }} <span class="req">*</span></label>
 <div class="variant-info-box" id="matrix-hint" style="display:none;">
-    <strong>Una fila por combinación</strong>
-    Cada talla y color que marques genera su propia fila con precio y cantidad.
-    Así el cliente ve agotada solo la combinación que se acabó, no el producto entero.
+    <strong>{{ __('Una fila por combinación') }}</strong>
+    {{ __('Cada talla y color que marques genera su propia fila con precio y cantidad. Así el cliente ve agotada solo la combinación que se acabó, no el producto entero.') }}
 </div>
 <div id="stock-rows"></div>
 
 <script>
 // ── Variantes: matriz talla × color ──────────────────────────────
-const VARIANT_TYPES = @json(config('variants.types'));
-const COLOR_PALETTE = @json(config('variants.colors'));
+const VARIANT_TYPES = @json(collect(config('variants.types'))->map(fn ($t) => $t + ['label' => __($t['label']), 'size_label' => __($t['size_label'] ?? 'Talla')]));
+const COLOR_PALETTE = @json(collect(config('variants.colors'))->map(fn ($c) => ['label' => __($c['label']), 'hex' => $c['hex']]));
 const INITIAL_STOCKS = @json($initialStocks->values());
 
 let selectedSizes  = [];
 let selectedColors = [];
 
-function currentVariantType() {
+function categoryVariantType() {
     const sel = document.getElementById('category_id');
     const opt = sel.options[sel.selectedIndex];
     return (opt && opt.dataset.variantType) || 'none';
+}
+
+function currentVariantType() {
+    return document.getElementById('variant_type').value || categoryVariantType();
+}
+
+/** Deja ver en la opción "Según la categoría" qué tipo se está heredando. */
+function paintInheritedLabel() {
+    const inherited = VARIANT_TYPES[categoryVariantType()] || VARIANT_TYPES['none'];
+    document.querySelector('#variant_type option[data-auto]').textContent =
+        @json(__('Según la categoría')) + ' (' + inherited.label + ')';
+}
+
+function onVariantTypeChange() {
+    onCategoryChange();
 }
 
 function renderSizeOptions() {
@@ -82,7 +123,7 @@ function renderSizeOptions() {
         return [];
     }
 
-    document.getElementById('size-picker-label').textContent = config.size_label || 'Tallas';
+    document.getElementById('size-picker-label').textContent = config.size_label || @json(__('Tallas'));
     document.getElementById('size-options').innerHTML = sizes.map(s =>
         `<button type="button" class="quick-size-btn" data-size="${s}" onclick="toggleSize(this)">${s}</button>`
     ).join('');
@@ -92,6 +133,8 @@ function renderSizeOptions() {
 }
 
 function onCategoryChange() {
+    paintInheritedLabel();
+
     const sizes = renderSizeOptions();
 
     // Al cambiar de categoría se descartan las tallas que ya no existen en el
@@ -166,7 +209,7 @@ function rebuildMatrix() {
         const label = key
             ? [combo.size, combo.color ? (COLOR_PALETTE[combo.color]?.label ?? combo.color) : null]
                 .filter(Boolean).join(' · ')
-            : 'Producto sin variantes';
+            : @json(__('Producto sin variantes'));
 
         return `
         <div class="stock-row" data-key="${key}">
@@ -177,12 +220,12 @@ function rebuildMatrix() {
             <input type="hidden" name="stocks[${i}][color]" value="${combo.color ?? ''}">
             <div class="stock-row-fields">
                 <div>
-                    <label class="form-label" style="font-size:.78rem;">Precio <span style="color:#e74c3c;">*</span></label>
+                    <label class="form-label" style="font-size:.78rem;">${@json(__('Precio'))} <span style="color:#e74c3c;">*</span></label>
                     <input type="number" name="stocks[${i}][price]" data-field="price" class="form-control"
                            placeholder="0.00" step="0.01" min="0" required value="${saved.price ?? ''}">
                 </div>
                 <div>
-                    <label class="form-label" style="font-size:.78rem;">Cantidad <span style="color:#e74c3c;">*</span></label>
+                    <label class="form-label" style="font-size:.78rem;">${@json(__('Cantidad'))} <span style="color:#e74c3c;">*</span></label>
                     <input type="number" name="stocks[${i}][qty]" data-field="qty" class="form-control"
                            placeholder="0" min="0" required value="${saved.qty ?? ''}">
                 </div>
@@ -207,6 +250,7 @@ INITIAL_STOCKS.forEach(s => {
     if (s.color && !selectedColors.includes(s.color)) selectedColors.push(s.color);
 });
 
+paintInheritedLabel();
 renderSizeOptions();
 paintSizeButtons();
 paintColorButtons();

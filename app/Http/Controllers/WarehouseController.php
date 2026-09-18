@@ -16,7 +16,7 @@ class WarehouseController extends Controller
         // Defensa en profundidad: las rutas ya llevan el middleware 'admin'.
         $this->middleware(function ($request, $next) {
             if (! Auth::user()->isAdmin()) {
-                abort(403, 'No autorizado.');
+                abort(403, __('No autorizado.'));
             }
 
             return $next($request);
@@ -26,7 +26,7 @@ class WarehouseController extends Controller
     // ── GET /warehouse ───────────────────────────────────────────
     public function index(Request $request)
     {
-        $query = Order::with(['user', 'orderDetails'])
+        $query = Order::with(['user', 'orderDetails.product.category'])
             ->where('payment_status', 'paid');
 
         if ($request->filled('delivery_status')) {
@@ -74,7 +74,7 @@ class WarehouseController extends Controller
         $order = Order::findOrFail($id);
 
         if ($order->delivery_status !== 'warehouse') {
-            return back()->with('warehouse_error', 'Solo se pueden despachar pedidos que están en el almacén.');
+            return back()->with('warehouse_error', __('Solo se pueden despachar pedidos que están en el almacén.'));
         }
 
         $order->update([
@@ -86,7 +86,7 @@ class WarehouseController extends Controller
 
         $order->user?->notify(new OrderStatusUpdatedNotification($order, 'on_the_way'));
 
-        return back()->with('warehouse_success', 'Pedido #'.$order->code.' despachado — ahora está en camino al cliente.');
+        return back()->with('warehouse_success', __('Pedido #:code despachado — ahora está en camino al cliente.', ['code' => $order->code]));
     }
 
     // ── POST /warehouse/orders/{id}/deliver ──────────────────────
@@ -95,7 +95,7 @@ class WarehouseController extends Controller
         $order = Order::findOrFail($id);
 
         if ($order->delivery_status !== 'on_the_way') {
-            return back()->with('warehouse_error', 'Solo se pueden marcar como entregados los pedidos que están en camino.');
+            return back()->with('warehouse_error', __('Solo se pueden marcar como entregados los pedidos que están en camino.'));
         }
 
         $order->update([
@@ -106,6 +106,6 @@ class WarehouseController extends Controller
 
         $order->user?->notify(new OrderStatusUpdatedNotification($order, 'delivered'));
 
-        return back()->with('warehouse_success', 'Pedido #'.$order->code.' marcado como entregado.');
+        return back()->with('warehouse_success', __('Pedido #:code marcado como entregado.', ['code' => $order->code]));
     }
 }

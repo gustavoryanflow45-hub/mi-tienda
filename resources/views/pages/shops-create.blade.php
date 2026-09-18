@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
-@section('title', 'Register Your Shop')
+@section('title', __('Registra tu tienda'))
 
-@section('meta_description', 'Register your shop and start selling on our platform.')
+@section('meta_description', __('Registra tu tienda y empieza a vender en nuestra plataforma.'))
 
 @section('extra_css')
 <style>
@@ -187,11 +187,11 @@
 <div class="page-hero">
     <div class="container">
         <div class="d-flex justify-content-between align-items-center">
-            <h1>Register Your Shop</h1>
+            <h1>{{ __('Registra tu tienda') }}</h1>
             <nav>
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ url('/') }}">Home</a></li>
-                    <li class="breadcrumb-item active">Register Your Shop</li>
+                    <li class="breadcrumb-item"><a href="{{ url('/') }}">{{ __('Inicio') }}</a></li>
+                    <li class="breadcrumb-item active">{{ __('Registra tu tienda') }}</li>
                 </ol>
             </nav>
         </div>
@@ -223,45 +223,45 @@
                     {{-- Personal Info --}}
                     <div class="form-card">
                         <div class="form-card-header">
-                            <h5>Personal Info</h5>
+                            <h5>{{ __('Datos personales') }}</h5>
                         </div>
                         <div class="form-card-body">
 
                             <div class="form-group">
-                                <label>Your name <span class="req">*</span></label>
+                                <label>{{ __('Tu nombre') }} <span class="req">*</span></label>
                                 <input type="text"
                                        name="name"
                                        class="form-control"
-                                       placeholder="Name"
+                                       placeholder="{{ __('Nombre') }}"
                                        value="{{ old('name') }}"
                                        required>
                             </div>
 
                             <div class="form-group">
-                                <label>Your Email <span class="req">*</span></label>
+                                <label>{{ __('Tu correo electrónico') }} <span class="req">*</span></label>
                                 <input type="email"
                                        name="email"
                                        class="form-control"
-                                       placeholder="Email"
+                                       placeholder="{{ __('Correo electrónico') }}"
                                        value="{{ old('email') }}"
                                        required>
                             </div>
 
                             <div class="form-group">
-                                <label>Your Password <span class="req">*</span></label>
+                                <label>{{ __('Tu contraseña') }} <span class="req">*</span></label>
                                 <input type="password"
                                        name="password"
                                        class="form-control"
-                                       placeholder="Password"
+                                       placeholder="{{ __('Contraseña') }}"
                                        required>
                             </div>
 
                             <div class="form-group">
-                                <label>Repeat Password <span class="req">*</span></label>
+                                <label>{{ __('Repite la contraseña') }} <span class="req">*</span></label>
                                 <input type="password"
                                        name="password_confirmation"
                                        class="form-control"
-                                       placeholder="Confirm Password"
+                                       placeholder="{{ __('Confirmar contraseña') }}"
                                        required>
                             </div>
 
@@ -271,35 +271,35 @@
                     {{-- Basic Info --}}
                     <div class="form-card">
                         <div class="form-card-header">
-                            <h5>Basic Info</h5>
+                            <h5>{{ __('Datos de la tienda') }}</h5>
                         </div>
                         <div class="form-card-body">
 
                             <div class="form-group">
-                                <label>Shop Name <span class="req">*</span></label>
+                                <label>{{ __('Nombre de la tienda') }} <span class="req">*</span></label>
                                 <input type="text"
                                        name="shop_name"
                                        class="form-control"
-                                       placeholder="Shop Name"
+                                       placeholder="{{ __('Nombre de la tienda') }}"
                                        value="{{ old('shop_name') }}"
                                        required>
                             </div>
 
                             <div class="form-group">
-                                <label>Email <span class="req">*</span></label>
+                                <label>{{ __('Correo de la tienda') }} <span class="req">*</span></label>
                                 <input type="email"
                                        name="shop_email"
                                        class="form-control"
-                                       placeholder="Email"
+                                       placeholder="{{ __('Correo de la tienda') }}"
                                        value="{{ old('shop_email') }}"
                                        required>
                             </div>
 
                             <div class="form-group">
-                                <label>Front of ID card <span class="req">*</span></label>
+                                <label>{{ __('Frente del documento de identidad') }} <span class="req">*</span></label>
                                 <div class="file-input-wrapper" onclick="document.getElementById('id_front').click()">
-                                    <span class="file-btn">Choose/ID</span>
-                                    <span class="file-label" id="id_front_label">No file selected</span>
+                                    <span class="file-btn">{{ __('Elegir archivo') }}</span>
+                                    <span class="file-label" id="id_front_label">{{ __('Ningún archivo seleccionado') }}</span>
                                     <input type="file"
                                            id="id_front"
                                            name="id_front"
@@ -310,10 +310,10 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Reverse side of ID card <span class="req">*</span></label>
+                                <label>{{ __('Reverso del documento de identidad') }} <span class="req">*</span></label>
                                 <div class="file-input-wrapper" onclick="document.getElementById('id_back').click()">
-                                    <span class="file-btn">Choose/ID</span>
-                                    <span class="file-label" id="id_back_label">No file selected</span>
+                                    <span class="file-btn">{{ __('Elegir archivo') }}</span>
+                                    <span class="file-label" id="id_back_label">{{ __('Ningún archivo seleccionado') }}</span>
                                     <input type="file"
                                            id="id_back"
                                            name="id_back"
@@ -324,11 +324,11 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Address <span class="req">*</span></label>
+                                <label>{{ __('Dirección') }} <span class="req">*</span></label>
                                 <input type="text"
                                        name="address"
                                        class="form-control"
-                                       placeholder="Address"
+                                       placeholder="{{ __('Dirección') }}"
                                        value="{{ old('address') }}"
                                        required>
                             </div>
@@ -339,7 +339,7 @@
                     {{-- Submit --}}
                     <div class="submit-row">
                         <button type="submit" class="btn-register-shop">
-                            Register Your Shop
+                            {{ __('Registra tu tienda') }}
                         </button>
                     </div>
 
@@ -360,7 +360,7 @@
             label.textContent = input.files[0].name;
             label.style.color = '#444';
         } else {
-            label.textContent = 'No file selected';
+            label.textContent = @json(__('Ningún archivo seleccionado'));
             label.style.color = '#999';
         }
     }

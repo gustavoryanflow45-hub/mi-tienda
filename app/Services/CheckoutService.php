@@ -26,7 +26,7 @@ class CheckoutService
     /** Ítems del carrito del usuario, con su producto cargado. */
     public function items(User $user): Collection
     {
-        return Cart::where('user_id', $user->id)->with('product')->get();
+        return Cart::where('user_id', $user->id)->with('product.category')->get();
     }
 
     /**

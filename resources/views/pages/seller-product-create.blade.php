@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Agregar Producto')
+@section('title', __('Agregar producto'))
 
 @section('extra_css')
 <style>
@@ -100,13 +100,6 @@
     .btn-submit:hover { opacity:.9; transform:translateY(-1px); }
 
     /* Logout */
-    .logout-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:9999; align-items:center; justify-content:center; }
-    .logout-modal-overlay.show { display:flex; }
-    .logout-modal-box { background:#fff; border-radius:16px; padding:2rem 1.75rem; width:90%; max-width:360px; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,.18); }
-    .logout-icon { width:64px; height:64px; background:linear-gradient(135deg,#f64f59,#c471ed); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; }
-    .logout-icon i { font-size:2rem; color:#fff; }
-    .btn-logout-confirm { display:block; width:100%; padding:.65rem; background:linear-gradient(135deg,#679941,#4e7a2e); color:#fff; border:none; border-radius:8px; font-weight:600; font-size:1rem; cursor:pointer; margin-bottom:.75rem; }
-    .btn-logout-cancel { display:block; width:100%; padding:.65rem; background:#f1f3f5; color:#444; border:none; border-radius:8px; font-weight:600; font-size:1rem; cursor:pointer; }
 </style>
 @endsection
 
@@ -126,33 +119,33 @@
                         </div>
                         <h4 class="h5 fw-600 fs-18 mb-1">{{ strtoupper(Auth::user()->name) }}</h4>
                         <p class="mb-2 text-truncate opacity-80 fs-13">{{ Auth::user()->email }}</p>
-                        <span class="verified-badge"><i class="las la-check-circle"></i> Verified</span>
+                        <span class="verified-badge"><i class="las la-check-circle"></i> {{ __('dashboard.verified') }}</span>
                     </div>
                     <div class="bg-white shadow-sm rounded-bottom p-3">
                         <ul class="aiz-side-nav-list list-unstyled mb-0">
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/dashboard') }}" class="aiz-side-nav-link d-flex align-items-center p-2">
-                                    <i class="las la-home mr-2 fs-16"></i><span>Dashboard</span>
+                                    <i class="las la-home mr-2 fs-16"></i><span>{{ __('dashboard.nav.dashboard') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/orders') }}" class="aiz-side-nav-link d-flex align-items-center p-2">
-                                    <i class="las la-file-invoice mr-2 fs-16"></i><span>Purchase History</span>
+                                    <i class="las la-file-invoice mr-2 fs-16"></i><span>{{ __('dashboard.nav.purchase_history') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/wishlist') }}" class="aiz-side-nav-link d-flex align-items-center p-2">
-                                    <i class="las la-heart mr-2 fs-16"></i><span>Wishlist</span>
+                                    <i class="las la-heart mr-2 fs-16"></i><span>{{ __('dashboard.nav.wishlist') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/seller/products') }}" class="aiz-side-nav-link active d-flex align-items-center p-2">
-                                    <i class="las la-box mr-2 fs-16"></i><span>Products</span>
+                                    <i class="las la-box mr-2 fs-16"></i><span>{{ __('dashboard.nav.products') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('seller.orders.index') }}" class="aiz-side-nav-link d-flex align-items-center p-2">
-                                    <i class="las la-shopping-cart mr-2 fs-16"></i><span>Pedidos</span>
+                                    <i class="las la-shopping-cart mr-2 fs-16"></i><span>{{ __('dashboard.nav.orders') }}</span>
                                     @php $newOrders = Auth::user()->newOrderNotificationsCount(); @endphp
                                     @if($newOrders > 0)
                                         <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ $newOrders }}</span>
@@ -161,12 +154,12 @@
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('wallet.index') }}" class="aiz-side-nav-link d-flex align-items-center p-2">
-                                    <i class="las la-wallet mr-2 fs-16"></i><span>Mi Billetera</span>
+                                    <i class="las la-wallet mr-2 fs-16"></i><span>{{ __('dashboard.nav.wallet') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/profile') }}" class="aiz-side-nav-link d-flex align-items-center p-2">
-                                    <i class="las la-user-cog mr-2 fs-16"></i><span>Administrar Perfil</span>
+                                    <i class="las la-user-cog mr-2 fs-16"></i><span>{{ __('dashboard.nav.manage_profile') }}</span>
                                 </a>
                             </li>
                         </ul>
@@ -181,7 +174,7 @@
                     <a href="{{ url('/seller/products') }}" class="btn btn-sm btn-outline-secondary mr-3">
                         <i class="las la-arrow-left mr-1"></i> Volver
                     </a>
-                    <h3 class="h4 fw-700 mb-0">Agregar Producto</h3>
+                    <h3 class="h4 fw-700 mb-0">{{ __('Agregar producto') }}</h3>
                 </div>
 
                 @if($errors->any())
@@ -199,30 +192,30 @@
                     <div class="form-section">
                         <div class="form-section-header">
                             <div class="section-icon"><i class="las la-info-circle"></i></div>
-                            <h5>Información Básica</h5>
+                            <h5>{{ __('Información básica') }}</h5>
                         </div>
                         <div class="form-section-body">
                             <div class="row">
                                 <div class="col-md-8 mb-3">
-                                    <label class="form-label">Nombre del Producto <span class="req">*</span></label>
-                                    <input type="text" name="name" class="form-control" value="{{ old('name') }}" placeholder="Ej: Camiseta Algodón Premium" required>
+                                    <label class="form-label">{{ __('Nombre del producto') }} <span class="req">*</span></label>
+                                    <input type="text" name="name" class="form-control" value="{{ old('name') }}" placeholder="{{ __('Ej: Camiseta Algodón Premium') }}" required>
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label">Unidad <span class="req">*</span></label>
+                                    <label class="form-label">{{ __('Unidad') }} <span class="req">*</span></label>
                                     <select name="unit" class="form-control" required>
-                                        <option value="">Seleccionar...</option>
-                                        <option value="pc"     {{ old('unit')=='pc'    ?'selected':'' }}>Pieza (pc)</option>
-                                        <option value="par"    {{ old('unit')=='par'   ?'selected':'' }}>Par</option>
-                                        <option value="kg"     {{ old('unit')=='kg'    ?'selected':'' }}>Kilogramo (kg)</option>
-                                        <option value="litro"  {{ old('unit')=='litro' ?'selected':'' }}>Litro</option>
-                                        <option value="metro"  {{ old('unit')=='metro' ?'selected':'' }}>Metro</option>
-                                        <option value="caja"   {{ old('unit')=='caja'  ?'selected':'' }}>Caja</option>
+                                        <option value="">{{ __('Seleccionar...') }}</option>
+                                        <option value="pc"     {{ old('unit')=='pc'    ?'selected':'' }}>{{ __('Pieza (pc)') }}</option>
+                                        <option value="par"    {{ old('unit')=='par'   ?'selected':'' }}>{{ __('Par') }}</option>
+                                        <option value="kg"     {{ old('unit')=='kg'    ?'selected':'' }}>{{ __('Kilogramo (kg)') }}</option>
+                                        <option value="litro"  {{ old('unit')=='litro' ?'selected':'' }}>{{ __('Litro') }}</option>
+                                        <option value="metro"  {{ old('unit')=='metro' ?'selected':'' }}>{{ __('Metro') }}</option>
+                                        <option value="caja"   {{ old('unit')=='caja'  ?'selected':'' }}>{{ __('Caja') }}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Categoría <span class="req">*</span></label>
+                                    <label class="form-label">{{ __('Categoría') }} <span class="req">*</span></label>
                                     <select name="category_id" id="category_id" class="form-control" required onchange="onCategoryChange()">
-                                        <option value="">Seleccionar categoría...</option>
+                                        <option value="">{{ __('Seleccionar categoría...') }}</option>
                                         @foreach($categories as $cat)
                                             <option value="{{ $cat->id }}"
                                                     data-variant-type="{{ $cat->variant_type }}"
@@ -233,21 +226,21 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Marca</label>
+                                    <label class="form-label">{{ __('Marca') }}</label>
                                     <select name="brand_id" class="form-control">
-                                        <option value="">Sin marca</option>
+                                        <option value="">{{ __('Sin marca') }}</option>
                                         @foreach($brands as $brand)
                                             <option value="{{ $brand->id }}" {{ old('brand_id')==$brand->id?'selected':'' }}>{{ $brand->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
                                 <div class="col-12 mb-3">
-                                    <label class="form-label">Descripción Corta</label>
-                                    <textarea name="short_description" class="form-control" rows="2" placeholder="Resumen breve del producto">{{ old('short_description') }}</textarea>
+                                    <label class="form-label">{{ __('Descripción corta') }}</label>
+                                    <textarea name="short_description" class="form-control" rows="2" placeholder="{{ __('Resumen breve del producto') }}">{{ old('short_description') }}</textarea>
                                 </div>
                                 <div class="col-12 mb-3">
-                                    <label class="form-label">Descripción Completa</label>
-                                    <textarea name="description" class="form-control" rows="5" placeholder="Describe tu producto en detalle...">{{ old('description') }}</textarea>
+                                    <label class="form-label">{{ __('Descripción completa') }}</label>
+                                    <textarea name="description" class="form-control" rows="5" placeholder="{{ __('Describe tu producto en detalle...') }}">{{ old('description') }}</textarea>
                                 </div>
                             </div>
                         </div>
@@ -257,25 +250,25 @@
                     <div class="form-section">
                         <div class="form-section-header">
                             <div class="section-icon"><i class="las la-image"></i></div>
-                            <h5>Imágenes del Producto</h5>
+                            <h5>{{ __('Imágenes del producto') }}</h5>
                         </div>
                         <div class="form-section-body">
                             <div class="row">
                                 <div class="col-md-5 mb-3">
-                                    <label class="form-label">Imagen Principal <span class="req">*</span></label>
+                                    <label class="form-label">{{ __('Imagen principal') }} <span class="req">*</span></label>
                                     <div class="img-upload-zone" onclick="document.getElementById('thumbnail').click()">
                                         <i class="las la-cloud-upload-alt"></i>
-                                        <span>Clic para subir imagen principal</span>
+                                        <span>{{ __('Clic para subir la imagen principal') }}</span>
                                         <input type="file" id="thumbnail" name="thumbnail" accept="image/*"
                                                onchange="previewSingle(this,'thumb-preview')" required>
                                     </div>
                                     <div id="thumb-preview" class="img-preview-row mt-2"></div>
                                 </div>
                                 <div class="col-md-7 mb-3">
-                                    <label class="form-label">Imágenes Adicionales <span style="color:#aaa;font-weight:400;">(máx. 5 — aparecen como thumbnails laterales)</span></label>
+                                    <label class="form-label">{{ __('Imágenes adicionales') }} <span style="color:#aaa;font-weight:400;">({{ __('máx. 5 — aparecen como miniaturas laterales') }})</span></label>
                                     <div class="img-upload-zone" onclick="document.getElementById('photos').click()">
                                         <i class="las la-images"></i>
-                                        <span>Clic para subir imágenes adicionales</span>
+                                        <span>{{ __('Clic para subir imágenes adicionales') }}</span>
                                         <input type="file" id="photos" name="photos[]" accept="image/*" multiple
                                                onchange="previewMultiple(this,'photos-preview')">
                                     </div>
@@ -289,31 +282,31 @@
                     <div class="form-section">
                         <div class="form-section-header">
                             <div class="section-icon"><i class="las la-dollar-sign"></i></div>
-                            <h5>Precios</h5>
+                            <h5>{{ __('Precios') }}</h5>
                         </div>
                         <div class="form-section-body">
                             <div class="row">
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label">Precio de Venta <span class="req">*</span></label>
+                                    <label class="form-label">{{ __('Precio de venta') }} <span class="req">*</span></label>
                                     <input type="number" name="unit_price" class="form-control" value="{{ old('unit_price') }}" placeholder="0.00" step="0.01" min="0" required>
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label">Precio de Compra</label>
+                                    <label class="form-label">{{ __('Precio de compra') }}</label>
                                     <input type="number" name="purchase_price" class="form-control" value="{{ old('purchase_price') }}" placeholder="0.00" step="0.01" min="0">
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label">Costo de Envío</label>
+                                    <label class="form-label">{{ __('Costo de envío') }}</label>
                                     <input type="number" name="shipping_cost" class="form-control" value="{{ old('shipping_cost', 0) }}" placeholder="0.00" step="0.01" min="0">
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label">Descuento</label>
+                                    <label class="form-label">{{ __('Descuento') }}</label>
                                     <input type="number" name="discount" class="form-control" value="{{ old('discount', 0) }}" placeholder="0" min="0">
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label">Tipo de Descuento</label>
+                                    <label class="form-label">{{ __('Tipo de descuento') }}</label>
                                     <select name="discount_type" class="form-control">
-                                        <option value="percent" {{ old('discount_type')=='percent'?'selected':'' }}>Porcentaje (%)</option>
-                                        <option value="amount"  {{ old('discount_type')=='amount' ?'selected':'' }}>Monto fijo ($)</option>
+                                        <option value="percent" {{ old('discount_type')=='percent'?'selected':'' }}>{{ __('Porcentaje (%)') }}</option>
+                                        <option value="amount"  {{ old('discount_type')=='amount' ?'selected':'' }}>{{ __('Monto fijo ($)') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -324,18 +317,18 @@
                     <div class="form-section">
                         <div class="form-section-header">
                             <div class="section-icon"><i class="las la-layer-group"></i></div>
-                            <h5>Variantes y Stock</h5>
+                            <h5>{{ __('Variantes y stock') }}</h5>
                         </div>
                         <div class="form-section-body">
 
                             {{-- Cantidades mínimas --}}
                             <div class="row mb-3">
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label">Cantidad Mínima de Compra</label>
+                                    <label class="form-label">{{ __('Cantidad mínima de compra') }}</label>
                                     <input type="number" name="min_qty" class="form-control" value="{{ old('min_qty', 1) }}" min="1">
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label">Alerta de Stock Bajo</label>
+                                    <label class="form-label">{{ __('Alerta de stock bajo') }}</label>
                                     <input type="number" name="low_stock_qty" class="form-control" value="{{ old('low_stock_qty', 5) }}" min="0">
                                 </div>
                             </div>
@@ -348,17 +341,17 @@
                     <div class="form-section">
                         <div class="form-section-header">
                             <div class="section-icon"><i class="las la-search"></i></div>
-                            <h5>SEO (Opcional)</h5>
+                            <h5>{{ __('SEO (opcional)') }}</h5>
                         </div>
                         <div class="form-section-body">
                             <div class="row">
                                 <div class="col-12 mb-3">
-                                    <label class="form-label">Meta Título</label>
-                                    <input type="text" name="meta_title" class="form-control" value="{{ old('meta_title') }}" placeholder="Título para buscadores">
+                                    <label class="form-label">{{ __('Meta título') }}</label>
+                                    <input type="text" name="meta_title" class="form-control" value="{{ old('meta_title') }}" placeholder="{{ __('Título para buscadores') }}">
                                 </div>
                                 <div class="col-12 mb-3">
-                                    <label class="form-label">Meta Descripción</label>
-                                    <textarea name="meta_description" class="form-control" rows="2" placeholder="Descripción para buscadores">{{ old('meta_description') }}</textarea>
+                                    <label class="form-label">{{ __('Meta descripción') }}</label>
+                                    <textarea name="meta_description" class="form-control" rows="2" placeholder="{{ __('Descripción para buscadores') }}">{{ old('meta_description') }}</textarea>
                                 </div>
                             </div>
                         </div>
@@ -368,11 +361,11 @@
                     <div class="form-section">
                         <div class="form-section-header">
                             <div class="section-icon"><i class="las la-toggle-on"></i></div>
-                            <h5>Opciones de Publicación</h5>
+                            <h5>{{ __('Opciones de publicación') }}</h5>
                         </div>
                         <div class="form-section-body">
                             <div class="toggle-row">
-                                <span class="toggle-label">Publicar producto</span>
+                                <span class="toggle-label">{{ __('Publicar producto') }}</span>
                                 <label class="toggle-switch">
                                     <input type="hidden" name="published" value="0">
                                     <input type="checkbox" name="published" value="1" {{ old('published', 1) ? 'checked' : '' }}>
@@ -381,8 +374,8 @@
                             </div>
                             <div class="toggle-row">
                                 <span class="toggle-label">
-                                    Destacado en Home
-                                    <small style="color:#aaa;font-weight:400;display:block;font-size:.75rem;">Aparece en la sección "Featured Products" del inicio</small>
+                                    {{ __('Destacado en Home') }}
+                                    <small style="color:#aaa;font-weight:400;display:block;font-size:.75rem;">{{ __('Aparece en la sección de productos destacados del inicio') }}</small>
                                 </span>
                                 <label class="toggle-switch">
                                     <input type="hidden" name="featured" value="0">
@@ -391,7 +384,7 @@
                                 </label>
                             </div>
                             <div class="toggle-row">
-                                <span class="toggle-label">Oferta del día</span>
+                                <span class="toggle-label">{{ __('Oferta del día') }}</span>
                                 <label class="toggle-switch">
                                     <input type="hidden" name="todays_deal" value="0">
                                     <input type="checkbox" name="todays_deal" value="1" {{ old('todays_deal') ? 'checked' : '' }}>
@@ -399,7 +392,7 @@
                                 </label>
                             </div>
                             <div class="toggle-row">
-                                <span class="toggle-label">Producto digital</span>
+                                <span class="toggle-label">{{ __('Producto digital') }}</span>
                                 <label class="toggle-switch">
                                     <input type="hidden" name="digital" value="0">
                                     <input type="checkbox" name="digital" value="1" {{ old('digital') ? 'checked' : '' }}>
@@ -407,7 +400,7 @@
                                 </label>
                             </div>
                             <div class="toggle-row">
-                                <span class="toggle-label">Multiplicar precio por cantidad (envío)</span>
+                                <span class="toggle-label">{{ __('Multiplicar precio por cantidad (envío)') }}</span>
                                 <label class="toggle-switch">
                                     <input type="hidden" name="is_quantity_multiplied" value="0">
                                     <input type="checkbox" name="is_quantity_multiplied" value="1" {{ old('is_quantity_multiplied') ? 'checked' : '' }}>
@@ -418,9 +411,9 @@
                     </div>
 
                     <div class="text-right mb-5">
-                        <a href="{{ url('/seller/products') }}" class="btn btn-outline-secondary mr-2 px-4">Cancelar</a>
+                        <a href="{{ url('/seller/products') }}" class="btn btn-outline-secondary mr-2 px-4">{{ __('Cancelar') }}</a>
                         <button type="submit" class="btn-submit">
-                            <i class="las la-save mr-1"></i> Guardar Producto
+                            <i class="las la-save mr-1"></i> {{ __('Guardar producto') }}
                         </button>
                     </div>
 
@@ -431,18 +424,6 @@
     </div>
 </section>
 
-<div class="logout-modal-overlay" id="logoutModal">
-    <div class="logout-modal-box">
-        <div class="logout-icon"><i class="las la-sign-out-alt"></i></div>
-        <h5 class="fw-700 mb-1">Sign out?</h5>
-        <p class="opacity-60 fs-14 mb-4">Are you sure you want to log out?</p>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" class="btn-logout-confirm"><i class="las la-sign-out-alt mr-1"></i> Yes, sign out</button>
-        </form>
-        <button class="btn-logout-cancel" onclick="document.getElementById('logoutModal').classList.remove('show')">Cancel</button>
-    </div>
-</div>
 @endsection
 
 @section('extra_js')
@@ -475,9 +456,5 @@ function previewMultiple(input, containerId) {
         reader.readAsDataURL(file);
     });
 }
-
-document.getElementById('logoutModal').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('show');
-});
 </script>
 @endsection

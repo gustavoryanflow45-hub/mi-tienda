@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Mis Pedidos')
+@section('title', __('Mis pedidos'))
 
 @section('extra_css')
 <style>
@@ -188,15 +188,15 @@
 
         {{-- Header --}}
         <div class="page-header-card">
-            <h2><i class="las la-file-invoice mr-2"></i>Mis Pedidos</h2>
-            <p>Revisa el estado y detalle de todos tus pedidos</p>
+            <h2><i class="las la-file-invoice mr-2"></i>{{ __('Mis pedidos') }}</h2>
+            <p>{{ __('Revisa el estado y detalle de todos tus pedidos') }}</p>
         </div>
 
         {{-- Avisos de estado nuevos --}}
         @if(isset($statusUpdates) && $statusUpdates->isNotEmpty())
             <div style="background:#eef7ff; border:1px solid #b8dcf5; border-radius:10px; padding:14px 18px; margin-bottom:20px;">
                 <h6 style="font-size:.85rem; font-weight:700; color:#0b5394; margin:0 0 8px; display:flex; align-items:center; gap:6px;">
-                    <i class="las la-bell"></i> Novedades de tus pedidos ({{ $statusUpdates->count() }})
+                    <i class="las la-bell"></i> {{ __('Novedades de tus pedidos') }} ({{ $statusUpdates->count() }})
                 </h6>
                 <ul style="margin:0; padding-left:0; list-style:none;">
                     @foreach($statusUpdates as $update)
@@ -218,50 +218,50 @@
         {{-- Filtros --}}
         <form method="GET" action="{{ route('orders.index') }}" class="filter-bar">
             <div class="filter-group">
-                <label>Estado de pago</label>
+                <label>{{ __('Estado de pago') }}</label>
                 <select name="payment_status" class="filter-control">
-                    <option value="">Filtrar por estado...</option>
-                    <option value="unpaid"  {{ request('payment_status')=='unpaid'  ? 'selected':'' }}>Sin pagar</option>
-                    <option value="paid"    {{ request('payment_status')=='paid'    ? 'selected':'' }}>Pagado</option>
-                    <option value="partial" {{ request('payment_status')=='partial' ? 'selected':'' }}>Parcial</option>
+                    <option value="">{{ __('Filtrar por estado...') }}</option>
+                    <option value="unpaid"  {{ request('payment_status')=='unpaid'  ? 'selected':'' }}>{{ __('Sin pagar') }}</option>
+                    <option value="paid"    {{ request('payment_status')=='paid'    ? 'selected':'' }}>{{ __('Pagado') }}</option>
+                    <option value="partial" {{ request('payment_status')=='partial' ? 'selected':'' }}>{{ __('Parcial') }}</option>
                 </select>
             </div>
             <div class="filter-group">
-                <label>Estado de entrega</label>
+                <label>{{ __('Estado de entrega') }}</label>
                 <select name="delivery_status" class="filter-control">
-                    <option value="">Filtrar por estado...</option>
-                    <option value="pending"    {{ request('delivery_status')=='pending'    ? 'selected':'' }}>Pendiente</option>
-                    <option value="confirmed"  {{ request('delivery_status')=='confirmed'  ? 'selected':'' }}>Confirmado</option>
-                    <option value="warehouse"  {{ request('delivery_status')=='warehouse'  ? 'selected':'' }}>En almacén</option>
-                    <option value="on_the_way" {{ request('delivery_status')=='on_the_way' ? 'selected':'' }}>En camino</option>
-                    <option value="delivered"  {{ request('delivery_status')=='delivered'  ? 'selected':'' }}>Entregado</option>
-                    <option value="cancelled"  {{ request('delivery_status')=='cancelled'  ? 'selected':'' }}>Cancelado</option>
+                    <option value="">{{ __('Filtrar por estado...') }}</option>
+                    <option value="pending"    {{ request('delivery_status')=='pending'    ? 'selected':'' }}>{{ __('Pendiente') }}</option>
+                    <option value="confirmed"  {{ request('delivery_status')=='confirmed'  ? 'selected':'' }}>{{ __('Confirmado') }}</option>
+                    <option value="warehouse"  {{ request('delivery_status')=='warehouse'  ? 'selected':'' }}>{{ __('En almacén') }}</option>
+                    <option value="on_the_way" {{ request('delivery_status')=='on_the_way' ? 'selected':'' }}>{{ __('En camino') }}</option>
+                    <option value="delivered"  {{ request('delivery_status')=='delivered'  ? 'selected':'' }}>{{ __('Entregado') }}</option>
+                    <option value="cancelled"  {{ request('delivery_status')=='cancelled'  ? 'selected':'' }}>{{ __('Cancelado') }}</option>
                 </select>
             </div>
             <div class="filter-group">
-                <label>Fecha inicio</label>
+                <label>{{ __('Fecha inicio') }}</label>
                 <input type="date" name="date_from" class="filter-control" value="{{ request('date_from') }}">
             </div>
             <div class="filter-group">
-                <label>Fecha fin</label>
+                <label>{{ __('Fecha fin') }}</label>
                 <input type="date" name="date_to" class="filter-control" value="{{ request('date_to') }}">
             </div>
             <div class="filter-group">
-                <label>Código de pedido</label>
-                <input type="text" name="code" class="filter-control" placeholder="Escriba el código..." value="{{ request('code') }}">
+                <label>{{ __('Código de pedido') }}</label>
+                <input type="text" name="code" class="filter-control" placeholder="{{ __('Escribe el código...') }}" value="{{ request('code') }}">
             </div>
             <button type="submit" class="btn-filter">
-                <i class="las la-search mr-1"></i> Filtrar
+                <i class="las la-search mr-1"></i> {{ __('Filtrar') }}
             </button>
             <a href="{{ route('orders.index') }}" class="btn-reset">
-                <i class="las la-times mr-1"></i> Limpiar
+                <i class="las la-times mr-1"></i> {{ __('Limpiar') }}
             </a>
         </form>
 
         {{-- Tabla de pedidos --}}
         <div class="orders-panel">
             <div class="orders-panel-header">
-                <span>Pedidos <span style="color:#aaa; font-weight:400; font-size:.8rem;">({{ $orders->total() }} total)</span></span>
+                <span>{{ __('Pedidos') }} <span style="color:#aaa; font-weight:400; font-size:.8rem;">({{ $orders->total() }} {{ __('en total') }})</span></span>
             </div>
 
             @if($orders->count() > 0)
@@ -270,13 +270,13 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Código de orden</th>
-                                <th>Ventas al por menor</th>
-                                <th>Lucro</th>
-                                <th>Estado de pago</th>
-                                <th>Estado de entrega</th>
-                                <th>Fecha</th>
-                                <th>Opciones</th>
+                                <th>{{ __('Código de pedido') }}</th>
+                                <th>{{ __('Total') }}</th>
+                                <th>{{ __('Productos (sin impuestos)') }}</th>
+                                <th>{{ __('Estado de pago') }}</th>
+                                <th>{{ __('Estado de entrega') }}</th>
+                                <th>{{ __('Fecha') }}</th>
+                                <th>{{ __('Opciones') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -287,7 +287,7 @@
                                         <div class="d-flex align-items-center gap-2">
                                             <button class="expand-btn"
                                                     onclick="toggleRow({{ $order->id }}, this)"
-                                                    title="Ver productos">+</button>
+                                                    title="{{ __('Ver productos') }}">+</button>
                                             {{ $orders->firstItem() + $i }}
                                         </div>
                                     </td>
@@ -308,12 +308,12 @@
                                     </td>
                                     <td>
                                         <span class="badge-status badge-{{ $order->payment_status }}">
-                                            {{ ucfirst($order->payment_status) }}
+                                            {{ payment_status_label($order->payment_status) }}
                                         </span>
                                     </td>
                                     <td>
                                         <span class="badge-status badge-{{ $order->delivery_status }}">
-                                            {{ ucwords(str_replace('_', ' ', $order->delivery_status)) }}
+                                            {{ delivery_status_label($order->delivery_status) }}
                                         </span>
                                     </td>
                                     <td style="white-space:nowrap; color:#888; font-size:.78rem;">
@@ -322,16 +322,16 @@
                                     <td>
                                         <div class="d-flex gap-1">
                                             {{-- Notificación --}}
-                                            <span class="btn-action btn-notify" title="Notificar">
+                                            <span class="btn-action btn-notify" title="{{ __('Notificar') }}">
                                                 <i class="las la-bell"></i>
                                             </span>
                                             {{-- Ver detalle --}}
                                             <a href="{{ route('orders.show', $order->id) }}"
-                                               class="btn-action btn-view" title="Ver detalle">
+                                               class="btn-action btn-view" title="{{ __('Ver detalle') }}">
                                                 <i class="las la-eye"></i>
                                             </a>
                                             {{-- Factura --}}
-                                            <span class="btn-action btn-invoice" title="Factura">
+                                            <span class="btn-action btn-invoice" title="{{ __('Factura') }}">
                                                 <i class="las la-file-invoice"></i>
                                             </span>
                                         </div>
@@ -346,11 +346,11 @@
                                                 <thead>
                                                     <tr>
                                                         <th>#</th>
-                                                        <th>Producto</th>
-                                                        <th>Variación</th>
-                                                        <th>Cantidad</th>
-                                                        <th>Precio</th>
-                                                        <th>Estado entrega</th>
+                                                        <th>{{ __('Producto') }}</th>
+                                                        <th>{{ __('Talla / Color') }}</th>
+                                                        <th>{{ __('Cantidad') }}</th>
+                                                        <th>{{ __('Precio') }}</th>
+                                                        <th>{{ __('Estado de entrega') }}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -364,15 +364,17 @@
                                                                         {{ Str::limit($detail->product->name, 40) }}
                                                                     </a>
                                                                 @else
-                                                                    <span style="color:#bbb;">Producto eliminado</span>
+                                                                    <span style="color:#bbb;">{{ __('Producto eliminado') }}</span>
                                                                 @endif
                                                             </td>
-                                                            <td>{{ $detail->variation ?? '—' }}</td>
+                                                            <td>
+                                                                @include('partials.variant-badge', ['parts' => $detail->variant_parts, 'small' => true, 'fallback' => '—'])
+                                                            </td>
                                                             <td>{{ $detail->quantity }}</td>
                                                             <td>${{ number_format($detail->price, 2) }}</td>
                                                             <td>
                                                                 <span class="badge-status badge-{{ $detail->delivery_status }}">
-                                                                    {{ ucwords(str_replace('_', ' ', $detail->delivery_status)) }}
+                                                                    {{ delivery_status_label($detail->delivery_status) }}
                                                                 </span>
                                                             </td>
                                                         </tr>
@@ -417,8 +419,8 @@
             @else
                 <div class="empty-orders">
                     <i class="las la-box-open"></i>
-                    <p style="font-size:.95rem; font-weight:600; color:#888;">No tienes pedidos aún.</p>
-                    <a href="{{ url('/') }}" style="color:#679941; font-size:.85rem;">← Ir a comprar</a>
+                    <p style="font-size:.95rem; font-weight:600; color:#888;">{{ __('No tienes pedidos aún.') }}</p>
+                    <a href="{{ url('/') }}" style="color:#679941; font-size:.85rem;">← {{ __('Ir a comprar') }}</a>
                 </div>
             @endif
         </div>
