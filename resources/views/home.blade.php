@@ -153,21 +153,21 @@
                     <h4>
                         <i class="las la-store mr-2"></i>
                         @if(Auth::user()->user_type === 'admin')
-                            Panel Admin — Gestión de Productos en Home
+                            {{ __('Panel Admin — Gestión de Productos en Home') }}
                         @else
-                            Mis Productos — Destacar en Home
+                            {{ __('Mis Productos — Destacar en Home') }}
                         @endif
                     </h4>
                     <p style="color:rgba(255,255,255,.75); font-size:.78rem; margin:2px 0 0;">
-                        Activa el toggle <strong>Home</strong> para que el producto aparezca en la sección destacada.
+                        {!! __('Activa el interruptor <strong>Home</strong> para que el producto aparezca en la sección destacada.') !!}
                     </p>
                 </div>
                 <div class="header-actions">
                     <a href="{{ route('seller.products.create') }}" class="btn-add-product">
-                        <i class="las la-plus"></i> Agregar producto
+                        <i class="las la-plus"></i> {{ __('Agregar producto') }}
                     </a>
                     <a href="{{ route('seller.products.index') }}" class="btn-add-product" style="background:rgba(255,255,255,.15); color:#fff;">
-                        <i class="las la-list"></i> Ver todos
+                        <i class="las la-list"></i> {{ __('Ver todos') }}
                     </a>
                 </div>
             </div>
@@ -181,12 +181,12 @@
                             {{-- Badge si ya está en home --}}
                             @if($product->featured)
                                 <span class="badge-featured-home" id="badge-{{ $product->id }}">
-                                    <i class="las la-home"></i> En Home
+                                    <i class="las la-home"></i> {{ __('En Home') }}
                                 </span>
                             @else
                                 <span class="badge-featured-home" id="badge-{{ $product->id }}"
                                       style="display:none; background:#aaa;">
-                                    <i class="las la-home"></i> En Home
+                                    <i class="las la-home"></i> {{ __('En Home') }}
                                 </span>
                             @endif
 
@@ -218,7 +218,7 @@
                                                    onchange="toggleFeatured({{ $product->id }}, this)">
                                             <span class="switch-slider"></span>
                                         </label>
-                                        Home
+                                        {{ __('Home') }}
                                     </div>
 
                                     {{-- Toggle: Publicado --}}
@@ -229,14 +229,14 @@
                                                    onchange="togglePublished({{ $product->id }}, this)">
                                             <span class="switch-slider"></span>
                                         </label>
-                                        Visible
+                                        {{ __('Visible') }}
                                     </div>
                                 </div>
 
                                 {{-- Editar --}}
                                 <a href="{{ url('/seller/products/' . $product->id . '/edit') }}"
                                    style="display:block; margin-top:8px; font-size:.75rem; color:#679941; text-decoration:none; font-weight:600;">
-                                    <i class="las la-edit mr-1"></i> Editar producto
+                                    <i class="las la-edit mr-1"></i> {{ __('Editar producto') }}
                                 </a>
                             </div>
                         </div>
@@ -246,11 +246,11 @@
                     <div class="panel-empty">
                         <i class="las la-box-open"></i>
                         <p style="font-size:.85rem; color:#999; margin:0;">
-                            No tienes productos publicados aún.
+                            {{ __('No tienes productos publicados aún.') }}
                         </p>
                         <a href="{{ route('seller.products.create') }}"
                            style="color:#679941; font-size:.83rem; font-weight:600;">
-                            + Agregar mi primer producto
+                            + {{ __('Agregar mi primer producto') }}
                         </a>
                     </div>
                 @endif
@@ -270,9 +270,9 @@
             <div class="col-lg-3 position-static d-none d-lg-block">
                 <div class="aiz-category-menu bg-white rounded shadow-sm">
                     <div class="p-3 bg-soft-primary d-none d-lg-block rounded-top all-category position-relative text-left">
-                        <span class="fw-600 fs-16 mr-3">Categories</span>
+                        <span class="fw-600 fs-16 mr-3">{{ __('Categorías') }}</span>
                         <a href="{{ route('categories.index') }}" class="text-reset">
-                            <span class="d-none d-lg-inline-block">See All ></span>
+                            <span class="d-none d-lg-inline-block">{{ __('Ver todas') }} ></span>
                         </a>
                     </div>
                     <ul class="list-unstyled categories no-scrollbar py-2 mb-0 text-left">
@@ -396,11 +396,11 @@
             <div class="d-flex mb-3 align-items-baseline border-bottom">
                 <h3 class="h5 fw-700 mb-0">
                     <span class="border-bottom border-primary border-width-2 pb-3 d-inline-block">
-                        <i class="las la-star text-warning mr-1"></i> Featured Products
+                        <i class="las la-star text-warning mr-1"></i> {{ __('Productos destacados') }}
                     </span>
                 </h3>
                 <a href="{{ route('products.index') }}" class="ml-auto mr-0 btn btn-primary btn-sm shadow-md">
-                    View All
+                    {{ __('Ver todo') }}
                 </a>
             </div>
             <div class="aiz-carousel gutters-10 half-outside-arrow"
@@ -434,9 +434,9 @@
             <div class="col-lg-6">
                 <div class="d-flex mb-3 align-items-baseline border-bottom">
                     <h3 class="h5 fw-700 mb-0">
-                        <span class="border-bottom border-primary border-width-2 pb-3 d-inline-block">Top 10 Categories</span>
+                        <span class="border-bottom border-primary border-width-2 pb-3 d-inline-block">{{ __('Top 10 categorías') }}</span>
                     </h3>
-                    <a href="{{ route('categories.index') }}" class="ml-auto mr-0 btn btn-primary btn-sm shadow-md">View All Categories</a>
+                    <a href="{{ route('categories.index') }}" class="ml-auto mr-0 btn btn-primary btn-sm shadow-md">{{ __('Ver todas las categorías') }}</a>
                 </div>
                 <div class="row gutters-5">
                     @foreach($top_categories as $category)
@@ -468,9 +468,9 @@
             <div class="col-lg-6">
                 <div class="d-flex mb-3 align-items-baseline border-bottom">
                     <h3 class="h5 fw-700 mb-0">
-                        <span class="border-bottom border-primary border-width-2 pb-3 d-inline-block">Top 10 Brands</span>
+                        <span class="border-bottom border-primary border-width-2 pb-3 d-inline-block">{{ __('Top 10 marcas') }}</span>
                     </h3>
-                    <a href="{{ route('brands.index') }}" class="ml-auto mr-0 btn btn-primary btn-sm shadow-md">View All Brands</a>
+                    <a href="{{ route('brands.index') }}" class="ml-auto mr-0 btn btn-primary btn-sm shadow-md">{{ __('Ver todas las marcas') }}</a>
                 </div>
                 <div class="row gutters-5">
                     @foreach($top_brands as $brand)
@@ -542,7 +542,7 @@ function toggleFeatured(productId, checkbox) {
         showToast(data.message, 'success');
     }).fail(function () {
         checkbox.checked = !checkbox.checked; // revertir si error
-        showToast('Error al actualizar', 'error');
+        showToast(@json(__('Error al actualizar')), 'error');
     });
 }
 
@@ -554,7 +554,7 @@ function togglePublished(productId, checkbox) {
         showToast(data.message, 'success');
     }).fail(function () {
         checkbox.checked = !checkbox.checked;
-        showToast('Error al actualizar', 'error');
+        showToast(@json(__('Error al actualizar')), 'error');
     });
 }
 

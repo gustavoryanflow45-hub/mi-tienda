@@ -4,7 +4,7 @@
         <div class="px-2 py-4 px-md-4 py-md-3 bg-white shadow-sm rounded">
             <div class="d-flex mb-3 align-items-baseline border-bottom">
                 <h3 class="h5 fw-700 mb-0">
-                    <span class="border-bottom border-primary border-width-2 pb-3 d-inline-block">Shop by Category</span>
+                    <span class="border-bottom border-primary border-width-2 pb-3 d-inline-block">{{ __('Compra por categoría') }}</span>
                 </h3>
             </div>
             <div class="row gutters-10">

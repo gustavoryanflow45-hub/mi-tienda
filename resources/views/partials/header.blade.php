@@ -30,7 +30,7 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="text" class="border-0 border-lg form-control" id="search" name="keyword"
-                                           placeholder="I am shopping for..." autocomplete="off"
+                                           placeholder="{{ __('Estoy buscando...') }}" autocomplete="off"
                                            value="{{ request('keyword') }}">
                                     <div class="input-group-append d-none d-lg-block">
                                         <button class="btn btn-primary" type="submit">
@@ -68,7 +68,7 @@
             <i class="la la-shopping-cart la-2x opacity-80"></i>
             <span class="flex-grow-1 ml-1">
                 <span class="badge badge-primary badge-inline badge-pill cart-count">0</span>
-                <span class="nav-box-text d-none d-xl-block opacity-70">Cart</span>
+                <span class="nav-box-text d-none d-xl-block opacity-70">{{ __('Carrito') }}</span>
             </span>
         </a>
         <div class="dropdown-menu dropdown-menu-right dropdown-menu-lg p-0 stop-propagation" id="nav-cart-dropdown">
@@ -90,22 +90,22 @@
             <ul class="list-inline mb-0 pl-0 mobile-hor-swipe text-center">
                 <li class="list-inline-item mr-0">
                     <a href="{{ route('home') }}" class="opacity-60 fs-14 px-3 py-2 d-inline-block fw-600 hov-opacity-100 text-reset {{ request()->routeIs('home') ? 'text-primary opacity-100' : '' }}">
-                        Home
+                        {{ __('Inicio') }}
                     </a>
                 </li>
                 <li class="list-inline-item mr-0">
                     <a href="{{ route('products.index') }}" class="opacity-60 fs-14 px-3 py-2 d-inline-block fw-600 hov-opacity-100 text-reset {{ request()->routeIs('products.*') ? 'text-primary opacity-100' : '' }}">
-                        Product
+                        {{ __('Productos') }}
                     </a>
                 </li>
                 <li class="list-inline-item mr-0">
                     <a href="{{ route('orders.index') }}" class="opacity-60 fs-14 px-3 py-2 d-inline-block fw-600 hov-opacity-100 text-reset {{ request()->routeIs('orders.*') ? 'text-primary opacity-100' : '' }}">
-                        Order
+                        {{ __('Pedidos') }}
                     </a>
                 </li>
                 <li class="list-inline-item mr-0">
                     <a href="{{ route('wallet.index') }}" class="opacity-60 fs-14 px-3 py-2 d-inline-block fw-600 hov-opacity-100 text-reset {{ request()->routeIs('wallet.*') ? 'text-primary opacity-100' : '' }}">
-                        Wallet
+                        {{ __('Billetera') }}
                     </a>
                 </li>
             </ul>
@@ -120,13 +120,13 @@
         <div class="col">
             <a href="{{ route('home') }}" class="text-reset d-block text-center pb-2 pt-3">
                 <i class="las la-home fs-20 {{ request()->routeIs('home') ? 'text-primary opacity-100' : 'opacity-60' }}"></i>
-                <span class="d-block fs-10 fw-600 {{ request()->routeIs('home') ? 'text-primary opacity-100' : 'opacity-60' }}">Home</span>
+                <span class="d-block fs-10 fw-600 {{ request()->routeIs('home') ? 'text-primary opacity-100' : 'opacity-60' }}">{{ __('Inicio') }}</span>
             </a>
         </div>
         <div class="col">
             <a href="{{ route('categories.index') }}" class="text-reset d-block text-center pb-2 pt-3">
                 <i class="las la-list-ul fs-20 opacity-60"></i>
-                <span class="d-block fs-10 fw-600 opacity-60">Categories</span>
+                <span class="d-block fs-10 fw-600 opacity-60">{{ __('Categorías') }}</span>
             </a>
         </div>
         <div class="col-auto">
@@ -136,7 +136,7 @@
                     <i class="las la-shopping-bag la-2x text-white"></i>
                 </span>
                 <span class="d-block mt-1 fs-10 fw-600 opacity-60">
-                    Cart (<span class="cart-count">0</span>)
+                    {{ __('Carrito') }} (<span class="cart-count">0</span>)
                 </span>
             </a>
         </div>
@@ -145,7 +145,7 @@
                 <span class="d-inline-block position-relative px-2">
                     <i class="las la-bell fs-20 opacity-60"></i>
                 </span>
-                <span class="d-block fs-10 fw-600 opacity-60">Notifications</span>
+                <span class="d-block fs-10 fw-600 opacity-60">{{ __('Notificaciones') }}</span>
             </a>
         </div>
         <div class="col">
@@ -157,7 +157,7 @@
                 <span class="d-block mx-auto">
                     <img src="{{ asset('assets/img/avatar-place.png') }}" class="rounded-circle size-20px">
                 </span>
-                <span class="d-block fs-10 fw-600 opacity-60">Account</span>
+                <span class="d-block fs-10 fw-600 opacity-60">{{ __('Cuenta') }}</span>
             </a>
         </div>
     </div>

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Shopping Cart')
+@section('title', __('Carrito de compras'))
 
 @section('extra_css')
 <style>
@@ -73,9 +73,9 @@
     <div class="container">
 
         <h1 style="font-size:1.15rem; font-weight:700; color:#222; margin-bottom:20px;">
-            Shopping Cart
+            {{ __('Carrito de compras') }}
             @if($cartItems->count() > 0)
-                <span style="color:#aaa; font-size:.85rem; font-weight:400;">({{ $cartItems->sum('quantity') }} items)</span>
+                <span style="color:#aaa; font-size:.85rem; font-weight:400;">({{ __(':count artículos', ['count' => $cartItems->sum('quantity')]) }})</span>
             @endif
         </h1>
 
@@ -87,11 +87,11 @@
                 <table class="cart-table">
                     <thead>
                         <tr>
-                            <th>Product</th>
-                            <th>Price</th>
-                            <th>Quantity</th>
-                            <th>Envío</th>
-                            <th>Subtotal</th>
+                            <th>{{ __('Producto') }}</th>
+                            <th>{{ __('Precio') }}</th>
+                            <th>{{ __('Cantidad') }}</th>
+                            <th>{{ __('Envío') }}</th>
+                            <th>{{ __('Subtotal') }}</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -147,7 +147,7 @@
                                 @if($item->shipping_cost > 0)
                                     ${{ number_format($item->shipping_cost, 2) }}
                                 @else
-                                    <span style="color:#aaa;">Gratis</span>
+                                    <span style="color:#aaa;">{{ __('Gratis') }}</span>
                                 @endif
                             </td>
 
@@ -160,7 +160,7 @@
 
                             {{-- Eliminar --}}
                             <td>
-                                <button class="btn-remove" onclick="removeItem({{ $item->id }})" title="Remove">
+                                <button class="btn-remove" onclick="removeItem({{ $item->id }})" title="{{ __('Quitar') }}">
                                     <i class="las la-times-circle"></i>
                                 </button>
                             </td>
@@ -173,40 +173,40 @@
             {{-- ── RESUMEN DEL PEDIDO ── --}}
             <div class="col-lg-4">
                 <div class="cart-summary">
-                    <h3>Order Summary</h3>
+                    <h3>{{ __('Resumen del pedido') }}</h3>
 
                     <div class="summary-row">
-                        <span>Subtotal</span>
+                        <span>{{ __('Subtotal') }}</span>
                         <span class="val" id="summary-subtotal">${{ number_format($total, 2) }}</span>
                     </div>
                     <div class="summary-row">
-                        <span>Envío</span>
+                        <span>{{ __('Envío') }}</span>
                         <span class="val" id="summary-shipping">
-                            {{ $shippingTotal > 0 ? '$'.number_format($shippingTotal, 2) : 'Gratis' }}
+                            {{ $shippingTotal > 0 ? '$'.number_format($shippingTotal, 2) : __('Gratis') }}
                         </span>
                     </div>
                     <div class="summary-row">
-                        <span>Impuesto</span>
+                        <span>{{ __('Impuesto') }}</span>
                         <span class="val" id="summary-tax">${{ number_format($taxTotal, 2) }}</span>
                     </div>
                     <div class="summary-row total">
-                        <span>Total</span>
+                        <span>{{ __('Total') }}</span>
                         <span class="val" id="summary-total">${{ number_format($grandTotal, 2) }}</span>
                     </div>
 
                     <a href="{{ url('/checkout') }}" class="btn-checkout">
-                        <i class="las la-lock mr-1"></i> Proceed to Checkout
+                        <i class="las la-lock mr-1"></i> {{ __('Ir a pagar') }}
                     </a>
                     <a href="{{ url('/products') }}" class="btn-continue">
-                        ← Continue Shopping
+                        ← {{ __('Seguir comprando') }}
                     </a>
 
                     {{-- Cupón --}}
                     <div class="mt-4 pt-3 border-top">
-                        <p style="font-size:.8rem; color:#888; font-weight:600; margin-bottom:8px;">Have a coupon?</p>
+                        <p style="font-size:.8rem; color:#888; font-weight:600; margin-bottom:8px;">{{ __('¿Tienes un cupón?') }}</p>
                         <div class="coupon-form">
-                            <input type="text" id="couponCode" placeholder="Enter coupon code">
-                            <button type="button" onclick="applyCoupon()">Apply</button>
+                            <input type="text" id="couponCode" placeholder="{{ __('Escribe el código') }}">
+                            <button type="button" onclick="applyCoupon()">{{ __('Aplicar') }}</button>
                         </div>
                     </div>
                 </div>
@@ -218,10 +218,10 @@
         {{-- CARRITO VACÍO --}}
         <div class="cart-empty">
             <i class="las la-shopping-cart"></i>
-            <h4>Your cart is empty</h4>
-            <p>Looks like you haven't added anything to your cart yet.</p>
+            <h4>{{ __('Tu carrito está vacío') }}</h4>
+            <p>{{ __('Parece que aún no has añadido nada a tu carrito.') }}</p>
             <a href="{{ url('/products') }}" class="btn-checkout mt-4 d-inline-block" style="width:auto; padding: 12px 32px;">
-                Start Shopping
+                {{ __('Empezar a comprar') }}
             </a>
         </div>
         @endif
@@ -251,7 +251,7 @@ function changeQty(cartId, delta) {
 
     if (newVal < 1)   newVal = 1;
     if (newVal > max) {
-        showToast('Only ' + max + ' units available in stock', 'error');
+        showToast(@json(__('Solo hay :max unidades en stock')).replace(':max', max), 'error');
         newVal = max;
     }
 
@@ -280,7 +280,7 @@ function updateQty(cartId, qty) {
 }
 
 function removeItem(cartId) {
-    if (!confirm('Remove this item from cart?')) return;
+    if (!confirm(@json(__('¿Quitar este artículo del carrito?')))) return;
 
     fetch('{{ route("cart.remove") }}', {
         method: 'POST',
@@ -298,15 +298,15 @@ function removeItem(cartId) {
                 updateSummary(data);
                 if (data.cart_count === 0) location.reload();
             }, 300);
-            showToast('Item removed from cart');
+            showToast(@json(__('Artículo quitado del carrito')));
         }
     });
 }
 
 function applyCoupon() {
     const code = document.getElementById('couponCode').value.trim();
-    if (!code) { showToast('Enter a coupon code', 'error'); return; }
-    showToast('Coupon feature coming soon', 'error');
+    if (!code) { showToast(@json(__('Escribe un código de cupón')), 'error'); return; }
+    showToast(@json(__('Los cupones estarán disponibles pronto')), 'error');
 }
 
 // El envío es un costo fijo por producto, así que cambia al quitar líneas:
@@ -314,7 +314,7 @@ function applyCoupon() {
 function updateSummary(data) {
     document.getElementById('summary-subtotal').textContent = '$' + data.cart_total;
     document.getElementById('summary-shipping').textContent =
-        parseFloat(data.cart_shipping.replace(/,/g, '')) > 0 ? '$' + data.cart_shipping : 'Gratis';
+        parseFloat(data.cart_shipping.replace(/,/g, '')) > 0 ? '$' + data.cart_shipping : @json(__('Gratis'));
     document.getElementById('summary-tax').textContent = '$' + data.cart_tax;
     document.getElementById('summary-total').textContent = '$' + data.cart_grand;
     updateCartCount(data.cart_count);

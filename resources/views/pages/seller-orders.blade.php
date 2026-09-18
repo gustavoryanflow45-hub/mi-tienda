@@ -261,7 +261,7 @@
                                         </td>
                                         <td>
                                             <span class="badge-status badge-{{ $order->delivery_status }}">
-                                                {{ ucwords(str_replace('_', ' ', $order->delivery_status)) }}
+                                                {{ delivery_status_label($order->delivery_status) }}
                                             </span>
                                         </td>
                                         <td>

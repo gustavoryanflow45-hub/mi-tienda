@@ -95,7 +95,7 @@
 
         @if(count($colors) > 0)
             <div class="qa-field">
-                <span class="qa-label">Color</span>
+                <span class="qa-label">{{ __('Color') }}</span>
                 <div class="qa-chips">
                     @foreach($colors as $color)
                         @php
@@ -113,24 +113,24 @@
         @endif
 
         <div class="qa-field qa-qty">
-            <span class="qa-label" style="margin:0;">Cantidad</span>
+            <span class="qa-label" style="margin:0;">{{ __('Cantidad') }}</span>
             <div class="qa-qty-control">
                 <button type="button" class="qa-qty-btn" data-step="-1">&minus;</button>
                 <input type="number" id="qa-qty" class="qa-qty-input" value="1" min="1" max="{{ max(1, $totalStock) }}">
                 <button type="button" class="qa-qty-btn" data-step="1">+</button>
             </div>
-            <span class="qa-stock" id="qa-stock">({{ $totalStock }} disponibles)</span>
+            <span class="qa-stock" id="qa-stock">({{ __(':qty disponibles', ['qty' => $totalStock]) }})</span>
         </div>
 
         <div class="qa-cta">
             @if($totalStock > 0)
                 <button type="button" class="qa-add">
-                    <i class="las la-shopping-cart"></i> Añadir al carrito
+                    <i class="las la-shopping-cart"></i> {{ __('Añadir al carrito') }}
                 </button>
             @else
-                <span class="qa-out">Agotado</span>
+                <span class="qa-out">{{ __('Agotado') }}</span>
             @endif
-            <a href="{{ route('products.show', $product->slug) }}" class="qa-detail">Ver ficha completa</a>
+            <a href="{{ route('products.show', $product->slug) }}" class="qa-detail">{{ __('Ver ficha completa') }}</a>
         </div>
     </div>
 </div>

@@ -191,7 +191,7 @@
                     }, function (data) {
                         if (data == '0') {
                             $('#search-content').html(null);
-                            $('.typed-search-box .search-nothing').removeClass('d-none').html('Sorry, nothing found for <strong>"' + searchKey + '"</strong>');
+                            $('.typed-search-box .search-nothing').removeClass('d-none').html(@json(__('No encontramos nada para')) + ' <strong>"' + searchKey + '"</strong>');
                         } else {
                             $('.typed-search-box .search-nothing').addClass('d-none').html(null);
                             $('#search-content').html(data);
@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 id: id
             }, function (data) {
                 $('#compare').html(data);
-                AIZ.plugins.notify('success', 'Item has been added to compare list');
+                AIZ.plugins.notify('success', @json(__('Producto añadido a comparar')));
             });
         }
 
@@ -266,10 +266,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 _token: AIZ.data.csrf,
                 id: id
             }, function (data) {
-                AIZ.plugins.notify('success', 'Item added to wishlist');
+                AIZ.plugins.notify('success', @json(__('Producto añadido a la lista de deseos')));
             });
             @else
-            AIZ.plugins.notify('warning', 'Please login first');
+            AIZ.plugins.notify('warning', @json(__('Inicia sesión primero')));
             @endauth
         }
 
@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // CartController entero pide 'auth': para un invitado la petición
             // redirige al login y el modal acabaría mostrando esa página.
             @guest
-            AIZ.plugins.notify('warning', 'Inicia sesión para añadir productos al carrito');
+            AIZ.plugins.notify('warning', @json(__('Inicia sesión para añadir productos al carrito')));
             setTimeout(function () { window.location.href = '{{ url("/login") }}'; }, 1200);
             return;
             @endguest
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 quickAddRefresh();
             }).fail(function () {
                 $('.c-preloader').hide();
-                AIZ.plugins.notify('danger', 'No se pudo cargar el producto');
+                AIZ.plugins.notify('danger', @json(__('No se pudo cargar el producto')));
             });
         }
 
@@ -375,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var full  = (!d.hasSizes || sel.size) && (!d.hasColors || sel.color);
 
             if (!full) {
-                if (stock) stock.textContent = '(' + d.totalStock + ' disponibles)';
+                if (stock) stock.textContent = '(' + @json(__(':qty disponibles')).replace(':qty', d.totalStock) + ')';
                 if (qty) qty.max = d.totalStock;
                 return;
             }
@@ -383,13 +383,13 @@ document.addEventListener('DOMContentLoaded', function() {
             var entry = d.map[quickAddKey(sel.size, sel.color)];
 
             if (!entry) {
-                if (stock) stock.textContent = '(combinación no disponible)';
+                if (stock) stock.textContent = '(' + @json(__('combinación no disponible')) + ')';
                 if (qty) { qty.max = 0; qty.value = 1; }
                 return;
             }
 
             if (price) price.textContent = '$' + entry.price.toFixed(2);
-            if (stock) stock.textContent = '(' + entry.qty + ' disponibles)';
+            if (stock) stock.textContent = '(' + @json(__(':qty disponibles')).replace(':qty', entry.qty) + ')';
             if (qty) {
                 qty.max = entry.qty;
                 if (parseInt(qty.value, 10) > entry.qty) qty.value = Math.max(1, entry.qty);
@@ -400,13 +400,13 @@ document.addEventListener('DOMContentLoaded', function() {
         function quickAddMissing(d) {
             var sel = quickAddSelection(d.root);
 
-            if (d.hasSizes && !sel.size)   return 'Elige una talla antes de continuar.';
-            if (d.hasColors && !sel.color) return 'Elige un color antes de continuar.';
+            if (d.hasSizes && !sel.size)   return @json(__('Elige una talla antes de continuar.'));
+            if (d.hasColors && !sel.color) return @json(__('Elige un color antes de continuar.'));
 
             if (d.hasSizes || d.hasColors) {
                 var entry = d.map[quickAddKey(sel.size, sel.color)];
-                if (!entry)         return 'Esa combinación no está disponible.';
-                if (entry.qty <= 0) return 'Esa combinación está agotada.';
+                if (!entry)         return @json(__('Esa combinación no está disponible.'));
+                if (entry.qty <= 0) return @json(__('Esa combinación está agotada.'));
             }
 
             return null;
@@ -414,7 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function quickAddSubmit() {
             @guest
-            AIZ.plugins.notify('warning', 'Inicia sesión para añadir productos al carrito');
+            AIZ.plugins.notify('warning', @json(__('Inicia sesión para añadir productos al carrito')));
             setTimeout(function () { window.location.href = '{{ url("/login") }}'; }, 1200);
             return;
             @endguest
@@ -435,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var original = btn.innerHTML;
 
             btn.disabled = true;
-            btn.innerHTML = '<i class="las la-spinner la-spin"></i> Añadiendo...';
+            btn.innerHTML = '<i class="las la-spinner la-spin"></i> ' + @json(__('Añadiendo...'));
 
             $.ajax({
                 type: 'POST',
@@ -451,12 +451,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (res.status === 'success') {
                     updateNavCart(res.cart_count);
                     $('#addToCart').modal('hide');
-                    AIZ.plugins.notify('success', 'Producto añadido al carrito');
+                    AIZ.plugins.notify('success', @json(__('Producto añadido al carrito')));
                 } else {
-                    AIZ.plugins.notify('warning', res.message || 'No se pudo añadir al carrito');
+                    AIZ.plugins.notify('warning', res.message || @json(__('No se pudo añadir al carrito')));
                 }
             }).fail(function () {
-                AIZ.plugins.notify('danger', 'Error de red, inténtalo de nuevo');
+                AIZ.plugins.notify('danger', @json(__('Error de red, inténtalo de nuevo')));
             }).always(function () {
                 btn.disabled = false;
                 btn.innerHTML = original;

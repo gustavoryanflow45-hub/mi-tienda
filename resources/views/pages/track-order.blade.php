@@ -45,7 +45,7 @@
                     <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
                         <span style="font-size:.83rem; color:#666;">Estado de entrega</span>
                         <span style="font-size:.83rem; font-weight:600; color:#333;">
-                            {{ ucwords(str_replace('_', ' ', $order->delivery_status)) }}
+                            {{ delivery_status_label($order->delivery_status) }}
                         </span>
                     </div>
                     <div style="display:flex; justify-content:space-between;">

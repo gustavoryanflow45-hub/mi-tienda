@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Pedido ' . $order->code)
+@section('title', __('Pedido') . ' ' . $order->code)
 
 @section('extra_css')
 <style>
@@ -280,14 +280,14 @@
         @if(isset($isSeller) && $isSeller && $order->delivery_status === 'confirmed')
         <div class="warehouse-action-card">
             <div class="warehouse-action-info">
-                <h6><i class="las la-warehouse mr-1"></i> Enviar pedido al almacén</h6>
-                <p>El pedido está confirmado y listo para prepararse. Envíalo al almacén para iniciar el despacho.</p>
+                <h6><i class="las la-warehouse mr-1"></i> {{ __('Enviar pedido al almacén') }}</h6>
+                <p>{{ __('El pedido está confirmado y listo para prepararse. Envíalo al almacén para iniciar el despacho.') }}</p>
             </div>
             <form method="POST" action="{{ route('orders.send-to-warehouse', $order->id) }}"
-                  onsubmit="return confirm('¿Confirmar envío del pedido #{{ $order->code }} al almacén?')">
+                  onsubmit="return confirm({{ json_encode(__('¿Confirmar envío del pedido #:code al almacén?', ['code' => $order->code])) }})">
                 @csrf
                 <button type="submit" class="btn-warehouse">
-                    <i class="las la-warehouse"></i> Enviar al almacén
+                    <i class="las la-warehouse"></i> {{ __('Enviar al almacén') }}
                 </button>
             </form>
         </div>
@@ -297,8 +297,8 @@
         @if(isset($isSeller) && $isSeller && $order->delivery_status === 'warehouse')
         <div class="warehouse-action-card" style="background:linear-gradient(135deg,#edfaf0,#d4f5dc);border-color:#7ed4a0;">
             <div class="warehouse-action-info">
-                <h6 style="color:#1a5c32;"><i class="las la-check-circle mr-1"></i> Pedido en almacén</h6>
-                <p style="color:#2d7a4a;">El pedido ya fue enviado al almacén y está pendiente de despacho al cliente.</p>
+                <h6 style="color:#1a5c32;"><i class="las la-check-circle mr-1"></i> {{ __('Pedido en almacén') }}</h6>
+                <p style="color:#2d7a4a;">{{ __('El pedido ya fue enviado al almacén y está pendiente de despacho al cliente.') }}</p>
             </div>
             <span style="font-size:2rem; color:#2d7a4a;"><i class="las la-warehouse"></i></span>
         </div>
@@ -310,16 +310,16 @@
         <div class="tracker-wrap">
             <div class="tracker-title">
                 <span>Solicitar ID: {{ $order->code }}</span>
-                <a href="{{ route('orders.index') }}" class="close-btn" title="Cerrar">&times;</a>
+                <a href="{{ route('orders.index') }}" class="close-btn" title="{{ __('Cerrar') }}">&times;</a>
             </div>
 
             @php
                 $steps = [
-                    'pending'    => ['label' => 'Pedido realizado', 'icon' => 'las la-file-alt',        'date' => $order->created_at],
-                    'confirmed'  => ['label' => 'Confirmado',       'icon' => 'las la-clipboard-check', 'date' => $order->confirmed_at],
-                    'warehouse'  => ['label' => 'En almacén',       'icon' => 'las la-warehouse',       'date' => $order->warehouse_at],
-                    'on_the_way' => ['label' => 'En camino',        'icon' => 'las la-shipping-fast',   'date' => $order->dispatched_at],
-                    'delivered'  => ['label' => 'Entregado',        'icon' => 'las la-check-circle',    'date' => $order->delivered_at],
+                    'pending'    => ['label' => __('Pedido realizado'), 'icon' => 'las la-file-alt',        'date' => $order->created_at],
+                    'confirmed'  => ['label' => __('Confirmado'),   'icon' => 'las la-clipboard-check', 'date' => $order->confirmed_at],
+                    'warehouse'  => ['label' => __('En almacén'),   'icon' => 'las la-warehouse',       'date' => $order->warehouse_at],
+                    'on_the_way' => ['label' => __('En camino'),    'icon' => 'las la-shipping-fast',   'date' => $order->dispatched_at],
+                    'delivered'  => ['label' => __('Entregado'),    'icon' => 'las la-check-circle',    'date' => $order->delivered_at],
                 ];
 
                 // Orden de los estados
@@ -368,20 +368,20 @@
 
         <div class="info-card">
             <div class="info-card-header">
-                <i class="las la-receipt mr-2" style="color:#679941;"></i> Resumen del pedido
+                <i class="las la-receipt mr-2" style="color:#679941;"></i> {{ __('Resumen del pedido') }}
             </div>
             <div class="info-card-body">
                 <div class="summary-grid">
                     <div class="summary-item">
-                        <div class="label">Código de orden</div>
+                        <div class="label">{{ __('Código de pedido') }}</div>
                         <div class="value">{{ $order->code }}</div>
                     </div>
                     <div class="summary-item">
-                        <div class="label">Fecha de orden</div>
+                        <div class="label">{{ __('Fecha del pedido') }}</div>
                         <div class="value">{{ $order->created_at->format('d-m-Y H:i A') }}</div>
                     </div>
                     <div class="summary-item">
-                        <div class="label">Cliente</div>
+                        <div class="label">{{ __('Cliente') }}</div>
                         <div class="value">
                             @if($staffView)
                                 {{ $buyerName }}
@@ -391,15 +391,15 @@
                         </div>
                     </div>
                     <div class="summary-item">
-                        <div class="label">Estado del pedido</div>
+                        <div class="label">{{ __('Estado del pedido') }}</div>
                         <div class="value">
                             <span class="badge-status badge-{{ $order->delivery_status }}">
-                                {{ ucwords(str_replace('_', ' ', $order->delivery_status)) }}
+                                {{ delivery_status_label($order->delivery_status) }}
                             </span>
                         </div>
                     </div>
                     <div class="summary-item">
-                        <div class="label">Email</div>
+                        <div class="label">{{ __('Correo') }}</div>
                         <div class="value">
                             @if(! $buyerEmail)
                                 —
@@ -414,13 +414,13 @@
                         </div>
                     </div>
                     <div class="summary-item">
-                        <div class="label">Importe total del pedido</div>
+                        <div class="label">{{ __('Importe total del pedido') }}</div>
                         <div class="value" style="font-weight:700; color:#679941; font-size:1rem;">
                             ${{ number_format($order->grand_total, 2) }}
                         </div>
                     </div>
                     <div class="summary-item">
-                        <div class="label">Dirección de Envío</div>
+                        <div class="label">{{ __('Dirección de envío') }}</div>
                         <div class="value">
                             @if($addressData && ! empty($addressData['address']))
                                 {{ $addressData['address'] }}{{ ! empty($addressData['city']) ? ', ' . $addressData['city'] : '' }}
@@ -432,7 +432,7 @@
                         </div>
                     </div>
                     <div class="summary-item">
-                        <div class="label">Teléfono</div>
+                        <div class="label">{{ __('Teléfono') }}</div>
                         <div class="value">
                             @if(! $buyerPhone)
                                 —
@@ -444,8 +444,8 @@
                         </div>
                     </div>
                     <div class="summary-item">
-                        <div class="label">Método de pago</div>
-                        <div class="value">{{ ucfirst($order->payment_type ?? 'No especificado') }}</div>
+                        <div class="label">{{ __('Método de pago') }}</div>
+                        <div class="value">{{ $order->payment_type ? ucfirst($order->payment_type) : __('No especificado') }}</div>
                     </div>
                 </div>
             </div>
@@ -460,19 +460,19 @@
             <div class="col-lg-8 mb-4">
                 <div class="info-card">
                     <div class="info-card-header">
-                        <i class="las la-box mr-2" style="color:#679941;"></i> Detalles del pedido
+                        <i class="las la-box mr-2" style="color:#679941;"></i> {{ __('Detalles del pedido') }}
                     </div>
                     <div class="table-responsive">
                         <table class="details-table">
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Producto</th>
-                                    <th>Talla / Color</th>
-                                    <th>Cantidad</th>
-                                    <th>Tipo de entrega</th>
-                                    <th>Precio</th>
-                                    <th>Reembolso</th>
+                                    <th>{{ __('Producto') }}</th>
+                                    <th>{{ __('Talla / Color') }}</th>
+                                    <th>{{ __('Cantidad') }}</th>
+                                    <th>{{ __('Estado de entrega') }}</th>
+                                    <th>{{ __('Precio') }}</th>
+                                    <th>{{ __('Reembolso') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -486,7 +486,7 @@
                                                     {{ $detail->product->name }}
                                                 </a>
                                             @else
-                                                <span style="color:#bbb;">Producto eliminado</span>
+                                                <span style="color:#bbb;">{{ __('Producto eliminado') }}</span>
                                             @endif
                                         </td>
                                         <td>
@@ -495,7 +495,7 @@
                                         <td>{{ $detail->quantity }}</td>
                                         <td>
                                             <span class="badge-status badge-{{ $detail->delivery_status }}">
-                                                {{ ucwords(str_replace('_', ' ', $detail->delivery_status)) }}
+                                                {{ delivery_status_label($detail->delivery_status) }}
                                             </span>
                                         </td>
                                         <td style="font-weight:600;">
@@ -514,7 +514,7 @@
             <div class="col-lg-4 mb-4">
                 <div class="info-card">
                     <div class="info-card-header">
-                        <i class="las la-calculator mr-2" style="color:#679941;"></i> Orden Amount
+                        <i class="las la-calculator mr-2" style="color:#679941;"></i> {{ __('Importe del pedido') }}
                     </div>
                     <div class="info-card-body">
                         @php
@@ -525,23 +525,23 @@
                         @endphp
                         <div class="totals-box">
                             <div class="totals-row">
-                                <span class="t-label">Total parcial</span>
+                                <span class="t-label">{{ __('Subtotal') }}</span>
                                 <span>${{ number_format($subtotal, 2) }}</span>
                             </div>
                             <div class="totals-row">
-                                <span class="t-label">Envío</span>
+                                <span class="t-label">{{ __('Envío') }}</span>
                                 <span>${{ number_format($shippingTotal, 2) }}</span>
                             </div>
                             <div class="totals-row">
-                                <span class="t-label">Impuesto</span>
+                                <span class="t-label">{{ __('Impuesto') }}</span>
                                 <span>${{ number_format($taxTotal, 2) }}</span>
                             </div>
                             <div class="totals-row">
-                                <span class="t-label">Cupón</span>
+                                <span class="t-label">{{ __('Cupón') }}</span>
                                 <span>-${{ number_format($coupon, 2) }}</span>
                             </div>
                             <div class="totals-row">
-                                <span>TOTAL</span>
+                                <span>{{ __('TOTAL') }}</span>
                                 <span style="color:#679941;">${{ number_format($order->grand_total, 2) }}</span>
                             </div>
                         </div>
