@@ -70,11 +70,6 @@
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-reply mr-2 fs-16"></i><span>{{ __('dashboard.nav.refund_sent') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/wishlist') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-heart mr-2 fs-16"></i><span>{{ __('dashboard.nav.wishlist') }}</span>
                                 </a>
@@ -82,21 +77,6 @@
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('seller.products.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-box mr-2 fs-16"></i><span>{{ __('dashboard.nav.products') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-boxes mr-2 fs-16"></i><span>{{ __('dashboard.nav.wholesale') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-ticket-alt mr-2 fs-16"></i><span>{{ __('dashboard.nav.coupons') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-tags mr-2 fs-16"></i><span>{{ __('dashboard.nav.classified') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
@@ -130,22 +110,12 @@
                                 </li>
                             @endif
                             <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-undo mr-2 fs-16"></i><span>{{ __('dashboard.nav.refund_received') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-star mr-2 fs-16"></i><span>{{ __('dashboard.nav.reviews') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('wallet.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-wallet mr-2 fs-16"></i><span>{{ __('dashboard.nav.wallet') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
+                                <a href="{{ route('support-policy') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-headset mr-2 fs-16"></i><span>{{ __('dashboard.nav.support') }}</span>
                                 </a>
                             </li>
@@ -212,11 +182,11 @@
 
                 <div class="row gutters-10 mb-4">
                     <div class="col-6 col-md-3 mb-3">
-                        <div class="wave-card" style="background: linear-gradient(135deg, #c471ed, #f64f59);">
-                            <i class="las la-eye stat-icon"></i>
-                            <h2 class="fw-700 fs-32 mb-1 position-relative">{{ $stats['visitors'] ?? 0 }}</h2>
-                            <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.visitors') }}</p>
-                        </div>
+                        <a href="{{ route('seller.orders.index', ['delivery_status' => 'pending']) }}" class="wave-card d-block text-white text-decoration-none" style="background: linear-gradient(135deg, #c471ed, #f64f59);">
+                            <i class="las la-hourglass-half stat-icon"></i>
+                            <h2 class="fw-700 fs-32 mb-1 position-relative">{{ $stats['pending_orders'] ?? 0 }}</h2>
+                            <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.pending_orders') }}</p>
+                        </a>
                     </div>
                 </div>
 

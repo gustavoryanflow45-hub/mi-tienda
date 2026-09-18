@@ -75,16 +75,6 @@
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2 opacity-60">
-                                    <i class="las la-download mr-2 fs-16"></i><span>{{ __('dashboard.nav.downloads') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2 opacity-60">
-                                    <i class="las la-reply mr-2 fs-16"></i><span>{{ __('dashboard.nav.refund_sent') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/wishlist') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2 opacity-60">
                                     <i class="las la-heart mr-2 fs-16"></i><span>{{ __('dashboard.nav.wishlist') }}</span>
                                 </a>

@@ -146,7 +146,9 @@ Note: much of the page JS (language/currency switchers, search autocomplete) liv
 
 Default locale is `es` (`config/app.php` + `.env`). The topbar switcher POSTs to `/language` (`LanguageController@change`, param name `locale`), which stores `session('locale')`; `SetLocale` middleware applies it on every `web` request. Supported locales are declared once in `SetLocale::SUPPORTED` — the topbar dropdown and the controller both read from it, so adding a language means adding it there plus a `lang/<code>/` directory.
 
-Migration to `__()` is partial: only `partials/topbar` and the two dashboard views use translation keys (`lang/es`, `lang/en`). Every other view still has hardcoded Spanish, so switching to English leaves them untranslated.
+Migration to `__()` is partial: only `partials/topbar`, the two dashboard views and the password-broker messages (`passwords.php`) use translation keys (`lang/es`, `lang/en`). Every other view still has hardcoded Spanish, so switching to English leaves them untranslated.
+
+The dashboard sidebars (`pages/dashboard-verified`, `pages/dashboard-index`) only link to features that exist: the refund, wholesale, coupon, classified, reviews and downloads entries were `href="#"` placeholders inherited from the theme with no backend behind them (`Review` is a model with no routes or UI) and were removed together with their `dashboard.nav.*` keys; "Soporte" goes to the support-policy page. The old "Visitantes de Hoy" card, hard-wired to 0, is now "Pedidos por Confirmar" (`$stats['pending_orders']`: paid orders with a line of the seller still `delivery_status = 'pending'`), linking to `/seller/orders?delivery_status=pending`. `tests/Feature/SellerDashboardTest.php` fails if a `href="#"` comes back into either sidebar.
 
 ### Queue & Sessions
 

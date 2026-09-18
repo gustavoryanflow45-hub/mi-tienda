@@ -87,7 +87,9 @@ class DashboardController extends Controller
             'commission_rate' => $pending['commission_rate'],
             'success_orders'  => (clone $paidLines)->where('delivery_status', 'delivered')
                                     ->distinct()->count('order_id'),
-            'visitors'        => 0, // implementar con analytics si se desea
+            // Pagados y aún sin confirmar: lo que el vendedor tiene que atender.
+            'pending_orders'  => (clone $paidLines)->where('delivery_status', 'pending')
+                                    ->distinct()->count('order_id'),
         ];
 
         $lastSettlement = SellerSettlement::where('seller_id', $user->id)
