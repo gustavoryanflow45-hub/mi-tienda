@@ -19,7 +19,9 @@ class OrderController extends Controller
     // ── GET /orders ──────────────────────────────────────────────
     public function index(Request $request)
     {
-        $query = Order::with(['orderDetails.product'])
+        // La categoría entra por la etiqueta de la talla ("Talla US" vs
+        // "Cintura"), que sale del producto y, si no la declara, de ella.
+        $query = Order::with(['orderDetails.product.category'])
             ->where('user_id', Auth::id());
 
         // Filtro estado de pago

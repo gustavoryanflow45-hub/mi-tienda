@@ -468,7 +468,7 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Producto</th>
-                                    <th>Variación</th>
+                                    <th>Talla / Color</th>
                                     <th>Cantidad</th>
                                     <th>Tipo de entrega</th>
                                     <th>Precio</th>
@@ -489,7 +489,9 @@
                                                 <span style="color:#bbb;">Producto eliminado</span>
                                             @endif
                                         </td>
-                                        <td>{{ $detail->variation ?? '—' }}</td>
+                                        <td>
+                                            @include('partials.variant-badge', ['parts' => $detail->variant_parts, 'fallback' => '—'])
+                                        </td>
                                         <td>{{ $detail->quantity }}</td>
                                         <td>
                                             <span class="badge-status badge-{{ $detail->delivery_status }}">

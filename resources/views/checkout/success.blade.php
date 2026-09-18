@@ -53,7 +53,12 @@
                     <div class="d-items">
                         @foreach($order->orderDetails as $item)
                             <div class="d-row">
-                                <span>{{ $item->product_name }} × {{ $item->quantity }}</span>
+                                <span>
+                                    {{ $item->product_name }} × {{ $item->quantity }}
+                                    @if($item->hasVariant())
+                                        <br>@include('partials.variant-badge', ['parts' => $item->variant_parts, 'small' => true])
+                                    @endif
+                                </span>
                                 <span>${{ number_format($item->price * $item->quantity, 2) }}</span>
                             </div>
                         @endforeach

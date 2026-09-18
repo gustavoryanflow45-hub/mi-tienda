@@ -273,81 +273,208 @@ document.addEventListener('DOMContentLoaded', function() {
             @endauth
         }
 
+        // ── Modal rápido de añadir al carrito (tarjeta de producto) ──
+        //
+        // El modal sirve partials/quick-add-modal.blade.php ya renderizado.
+        // Antes pedía JSON y lo inyectaba con .html(), de modo que volcaba el
+        // JSON crudo en pantalla: desde la rejilla no se podía elegir talla ni
+        // color, solo desde la ficha completa.
+        //
+        // El comportamiento se queda aquí, delegado sobre #qa-root, para no
+        // reinyectar los mismos scripts en cada apertura.
+
         function showAddToCartModal(id) {
-            if (!$('#modal-size').hasClass('modal-lg')) {
-                $('#modal-size').addClass('modal-lg');
-            }
+            // CartController entero pide 'auth': para un invitado la petición
+            // redirige al login y el modal acabaría mostrando esa página.
+            @guest
+            AIZ.plugins.notify('warning', 'Inicia sesión para añadir productos al carrito');
+            setTimeout(function () { window.location.href = '{{ url("/login") }}'; }, 1200);
+            return;
+            @endguest
+
             $('#addToCart-modal-body').html(null);
             $('#addToCart').modal();
             $('.c-preloader').show();
+
             $.post('{{ route("cart.modal") }}', {
                 _token: AIZ.data.csrf,
                 id: id
-            }, function (data) {
+            }, function (html) {
                 $('.c-preloader').hide();
-                $('#addToCart-modal-body').html(data);
-                AIZ.plugins.slickCarousel();
-                AIZ.plugins.zoom();
-                AIZ.extra.plusMinus();
-                getVariantPrice();
+                $('#addToCart-modal-body').html(html);
+                quickAddRefresh();
+            }).fail(function () {
+                $('.c-preloader').hide();
+                AIZ.plugins.notify('danger', 'No se pudo cargar el producto');
             });
         }
 
-        function getVariantPrice() {
-            if ($('#option-choice-form input[name=quantity]').val() > 0 && checkAddToCartValidity()) {
-                $.ajax({
-                    type: 'POST',
-                    url: '{{ route("product.variant_price") }}',
-                    data: $('#option-choice-form').serializeArray(),
-                    success: function (data) {
-                        $('#option-choice-form #chosen_price_div').removeClass('d-none');
-                        $('#option-choice-form #chosen_price_div #chosen_price').html(data.price);
-                        $('#available-quantity').html(data.quantity);
-                        $('.input-number').prop('max', data.max_limit);
-                        if (parseInt(data.in_stock) == 0 && data.digital == 0) {
-                            $('.buy-now, .add-to-cart').addClass('d-none');
-                            $('.out-of-stock').removeClass('d-none');
-                        } else {
-                            $('.buy-now, .add-to-cart').removeClass('d-none');
-                            $('.out-of-stock').addClass('d-none');
-                        }
-                    }
-                });
-            }
+        function quickAddData() {
+            var root = document.getElementById('qa-root');
+            if (!root) return null;
+
+            return {
+                root: root,
+                productId: parseInt(root.dataset.productId, 10),
+                hasSizes: root.dataset.hasSizes === '1',
+                hasColors: root.dataset.hasColors === '1',
+                totalStock: parseInt(root.dataset.totalStock, 10) || 0,
+                map: JSON.parse(root.dataset.stockMap || '{}')
+            };
         }
 
-        function checkAddToCartValidity() {
-            var names = {};
-            $('#option-choice-form input:radio').each(function () {
-                names[$(this).attr('name')] = true;
+        function quickAddSelection(root) {
+            var size  = root.querySelector('input[name="qa-size"]:checked');
+            var color = root.querySelector('input[name="qa-color"]:checked');
+
+            return { size: size ? size.value : null, color: color ? color.value : null };
+        }
+
+        // Misma clave que arma ProductStock::buildVariant(): talla primero.
+        function quickAddKey(size, color) {
+            return [size, color].filter(Boolean).join('-');
+        }
+
+        /** true si queda alguna combinación con stock que incluya este valor. */
+        function quickAddReachable(d, dimension, value) {
+            var sel   = quickAddSelection(d.root);
+            // Al evaluar una dimensión se ignora lo ya elegido en ella misma,
+            // o elegir una talla dejaría todas las demás en agotado.
+            var size  = dimension === 'size'  ? value : sel.size;
+            var color = dimension === 'color' ? value : sel.color;
+
+            if ((d.hasSizes && !size) || (d.hasColors && !color)) {
+                return Object.keys(d.map).some(function (key) {
+                    return d.map[key].qty > 0 && key.split('-').indexOf(value) !== -1;
+                });
+            }
+
+            var entry = d.map[quickAddKey(size, color)];
+            return !!entry && entry.qty > 0;
+        }
+
+        function quickAddRefresh() {
+            var d = quickAddData();
+            if (!d) return;
+
+            var sel = quickAddSelection(d.root);
+
+            d.root.querySelectorAll('.qa-size').forEach(function (chip) {
+                chip.classList.toggle('selected', chip.dataset.size === sel.size);
+                chip.classList.toggle('no-stock', !quickAddReachable(d, 'size', chip.dataset.size));
             });
-            var count = 0;
-            $.each(names, function () { count++; });
-            return $('#option-choice-form input:radio:checked').length == count;
-        }
 
-        function addToCart() {
-            if (checkAddToCartValidity()) {
-                $('#addToCart').modal();
-                $('.c-preloader').show();
-                $.ajax({
-                    type: 'POST',
-                    url: '{{ route("cart.add") }}',
-                    data: $('#option-choice-form').serializeArray(),
-                    success: function (data) {
-                        $('#addToCart-modal-body').html(null);
-                        $('.c-preloader').hide();
-                        $('#modal-size').removeClass('modal-lg');
-                        $('#addToCart-modal-body').html(data.modal_view);
-                        AIZ.extra.plusMinus();
-                        AIZ.plugins.slickCarousel();
-                        updateNavCart(data.nav_cart_view, data.cart_count);
-                    }
-                });
-            } else {
-                AIZ.plugins.notify('warning', 'Please choose all the options');
+            d.root.querySelectorAll('.qa-color').forEach(function (chip) {
+                chip.classList.toggle('selected', chip.dataset.color === sel.color);
+                chip.classList.toggle('no-stock', !quickAddReachable(d, 'color', chip.dataset.color));
+            });
+
+            var qty   = d.root.querySelector('#qa-qty');
+            var stock = d.root.querySelector('#qa-stock');
+            var price = d.root.querySelector('#qa-price-value');
+            var full  = (!d.hasSizes || sel.size) && (!d.hasColors || sel.color);
+
+            if (!full) {
+                if (stock) stock.textContent = '(' + d.totalStock + ' disponibles)';
+                if (qty) qty.max = d.totalStock;
+                return;
+            }
+
+            var entry = d.map[quickAddKey(sel.size, sel.color)];
+
+            if (!entry) {
+                if (stock) stock.textContent = '(combinación no disponible)';
+                if (qty) { qty.max = 0; qty.value = 1; }
+                return;
+            }
+
+            if (price) price.textContent = '$' + entry.price.toFixed(2);
+            if (stock) stock.textContent = '(' + entry.qty + ' disponibles)';
+            if (qty) {
+                qty.max = entry.qty;
+                if (parseInt(qty.value, 10) > entry.qty) qty.value = Math.max(1, entry.qty);
             }
         }
+
+        /** Qué falta por elegir; null si la selección ya es válida. */
+        function quickAddMissing(d) {
+            var sel = quickAddSelection(d.root);
+
+            if (d.hasSizes && !sel.size)   return 'Elige una talla antes de continuar.';
+            if (d.hasColors && !sel.color) return 'Elige un color antes de continuar.';
+
+            if (d.hasSizes || d.hasColors) {
+                var entry = d.map[quickAddKey(sel.size, sel.color)];
+                if (!entry)         return 'Esa combinación no está disponible.';
+                if (entry.qty <= 0) return 'Esa combinación está agotada.';
+            }
+
+            return null;
+        }
+
+        function quickAddSubmit() {
+            @guest
+            AIZ.plugins.notify('warning', 'Inicia sesión para añadir productos al carrito');
+            setTimeout(function () { window.location.href = '{{ url("/login") }}'; }, 1200);
+            return;
+            @endguest
+
+            var d = quickAddData();
+            if (!d) return;
+
+            // El servidor rechaza una combinación incompleta igualmente; se
+            // avisa aquí para ahorrar el viaje y señalar qué falta.
+            var missing = quickAddMissing(d);
+            if (missing) {
+                AIZ.plugins.notify('warning', missing);
+                return;
+            }
+
+            var sel = quickAddSelection(d.root);
+            var btn = d.root.querySelector('.qa-add');
+            var original = btn.innerHTML;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="las la-spinner la-spin"></i> Añadiendo...';
+
+            $.ajax({
+                type: 'POST',
+                url: '{{ route("cart.add") }}',
+                contentType: 'application/json',
+                headers: { 'X-CSRF-TOKEN': AIZ.data.csrf },
+                data: JSON.stringify({
+                    product_id: d.productId,
+                    quantity: parseInt(d.root.querySelector('#qa-qty').value, 10) || 1,
+                    variation: quickAddKey(sel.size, sel.color) || null
+                })
+            }).done(function (res) {
+                if (res.status === 'success') {
+                    updateNavCart(res.cart_count);
+                    $('#addToCart').modal('hide');
+                    AIZ.plugins.notify('success', 'Producto añadido al carrito');
+                } else {
+                    AIZ.plugins.notify('warning', res.message || 'No se pudo añadir al carrito');
+                }
+            }).fail(function () {
+                AIZ.plugins.notify('danger', 'Error de red, inténtalo de nuevo');
+            }).always(function () {
+                btn.disabled = false;
+                btn.innerHTML = original;
+            });
+        }
+
+        // Delegado: el contenido del modal se reemplaza en cada apertura.
+        $(document).on('change', '#qa-root input[name="qa-size"], #qa-root input[name="qa-color"]', quickAddRefresh);
+
+        $(document).on('click', '#qa-root .qa-qty-btn', function () {
+            var input = document.getElementById('qa-qty');
+            var max   = parseInt(input.max, 10) || 1;
+            var next  = (parseInt(input.value, 10) || 1) + parseInt(this.dataset.step, 10);
+
+            input.value = Math.min(Math.max(1, next), Math.max(1, max));
+        });
+
+        $(document).on('click', '#qa-root .qa-add', quickAddSubmit);
     </script>
 
     @yield('extra_js')

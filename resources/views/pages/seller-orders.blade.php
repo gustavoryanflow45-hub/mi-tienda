@@ -214,6 +214,7 @@
                                     <th>#</th>
                                     <th>Código</th>
                                     <th>Cliente</th>
+                                    <th>Tus productos</th>
                                     <th>Fecha</th>
                                     <th>Total (tus productos)</th>
                                     <th>Pago</th>
@@ -240,6 +241,9 @@
                                                     @if(! empty($addr['city'])) · {{ $addr['city'] }}@endif
                                                 </small>
                                             @endif
+                                        </td>
+                                        <td>
+                                            @include('partials.order-items-cell', ['details' => $order->orderDetails])
                                         </td>
                                         <td>{{ $order->created_at->format('d-m-Y H:i') }}</td>
                                         <td style="font-weight:600;">
@@ -277,7 +281,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8">
+                                        <td colspan="9">
                                             <div class="nothing-found">
                                                 <i class="las la-frown-open"></i>
                                                 <span>No tienes pedidos pagados todavía</span>

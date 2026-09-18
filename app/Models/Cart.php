@@ -1,9 +1,13 @@
 <?php
 namespace App\Models;
+
+use App\Models\Concerns\DescribesVariant;
 use Illuminate\Database\Eloquent\Model;
 
 class Cart extends Model
 {
+    use DescribesVariant;
+
     protected $fillable = [
         'user_id', 'temp_user_id', 'product_id', 'product_stock_id',
         'variation', 'quantity', 'price', 'tax', 'shipping_cost',

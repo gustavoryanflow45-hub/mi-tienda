@@ -54,7 +54,6 @@ Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('categ
 // Productos
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/product/{slug}', [ProductController::class, 'show'])->name('products.show');
-Route::post('/product/variant_price', [ProductController::class, 'variantPrice'])->name('product.variant_price');
 
 // Marcas
 Route::get('/brands', [BrandController::class, 'index'])->name('brands.index');

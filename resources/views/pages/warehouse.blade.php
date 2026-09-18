@@ -223,6 +223,7 @@
                             <th>#</th>
                             <th>Código</th>
                             <th>Cliente</th>
+                            <th>Artículos a despachar</th>
                             <th>Dirección de envío</th>
                             <th>Llegó al almacén</th>
                             <th>Despachado</th>
@@ -240,6 +241,9 @@
                                 <td>{{ $orders->firstItem() + $i }}</td>
                                 <td style="font-weight:600;">{{ $order->code }}</td>
                                 <td>{{ $addr['full_name'] ?? $order->user->name ?? '—' }}</td>
+                                <td>
+                                    @include('partials.order-items-cell', ['details' => $order->orderDetails])
+                                </td>
                                 <td class="address-cell">
                                     @if($addr && ! empty($addr['address']))
                                         {{ $addr['address'] }}{{ ! empty($addr['city']) ? ', ' . $addr['city'] : '' }}
@@ -293,7 +297,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9">
+                                <td colspan="10">
                                     <div class="nothing-found">
                                         <i class="las la-dolly"></i>
                                         <span>No hay pedidos en el almacén por ahora</span>

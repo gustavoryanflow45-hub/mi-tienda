@@ -26,7 +26,7 @@ class SellerOrderController extends Controller
     {
         $sellerId = Auth::id();
 
-        $query = Order::with(['user', 'orderDetails' => fn ($q) => $q->where('seller_id', $sellerId)])
+        $query = Order::with(['user', 'orderDetails' => fn ($q) => $q->where('seller_id', $sellerId)->with('product.category')])
             ->whereHas('orderDetails', fn ($q) => $q->where('seller_id', $sellerId))
             ->where('payment_status', 'paid');
 

@@ -126,6 +126,10 @@ class CheckoutController extends Controller
 
         $order->load('orderDetails.product');
 
+        // La etiqueta de la talla de cada línea sale del producto y de su
+        // categoría; sin cargarlas el resumen consulta una vez por artículo.
+        $order->load('orderDetails.product.category');
+
         return view('checkout.success', ['order' => $order]);
     }
 }

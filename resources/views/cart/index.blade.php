@@ -116,8 +116,10 @@
                                                 {{ $item->product->name }}
                                             </a>
                                         </div>
-                                        @if($item->variation)
-                                            <div class="cart-product-variant">{{ $item->variation }}</div>
+                                        @if($item->hasVariant())
+                                            <div class="cart-product-variant">
+                                                @include('partials.variant-badge', ['parts' => $item->variant_parts])
+                                            </div>
                                         @endif
                                     </div>
                                 </div>

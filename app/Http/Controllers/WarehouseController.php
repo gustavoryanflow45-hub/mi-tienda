@@ -26,7 +26,7 @@ class WarehouseController extends Controller
     // ── GET /warehouse ───────────────────────────────────────────
     public function index(Request $request)
     {
-        $query = Order::with(['user', 'orderDetails'])
+        $query = Order::with(['user', 'orderDetails.product.category'])
             ->where('payment_status', 'paid');
 
         if ($request->filled('delivery_status')) {

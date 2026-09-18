@@ -333,12 +333,7 @@
 
                             // Mapa combinación -> stock, para que el JS pueda desactivar
                             // las que no existen o están agotadas sin pedir nada al servidor.
-                            $stockMap = $product->stocks->mapWithKeys(fn($s) => [
-                                \App\Models\ProductStock::buildVariant($s->size, $s->color) => [
-                                    'qty'   => (int) $s->qty,
-                                    'price' => (float) $s->price,
-                                ],
-                            ]);
+                            $stockMap = $product->stockMap();
                         @endphp
 
                         <div class="info-row">

@@ -108,6 +108,24 @@ class Product extends Model
             : array_search($color, $order, true))->values()->all();
     }
 
+    /**
+     * Mapa combinación -> {qty, price}, para que el selector de variantes
+     * del cliente sepa qué desactivar sin pedir nada al servidor.
+     *
+     * Lo consumen la ficha de producto y el modal rápido de la tarjeta, que
+     * son el mismo selector en dos tamaños: si cada uno lo armara por su
+     * cuenta, uno acabaría ofreciendo combinaciones que el otro ya no tiene.
+     */
+    public function stockMap(): array
+    {
+        return $this->stocks->mapWithKeys(fn ($stock) => [
+            ProductStock::buildVariant($stock->size, $stock->color) => [
+                'qty'   => (int) $stock->qty,
+                'price' => (float) $stock->price,
+            ],
+        ])->all();
+    }
+
     /** Fila de stock de una combinación concreta, o null si no existe. */
     public function stockFor(?string $size, ?string $color): ?ProductStock
     {

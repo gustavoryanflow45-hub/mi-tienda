@@ -24,8 +24,8 @@
                    class="d-block text-reset fw-600 fs-13 text-truncate">
                     {{ $item->product->name }}
                 </a>
-                @if($item->variation)
-                    <span class="fs-11 text-muted">{{ $item->variation }}</span>
+                @if($item->hasVariant())
+                    @include('partials.variant-badge', ['parts' => $item->variant_parts, 'small' => true])
                 @endif
                 <div class="fs-13 mt-1">
                     <span class="text-muted">{{ $item->quantity }} ×</span>

@@ -168,7 +168,10 @@
                             <div>
                                 <div class="co-item-name">{{ $item->product->name }}</div>
                                 <div class="co-item-meta">
-                                    @if($item->variation) {{ $item->variation }} · @endif
+                                    @if($item->hasVariant())
+                                        @include('partials.variant-badge', ['parts' => $item->variant_parts, 'small' => true])
+                                        ·
+                                    @endif
                                     × {{ $item->quantity }}
                                 </div>
                             </div>

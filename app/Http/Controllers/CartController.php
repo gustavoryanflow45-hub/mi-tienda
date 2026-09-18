@@ -43,7 +43,7 @@ class CartController extends Controller
 
     public function index()
     {
-        $cartItems = $this->getCartQuery()->with(['product.stocks'])->get();
+        $cartItems = $this->getCartQuery()->with(['product.stocks', 'product.category'])->get();
 
         $cartItems->each(function ($item) {
             $stock = $item->variation
@@ -67,7 +67,7 @@ class CartController extends Controller
 
     public function mini()
     {
-        $cartItems = $this->getCartQuery()->with('product')->get();
+        $cartItems = $this->getCartQuery()->with('product.category')->get();
         $totals    = $this->checkout->totals($cartItems);
         $count     = $cartItems->sum('quantity');
 
@@ -187,33 +187,24 @@ class CartController extends Controller
 
     // ── MODAL ─────────────────────────────────────────────────────────
 
+    /**
+     * Ficha compacta para el modal de la tarjeta de producto, ya renderizada.
+     *
+     * Devolvía JSON mientras el JS del layout la inyectaba con .html(), así
+     * que el modal escupía el JSON crudo en pantalla y desde la rejilla no
+     * había forma de elegir talla ni color. El selector completo vive en la
+     * ficha de producto; esto es el mismo selector en pequeño, alimentado por
+     * Product::stockMap() para que ambos ofrezcan las mismas combinaciones.
+     */
     public function modal(Request $request)
     {
         $productId = $request->input('product_id') ?? $request->input('id');
         abort_unless($productId, 422, 'product_id required');
 
-        $product = Product::with('stocks')->findOrFail($productId);
+        // La categoría entra por el rótulo de la talla ("Talla US", "Cintura").
+        $product = Product::with('stocks', 'category')->findOrFail($productId);
 
-        return response()->json([
-            'status'  => 'success',
-            'product' => [
-                'id'          => $product->id,
-                'name'        => $product->name,
-                'slug'        => $product->slug,
-                'price'       => number_format($product->unit_price, 2),
-                'final_price' => number_format($product->discounted_price, 2),
-                'discount'    => $product->discount,
-                'thumbnail'   => $product->thumbnail
-                    ? asset('storage/' . $product->thumbnail)
-                    : 'https://via.placeholder.com/300x300/f8f9fa/679941?text=Producto',
-                'rating'      => $product->rating,
-                'stocks'      => $product->stocks->map(fn($s) => [
-                    'variant' => $s->variant,
-                    'price'   => $s->price,
-                    'qty'     => $s->qty,
-                ]),
-            ],
-        ]);
+        return response()->view('partials.quick-add-modal', compact('product'));
     }
 
     // ── UPDATE QUANTITY ───────────────────────────────────────────────
