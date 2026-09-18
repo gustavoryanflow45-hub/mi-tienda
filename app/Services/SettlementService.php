@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\OrderDetail;
 use App\Models\SellerSettlement;
 use App\Models\User;
+use App\Models\WalletWithdrawal;
 use App\Notifications\SellerSettledNotification;
 use Illuminate\Support\Facades\DB;
 
@@ -112,6 +113,26 @@ class SettlementService
         }
 
         return $settlement;
+    }
+
+    /**
+     * Parte del saldo que viene de liquidaciones y aún no se retiró: se puede
+     * retirar sin que el admin lo apruebe otra vez, porque ya lo aprobó al
+     * liquidar. Lo recargado por el usuario sigue pasando por /admin/wallet.
+     *
+     * Un retiro rechazado devolvió el saldo, así que vuelve a contar.
+     */
+    public function withdrawableFor(User $seller): float
+    {
+        $credited = (float) SellerSettlement::where('seller_id', $seller->id)->sum('net_amount');
+
+        $withdrawn = (float) WalletWithdrawal::where('user_id', $seller->id)
+            ->where('from_settlement', true)
+            ->where('status', '!=', 'rejected')
+            ->sum('amount');
+
+        // Nunca por encima del saldo real: el usuario pudo gastar en compras.
+        return round(max(0, min($credited - $withdrawn, (float) $seller->balance)), 2);
     }
 
     /**

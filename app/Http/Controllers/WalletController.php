@@ -9,6 +9,7 @@ use App\Models\SellerSettlement;
 use App\Models\WalletRecharge;
 use App\Models\WalletWithdrawal;
 use App\Models\User;
+use App\Services\SettlementService;
 
 class WalletController extends Controller
 {
@@ -21,13 +22,15 @@ class WalletController extends Controller
      | VISTA USUARIO
     ───────────────────────────────────────── */
 
-    public function index()
+    public function index(SettlementService $settlementService)
     {
         $recharges   = WalletRecharge::where('user_id', Auth::id())->latest()->get();
         $withdrawals = WalletWithdrawal::where('user_id', Auth::id())->latest()->get();
         // Liquidaciones de ventas acreditadas por el admin (solo vendedores las tienen).
         $settlements = SellerSettlement::where('seller_id', Auth::id())->latest('settled_at')->get();
-        return view('users.wallet', compact('recharges', 'withdrawals', 'settlements'));
+        // Parte del saldo que se retira sin aprobación: ya la aprobó el admin al liquidar.
+        $withdrawable = $settlementService->withdrawableFor(Auth::user());
+        return view('users.wallet', compact('recharges', 'withdrawals', 'settlements', 'withdrawable'));
     }
 
     /* ─────────────────────────────────────────
@@ -106,7 +109,7 @@ class WalletController extends Controller
      | RETIROS
     ───────────────────────────────────────── */
 
-    public function withdraw(Request $request)
+    public function withdraw(Request $request, SettlementService $settlementService)
     {
         $request->validate([
             'amount'         => 'required|numeric|min:1',
@@ -121,14 +124,20 @@ class WalletController extends Controller
             return back()->withErrors(['amount' => 'Saldo insuficiente.'])->withInput();
         }
 
-        DB::transaction(function () use ($request) {
+        // Si el monto cabe en lo que viene de liquidaciones, el admin ya lo
+        // aprobó al liquidar: sale aprobado sin segunda revisión. Lo que
+        // exceda (saldo recargado) sigue pendiente como siempre.
+        $fromSettlement = (float) $request->amount <= $settlementService->withdrawableFor(Auth::user());
+
+        DB::transaction(function () use ($request, $fromSettlement) {
             WalletWithdrawal::create([
-                'user_id'        => Auth::id(),
-                'amount'         => $request->amount,
-                'full_name'      => $request->full_name,
-                'bank_name'      => $request->bank_name,
-                'account_number' => $request->account_number,
-                'status'         => 'pending',
+                'user_id'         => Auth::id(),
+                'amount'          => $request->amount,
+                'full_name'       => $request->full_name,
+                'bank_name'       => $request->bank_name,
+                'account_number'  => $request->account_number,
+                'status'          => $fromSettlement ? 'approved' : 'pending',
+                'from_settlement' => $fromSettlement,
             ]);
 
             // Descontar el saldo al solicitar (se devuelve si se rechaza)
@@ -136,7 +145,9 @@ class WalletController extends Controller
                 ->decrement('balance', $request->amount);
         });
 
-        return back()->with('success', 'Solicitud de retiro enviada. Está pendiente de aprobación.');
+        return back()->with('success', $fromSettlement
+            ? 'Retiro aprobado: proviene de ventas ya liquidadas, no necesita otra aprobación.'
+            : 'Solicitud de retiro enviada. Está pendiente de aprobación.');
     }
 
     public function approveWithdrawal($id)

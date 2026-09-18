@@ -229,6 +229,54 @@ class SellerSettlementTest extends TestCase
             ->assertDontSee('Liquidaciones de ventas acreditadas');
     }
 
+    /**
+     * Lo liquidado ya lo aprobó el admin: el retiro que lo cubre sale aprobado
+     * al instante. Lo que exceda (saldo recargado) sigue pendiente.
+     */
+    public function test_withdrawals_covered_by_settlements_need_no_second_approval(): void
+    {
+        $admin = $this->makeAdmin();
+        $seller = $this->makeVerifiedSeller();
+        $customer = $this->makeCustomer();
+
+        $this->makeDeliveredOrder($customer, $seller, 100.00);
+        $this->actingAs($admin)->post('/admin/settlements/'.$seller->id)->assertSessionHas('success');
+
+        // Saldo extra que no viene de ventas (una recarga aprobada).
+        $seller->forceFill(['balance' => 75.00 + 50.00])->save();
+
+        $payload = [
+            'full_name' => $seller->name,
+            'bank_name' => 'TRC20',
+            'account_number' => 'TEkbFw2Gc6JAgZtKPb9KcmuyvojVCTtk',
+        ];
+
+        $this->actingAs($seller)->get('/wallet')->assertSee('$75.00');
+
+        // 60 ≤ 75 liquidados → aprobado sin pasar por el admin.
+        $this->actingAs($seller)->post('/wallet/withdraw', $payload + ['amount' => 60])
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'aprobado'));
+        $this->assertDatabaseHas('wallet_withdrawals', ['user_id' => $seller->id, 'amount' => 60, 'status' => 'approved', 'from_settlement' => true]);
+        $this->assertSame('65.00', $seller->fresh()->balance);
+
+        // Quedan 15 liquidados; 40 los excede → pendiente, como siempre.
+        $this->actingAs($seller)->post('/wallet/withdraw', $payload + ['amount' => 40])
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'pendiente'));
+        $this->assertDatabaseHas('wallet_withdrawals', ['user_id' => $seller->id, 'amount' => 40, 'status' => 'pending', 'from_settlement' => false]);
+        $this->assertSame('25.00', $seller->fresh()->balance);
+
+        // Los 15 restantes de liquidación siguen retirables al instante.
+        $this->actingAs($seller)->post('/wallet/withdraw', $payload + ['amount' => 15])
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'aprobado'));
+        $this->assertSame('10.00', $seller->fresh()->balance);
+
+        // Un cliente sin liquidaciones sigue pasando por aprobación.
+        $customer->forceFill(['balance' => 30.00])->save();
+        $this->actingAs($customer)->post('/wallet/withdraw', $payload + ['amount' => 20])
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'pendiente'));
+        $this->assertDatabaseHas('wallet_withdrawals', ['user_id' => $customer->id, 'status' => 'pending', 'from_settlement' => false]);
+    }
+
     public function test_settling_with_nothing_pending_records_nothing(): void
     {
         $admin = $this->makeAdmin();

@@ -563,6 +563,11 @@
                                     <span class="badge-pill badge-approved">
                                         <i class="las la-check"></i> Aprobado
                                     </span>
+                                    @if($w->from_settlement)
+                                        <span class="badge-pill badge-approved" title="Cubierto por ventas liquidadas: aprobado automáticamente al solicitarlo">
+                                            <i class="las la-bolt"></i> Liquidación
+                                        </span>
+                                    @endif
                                 @elseif($w->status == 'pending')
                                     <span class="badge-pill badge-pending">
                                         <i class="las la-clock"></i> Pendiente
