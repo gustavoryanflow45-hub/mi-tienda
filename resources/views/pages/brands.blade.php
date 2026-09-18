@@ -1,19 +1,19 @@
 @extends('layouts.app')
 
-@section('title', 'Marcas')
+@section('title', __('Marcas'))
 
 @section('content')
 <div style="background:#f2f3f8; padding:30px 0 60px; min-height:60vh;">
     <div class="container">
 
         <h1 style="font-size:1.2rem; font-weight:700; color:#222; margin-bottom:24px;">
-            <i class="las la-tags" style="color:#679941;"></i> Todas las Marcas
+            <i class="las la-tags" style="color:#679941;"></i> {{ __('Todas las marcas') }}
         </h1>
 
         @if($brands->isEmpty())
             <div style="text-align:center; padding:60px 20px; color:#bbb;">
                 <i class="las la-tags" style="font-size:3rem; display:block; margin-bottom:12px;"></i>
-                <p>No hay marcas disponibles.</p>
+                <p>{{ __('No hay marcas disponibles.') }}</p>
             </div>
         @else
             <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:16px;">

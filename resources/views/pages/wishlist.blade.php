@@ -1,20 +1,20 @@
 @extends('layouts.app')
 
-@section('title', 'Mi Lista de Deseos')
+@section('title', __('Mi lista de deseos'))
 
 @section('content')
 <div style="background:#f2f3f8; padding:30px 0 60px; min-height:60vh;">
     <div class="container">
 
         <h1 style="font-size:1.2rem; font-weight:700; color:#222; margin-bottom:24px;">
-            <i class="las la-heart" style="color:#679941;"></i> Mi Lista de Deseos
+            <i class="las la-heart" style="color:#679941;"></i> {{ __('Mi lista de deseos') }}
         </h1>
 
         @if($wishlist->isEmpty())
             <div style="background:#fff; border-radius:10px; box-shadow:0 1px 8px rgba(0,0,0,.07); padding:60px 20px; text-align:center; color:#bbb;">
                 <i class="las la-heart-broken" style="font-size:3rem; display:block; margin-bottom:12px;"></i>
-                <p style="font-size:.95rem; font-weight:600; color:#888;">Tu lista de deseos está vacía.</p>
-                <a href="{{ route('products.index') }}" style="color:#679941; font-size:.85rem;">← Explorar productos</a>
+                <p style="font-size:.95rem; font-weight:600; color:#888;">{{ __('Tu lista de deseos está vacía.') }}</p>
+                <a href="{{ route('products.index') }}" style="color:#679941; font-size:.85rem;">← {{ __('Explorar productos') }}</a>
             </div>
         @else
             <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px;">
@@ -46,7 +46,7 @@
                                 </div>
                                 <button onclick="addToCart({{ $item->product->id }})"
                                     style="width:100%; background:#679941; color:#fff; border:none; border-radius:6px; padding:8px; font-size:.82rem; font-weight:600; cursor:pointer;">
-                                    <i class="las la-shopping-cart"></i> Añadir al carrito
+                                    <i class="las la-shopping-cart"></i> {{ __('Añadir al carrito') }}
                                 </button>
                             </div>
                         </div>
@@ -77,7 +77,7 @@ function addToCart(productId) {
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
         body: JSON.stringify({ product_id: productId, quantity: 1 }),
     }).then(r => r.json()).then(data => {
-        if (data.status === 'success') alert('Añadido al carrito.');
+        if (data.status === 'success') alert(@json(__('Producto añadido al carrito')));
     });
 }
 </script>

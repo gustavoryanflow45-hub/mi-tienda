@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Mi Cartera')
+@section('title', __('Mi billetera'))
 
 @section('extra_css')
 <style>
@@ -155,7 +155,7 @@
                     <div class="balance-amount">
                         ${{ number_format(auth()->user()->balance ?? 0, 2) }}
                     </div>
-                    <div class="balance-label">{{ __('Saldo de Wallet') }}</div>
+                    <div class="balance-label">{{ __('Saldo de la billetera') }}</div>
                     @if(($withdrawable ?? 0) > 0)
                         <div class="balance-label" style="margin-top:6px;font-size:.8rem;opacity:.9;">
                             <i class="las la-bolt"></i>
@@ -170,7 +170,7 @@
                     <div class="action-circle">
                         <i class="las la-plus"></i>
                     </div>
-                    <div class="action-label">{{ __('Offline Recharge Wallet') }}</div>
+                    <div class="action-label">{{ __('Recargar billetera') }}</div>
                 </div>
 
                 {{-- Withdrawal Request --}}
@@ -214,7 +214,7 @@
 
                 {{-- Recharge History --}}
                 <div class="wallet-history-card">
-                    <div class="history-header">{{ __('Wallet Recharge History') }}</div>
+                    <div class="history-header">{{ __('Historial de recargas') }}</div>
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
@@ -251,7 +251,7 @@
 
                 {{-- Withdrawal History --}}
                 <div class="wallet-history-card">
-                    <div class="history-header">{{ __('Wallet Withdrawal History') }}</div>
+                    <div class="history-header">{{ __('Historial de retiros') }}</div>
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
@@ -354,7 +354,7 @@
 
             <div class="modal-header border-0 pb-1 pt-4 px-4">
                 <h5 class="modal-title" style="font-size:1.15rem;font-weight:700;">
-                    {{ __('Offline Recharge Wallet') }}
+                    {{ __('Recargar billetera') }}
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"
                         style="font-size:1.4rem;opacity:.6;">
@@ -419,7 +419,7 @@
                               style="font-size:.82rem;color:#333;word-break:break-all;flex:1;
                                      font-family:monospace;line-height:1.4;"></span>
                         <button type="button" id="copy-addr-btn" onclick="copyWalletAddress()"
-                                title="Copiar dirección"
+                                title="{{ __('Copiar dirección') }}"
                                 style="flex-shrink:0;background:none;border:none;padding:2px 4px;
                                        cursor:pointer;color:#888;font-size:1.1rem;line-height:1;
                                        transition:color .2s;">
@@ -444,11 +444,11 @@
                                    placeholder="{{ __('ID de transacción') }}" style="border-radius:8px;">
                         </div>
                         <div class="form-group mb-0">
-                            <label class="mb-1" style="font-size:.88rem;">{{ __('Foto') }}</label>
+                            <label class="mb-1" style="font-size:.88rem;">{{ __('Comprobante de pago') }}</label>
                             <div class="input-group">
                                 <label class="input-group-text" for="payment_proof_input"
                                        style="background:#e9ecef;cursor:pointer;border-radius:8px 0 0 8px;font-size:.84rem;">
-                                    {{ __('Vistazo') }}
+                                    {{ __('Elegir archivo') }}
                                 </label>
                                 <input type="file" name="payment_proof" id="payment_proof_input"
                                        class="form-control" accept="image/*"
@@ -504,20 +504,20 @@
 
                     <div class="form-group mb-3">
                         <label class="mb-1" style="font-size:.9rem;">
-                            {{ __('Nombre del banco') }} <span class="text-danger">*</span>
-                            <small class="text-muted">{{ __('Complete la criptomoneda (TRC20, ERC20, BEP20)') }}</small>
+                            {{ __('Red de retiro') }} <span class="text-danger">*</span>
+                            <small class="text-muted">{{ __('TRC20, ERC20 o BEP20') }}</small>
                         </label>
                         <input type="text" name="bank_name" class="form-control" required
-                               placeholder="{{ __('Nombre del banco') }}" style="border-radius:8px;">
+                               placeholder="{{ __('Red de retiro') }}" style="border-radius:8px;">
                     </div>
 
                     <div class="form-group mb-3">
                         <label class="mb-1" style="font-size:.9rem;">
-                            {{ __('Número de cuenta bancaria') }} <span class="text-danger">*</span>
-                            <small class="text-muted">{{ __('Por favor ingrese el precio del producto') }}</small>
+                            {{ __('Dirección de wallet de destino') }} <span class="text-danger">*</span>
+                            <small class="text-muted">{{ __('Revísala bien: un envío a una dirección equivocada no se puede recuperar.') }}</small>
                         </label>
                         <input type="text" name="account_number" class="form-control" required
-                               placeholder="{{ __('Número de cuenta bancaria') }}" style="border-radius:8px;">
+                               placeholder="{{ __('Dirección de wallet de destino') }}" style="border-radius:8px;">
                     </div>
 
                 </div>
