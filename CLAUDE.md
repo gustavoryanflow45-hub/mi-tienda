@@ -116,6 +116,14 @@ Common query scopes: `scopeActive()`, `scopePublished()`, `scopeFeatured()`, `sc
 
 Wallet: `WalletRecharge` / `WalletWithdrawal` records with admin approve/reject routes under `/admin/wallet`.
 
+### Seller Earnings & Settlements
+
+The seller dashboard's "Ventas Totales" / "Ganancias Totales" are **per settlement cycle**, not all-time. A sale counts only once its line is **paid and delivered** (`order_details.payment_status = 'paid'` and `delivery_status = 'delivered'` — the warehouse's deliver action stamps the lines), and it stays in the cycle until an admin settles it (`order_details.settlement_id` is null). `OrderDetail::scopeSettleable()` is the one definition; a paid-but-undelivered order shows nowhere and cannot be settled, so a return or a lost parcel never gets paid out. Profits are sales minus the marketplace commission, `config('app.seller_commission_rate')` (0.25); the card shows the rate so the seller knows why the two numbers differ. "Pedidos Exitosos" is still an all-time count.
+
+`app/Services/SettlementService.php` owns the whole thing: `pendingFor($sellerId)` / `pendingForAll()` compute the `{total_sales, commission, net_amount, lines_count}` breakdown — the dashboard and the admin panel both read it, so the figure the seller sees is exactly the one the admin pays — and `settle($seller, $admin)` closes the cycle. It creates a `SellerSettlement` row (the payout record: gross, rate, commission, net, who settled) and stamps `settlement_id` on the lines inside one transaction, locking the rows rather than an aggregate (PostgreSQL refuses `FOR UPDATE` on aggregates), so two admins cannot pay the same sales twice; with nothing pending it returns null and no row is written. Lines never get re-opened: a settlement is final.
+
+The admin panel is `/admin/settlements` (`AdminSettlementController`, view `admin/settlements.blade.php`, under the `admin` route group): one row per seller with pending sales, commission, net, last settlement and a "Liquidar" button (`POST /admin/settlements/{seller}`, disabled at zero), plus the paginated payout history. The dashboard sidebar links it for admins. The seller dashboard shows the date and amount of the last settlement under the stat cards (`$lastSettlement`). Covered by `tests/Feature/SellerSettlementTest.php`.
+
 ### Delivery / Warehouse Flow
 
 After payment, `orders.delivery_status` advances: `pending` → `confirmed` (seller, `SellerOrderController@confirm`) → `warehouse` (seller, `OrderController@sendToWarehouse`) → `on_the_way` (warehouse panel dispatch) → `delivered`. Each step stamps its timestamp (`confirmed_at`, `warehouse_at`, `dispatched_at` + `dispatched_by`, `delivered_at`) and every transition is guarded by a check on the previous status.
@@ -145,7 +153,7 @@ Ecuador IVA rate (15%) is read from `config/app.php` (key: `ec_iva_rate`). `Kush
 ## Database Notes
 
 - Tests use in-memory SQLite (configured in `phpunit.xml`); local/production uses PostgreSQL (migrated from MySQL 2026-07; the old XAMPP MySQL `woot_db` is kept as a backup — it holds the only copy of the seed data, see `legacy:restore` below). PostgreSQL runs as a Windows service independent of XAMPP.
-- `database/migrations/` has 19 migration files — always run `php artisan migrate` after pulling changes. `orders`/`order_details` come from `2026_06_10_200000_create_orders_table.php`; database notifications from `2026_06_22_184700_create_notifications_table.php`.
+- `database/migrations/` has 22 migration files — always run `php artisan migrate` after pulling changes. `orders`/`order_details` come from `2026_06_10_200000_create_orders_table.php`; database notifications from `2026_06_22_184700_create_notifications_table.php`; `seller_settlements` + `order_details.settlement_id` from `2026_09_18_120000_create_seller_settlements_table.php`.
 - File uploads go to `storage/app/public/`; the `public/storage` symlink must exist (`php artisan storage:link`).
 
 ### Restoring Seed Data (`legacy:restore`)

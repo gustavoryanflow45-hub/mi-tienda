@@ -14,6 +14,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\AdminSettlementController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\SubscriberController;
@@ -175,6 +176,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/shops', [AdminShopController::class, 'index'])->name('admin.shops');
         Route::post('/admin/shops/{id}/approve', [AdminShopController::class, 'approve'])->name('admin.shops.approve');
         Route::post('/admin/shops/{id}/reject', [AdminShopController::class, 'reject'])->name('admin.shops.reject');
+
+        // ── Liquidación de ventas a vendedores ───────────────────
+        // Liquidar cierra las ventas cobradas del vendedor y deja su panel
+        // en cero: solo el admin paga.
+        Route::get('/admin/settlements', [AdminSettlementController::class, 'index'])->name('admin.settlements');
+        Route::post('/admin/settlements/{seller}', [AdminSettlementController::class, 'settle'])->name('admin.settlements.settle');
 
         Route::get('/admin/wallet', [WalletController::class, 'adminIndex'])->name('admin.wallet');
         Route::post('/admin/wallet/approve/{id}', [WalletController::class, 'approve'])->name('wallet.approve');

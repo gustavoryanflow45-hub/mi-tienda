@@ -115,6 +115,11 @@
                                     </a>
                                 </li>
                                 <li class="aiz-side-nav-item mb-1">
+                                    <a href="{{ route('admin.settlements') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
+                                        <i class="las la-hand-holding-usd mr-2 fs-16"></i><span>{{ __('dashboard.nav.settlements') }}</span>
+                                    </a>
+                                </li>
+                                <li class="aiz-side-nav-item mb-1">
                                     <a href="{{ route('admin.shops') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                         <i class="las la-store mr-2 fs-16"></i><span>{{ __('dashboard.nav.shop_approvals') }}</span>
                                         @php $pendingShops = \App\Models\Shop::where('status', 0)->count(); @endphp
@@ -180,6 +185,7 @@
                             <i class="las la-chart-line stat-icon"></i>
                             <h2 class="fw-700 fs-32 mb-1 position-relative">${{ number_format($stats['total_profits'] ?? 0, 2) }}</h2>
                             <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.total_profits') }}</p>
+                            <p class="mb-0 opacity-60 fs-12 position-relative">{{ __('dashboard.stats.commission_note', ['rate' => round(($stats['commission_rate'] ?? 0) * 100)]) }}</p>
                         </div>
                     </div>
                     <div class="col-6 col-md-3 mb-3">
@@ -190,6 +196,18 @@
                         </div>
                     </div>
                 </div>
+
+                <p class="fs-13 opacity-60 mb-3">
+                    <i class="las la-info-circle"></i>
+                    @if(isset($lastSettlement) && $lastSettlement)
+                        {{ __('dashboard.stats.since_settlement', [
+                            'date' => $lastSettlement->settled_at->format('d/m/Y'),
+                            'amount' => number_format($lastSettlement->net_amount, 2),
+                        ]) }}
+                    @else
+                        {{ __('dashboard.stats.no_settlement') }}
+                    @endif
+                </p>
 
                 <div class="row gutters-10 mb-4">
                     <div class="col-6 col-md-3 mb-3">

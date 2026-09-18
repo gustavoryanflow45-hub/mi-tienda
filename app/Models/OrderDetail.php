@@ -23,6 +23,7 @@ class OrderDetail extends Model
         'discount_on_product',
         'delivery_status',
         'payment_status',
+        'settlement_id',
         'reviewed',
     ];
 
@@ -47,5 +48,22 @@ class OrderDetail extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'seller_id');
+    }
+
+    public function settlement(): BelongsTo
+    {
+        return $this->belongsTo(SellerSettlement::class, 'settlement_id');
+    }
+
+    /**
+     * Líneas que ya se pueden liquidar: cobradas Y entregadas, y todavía sin
+     * liquidación. Pagar antes de la entrega dejaría al marketplace sin
+     * margen si el pedido se devuelve o se pierde en el camino.
+     */
+    public function scopeSettleable($query)
+    {
+        return $query->where('payment_status', 'paid')
+            ->where('delivery_status', 'delivered')
+            ->whereNull('settlement_id');
     }
 }
