@@ -62,6 +62,29 @@ class LocalizationTest extends TestCase
             ->assertDontSee('En camino');
     }
 
+    /** Sin lang/es/validation.php los errores de formulario salían en inglés. */
+    public function test_validation_errors_follow_the_locale(): void
+    {
+        $this->post('/register', ['email' => 'no-es-correo'])
+            ->assertSessionHasErrors(['email' => 'El campo correo electrónico debe ser un correo electrónico válido.']);
+
+        $this->withSession(['locale' => 'en'])->post('/register', ['email' => 'no-es-correo'])
+            ->assertSessionHasErrors(['email' => 'The email address field must be a valid email address.']);
+    }
+
+    public function test_controller_flash_messages_follow_the_locale(): void
+    {
+        $seller = $this->makeSeller();
+
+        $this->actingAs($seller)->withSession(['locale' => 'en'])
+            ->post('/wallet/withdraw', ['amount' => 999, 'full_name' => 'x', 'bank_name' => 'TRC20', 'account_number' => 'y'])
+            ->assertSessionHasErrors(['amount' => 'Insufficient balance.']);
+
+        $this->actingAs($seller)->withSession(['locale' => 'es'])
+            ->post('/wallet/withdraw', ['amount' => 999, 'full_name' => 'x', 'bank_name' => 'TRC20', 'account_number' => 'y'])
+            ->assertSessionHasErrors(['amount' => 'Saldo insuficiente.']);
+    }
+
     /** Todas las claves __('...') de las vistas del comprador tienen traducción. */
     public function test_every_storefront_key_has_an_english_translation(): void
     {
