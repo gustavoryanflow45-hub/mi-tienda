@@ -12,6 +12,7 @@ use App\Http\Controllers\CompareController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\AdminSettlementController;
@@ -112,12 +113,13 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login']);
     Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
     Route::post('/register', [RegisterController::class, 'register']);
-    Route::get('/password/reset', function () {
-        return view('auth.passwords.email');
-    })->name('password.request');
-    Route::post('/password/email', function () {
-        return back()->with('status', 'Si existe una cuenta con ese correo, recibirás el enlace en breve.');
-    })->name('password.email');
+    // Recuperación de contraseña (broker de Laravel, token en password_reset_tokens).
+    Route::get('/password/reset', [PasswordResetController::class, 'request'])->name('password.request');
+    Route::post('/password/email', [PasswordResetController::class, 'email'])
+        ->middleware('throttle:6,1')->name('password.email');
+    Route::get('/password/reset/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
+    Route::post('/password/reset', [PasswordResetController::class, 'update'])
+        ->middleware('throttle:6,1')->name('password.update');
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');

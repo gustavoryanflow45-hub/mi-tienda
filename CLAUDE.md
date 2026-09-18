@@ -67,6 +67,10 @@ Routes (`Auth\VerificationController`): `GET /email/verify` (`verification.notic
 
 `SellerProductController` bounces unverified sellers to `verification.notice`. `MAIL_MAILER=log` locally — verification emails land in `storage/logs/laravel.log`, not a real inbox.
 
+### Password Reset
+
+`Auth\PasswordResetController` runs Laravel's password broker (`Password::sendResetLink` / `Password::reset`; token in `password_reset_tokens`, 60-minute expiry and 60-second resend throttle from `config/auth.php`). Routes, all under `guest`: `GET /password/reset` (`password.request`), `POST /password/email` (`password.email`, `throttle:6,1`), `GET /password/reset/{token}` (`password.reset`, view `auth/passwords/reset.blade.php`), `POST /password/reset` (`password.update`, `throttle:6,1`) — on success the user is logged in and sent to `/dashboard`. `POST /password/email` answers the same "if that account exists…" line whether or not the email is registered, so it cannot be used to enumerate users; only `RESET_THROTTLED` is surfaced. The mail is `ResetPasswordNotification`, which extends Laravel's `ResetPassword` (same token) and only rewrites the text in Spanish; `User::sendPasswordResetNotification()` routes to it. Broker status strings live in `lang/es|en/passwords.php`. Covered by `tests/Feature/PasswordResetTest.php`.
+
 `app/Http/Middleware/SetLocale.php` runs on every `web` request and applies `session('locale')` (see Localization below).
 
 ### Checkout & Payment Flow
