@@ -95,6 +95,14 @@
             #nav-cart-dropdown.dropdown-menu-lg { min-width: 0; width: calc(100vw - 30px); max-width: 320px; }
         }
 
+        /* Iconos de la tarjeta de producto (lista de deseos, comparar, añadir
+           al carrito). El tema los deja fuera de la tarjeta, que los recorta,
+           y solo los mete con :hover: en una pantalla táctil no hay hover y
+           eran inalcanzables. Ahí, y en ventanas estrechas, se ven siempre. */
+        @media (hover: none), (max-width: 991.98px) {
+            .aiz-card-box .aiz-p-hov-icon a { transform: none; -webkit-transform: none; }
+        }
+
         /* Red de seguridad: ninguna imagen de contenido más ancha que su caja. */
         img { max-width: 100%; }
     </style>
@@ -204,30 +212,51 @@
                 });
             }
 
-            // Búsqueda en tiempo real
+            // Búsqueda en tiempo real. SearchController@ajax responde las
+            // sugerencias ya renderizadas, o '0' si no hay ninguna.
+            //
+            // Se espera a que el usuario pare de teclear (250 ms) y se descarta
+            // la respuesta que llegue para un texto que ya no es el del campo:
+            // sin eso, "zapa" lanzaba cuatro peticiones y, si la de "za"
+            // llegaba la última, el cuadro mostraba sus resultados.
+            var searchTimer = null;
             $('#search').on('keyup focus', function () {
-                var searchKey = $(this).val();
-                if (searchKey.length > 0) {
-                    $('body').addClass('typed-search-box-shown');
-                    $('.typed-search-box').removeClass('d-none');
-                    $('.search-preloader').removeClass('d-none');
+                var input = this;
+                var searchKey = $.trim($(input).val());
+
+                clearTimeout(searchTimer);
+
+                if (searchKey.length === 0) {
+                    $('.typed-search-box').addClass('d-none');
+                    $('body').removeClass('typed-search-box-shown');
+                    return;
+                }
+
+                $('body').addClass('typed-search-box-shown');
+                $('.typed-search-box').removeClass('d-none');
+                $('.search-preloader').removeClass('d-none');
+
+                searchTimer = setTimeout(function () {
                     $.post('{{ route("search.ajax") }}', {
                         _token: AIZ.data.csrf,
                         search: searchKey
                     }, function (data) {
+                        if ($.trim($(input).val()) !== searchKey) return;
+
+                        var nothing = $('.typed-search-box .search-nothing');
                         if (data == '0') {
                             $('#search-content').html(null);
-                            $('.typed-search-box .search-nothing').removeClass('d-none').html(@json(__('No encontramos nada para')) + ' <strong>"' + searchKey + '"</strong>');
+                            // .text(): lo que teclea el usuario no se interpreta como HTML.
+                            nothing.removeClass('d-none').empty()
+                                .append(document.createTextNode(@json(__('No encontramos nada para')) + ' '))
+                                .append($('<strong>').text('"' + searchKey + '"'));
                         } else {
-                            $('.typed-search-box .search-nothing').addClass('d-none').html(null);
+                            nothing.addClass('d-none').empty();
                             $('#search-content').html(data);
                         }
                         $('.search-preloader').addClass('d-none');
                     });
-                } else {
-                    $('.typed-search-box').addClass('d-none');
-                    $('body').removeClass('typed-search-box-shown');
-                }
+                }, 250);
             });
         });
 

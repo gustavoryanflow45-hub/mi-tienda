@@ -13,37 +13,37 @@ class SearchController extends Controller
         $keyword = $request->get('keyword', '');
 
         $products = Product::active()
-            ->where(function ($q) use ($keyword) {
-                $q->where('name', 'like', "%{$keyword}%")
-                    ->orWhere('description', 'like', "%{$keyword}%");
-            })
-            ->paginate(20);
+            ->search($keyword, ['name', 'description'])
+            ->paginate(20)
+            ->withQueryString();
 
         $categories = Category::active()->whereNull('parent_id')->get();
 
         return view('search', compact('products', 'keyword', 'categories'));
     }
 
+    /**
+     * Sugerencias del buscador de la cabecera, ya renderizadas.
+     *
+     * El JS del layout manda el texto como `search` y pinta la respuesta con
+     * .html(); '0' significa "sin resultados". Antes leía `keyword` (siempre
+     * vacío: devolvía todos los productos) y respondía JSON, que .html() no
+     * sabe pintar: el cuadro de sugerencias salía en blanco.
+     */
     public function ajax(Request $request)
     {
-        $keyword = $request->get('keyword', '');
+        $keyword = trim((string) $request->input('search', $request->input('keyword', '')));
 
-        $products = Product::active()
-            ->where('name', 'like', "%{$keyword}%")
-            ->take(8)
-            ->get()
-            ->map(function ($p) {
-                return [
-                    'id' => $p->id,
-                    'name' => $p->name,
-                    'slug' => $p->slug,
-                    'price' => number_format($p->unit_price, 2),
-                    'thumbnail' => $p->thumbnail
-                        ? uploaded_asset($p->thumbnail)
-                        : 'https://via.placeholder.com/60x60/f8f9fa/679941?text=P',
-                ];
-            });
+        if ($keyword === '') {
+            return response('0');
+        }
 
-        return response()->json($products);
+        $products = Product::active()->search($keyword)->take(8)->get();
+
+        if ($products->isEmpty()) {
+            return response('0');
+        }
+
+        return view('partials.search-suggestions', compact('products', 'keyword'));
     }
 }

@@ -34,6 +34,35 @@ class Product extends Model
     public function scopeFeatured($query) { return $query->where('featured', 1); }
 
     /**
+     * Búsqueda por texto que no distingue mayúsculas, en una o varias columnas.
+     *
+     * Con where('name', 'like', …) PostgreSQL sí las distingue: "zapa" no
+     * encontraba "Zapatillas", y en el teléfono se escribe en minúsculas.
+     * SQLite (tests) no las distingue, así que el fallo no se veía en los
+     * tests. LOWER() en los dos lados se comporta igual en ambos motores.
+     *
+     * Los comodines del usuario (% y _) se escapan: "%" no debe valer como
+     * "cualquier cosa". ESCAPE va explícito porque SQLite no tiene uno por
+     * defecto.
+     */
+    public function scopeSearch($query, ?string $term, array $columns = ['name'])
+    {
+        $term = trim((string) $term);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        $pattern = '%'.addcslashes(mb_strtolower($term), '\\%_').'%';
+
+        return $query->where(function ($q) use ($columns, $pattern) {
+            foreach ($columns as $column) {
+                $q->orWhereRaw('LOWER('.$column.') LIKE ? ESCAPE ?', [$pattern, '\\']);
+            }
+        });
+    }
+
+    /**
      * Configuración de variantes que aplica a este producto.
      *
      * Manda su propio variant_type y, si no tiene, el de su categoría. El

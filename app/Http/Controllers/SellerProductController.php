@@ -39,7 +39,7 @@ class SellerProductController extends Controller
             ->where('added_by', Auth::id());
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%'.$request->search.'%');
+            $query->search($request->search);
         }
 
         $products = $query->latest()->paginate(15);
