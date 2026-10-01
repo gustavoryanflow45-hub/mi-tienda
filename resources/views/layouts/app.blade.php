@@ -89,6 +89,12 @@
             #addToCart .modal-dialog { margin: .5rem; }
         }
 
+        /* Mini-carrito de la cabecera: el tema le da 320px fijos y en un
+           teléfono estrecho se salía por la izquierda. Ahí ocupa lo que haya. */
+        @media (max-width: 575.98px) {
+            #nav-cart-dropdown.dropdown-menu-lg { min-width: 0; width: calc(100vw - 30px); max-width: 320px; }
+        }
+
         /* Red de seguridad: ninguna imagen de contenido más ancha que su caja. */
         img { max-width: 100%; }
     </style>

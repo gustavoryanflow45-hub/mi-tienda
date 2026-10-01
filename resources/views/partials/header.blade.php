@@ -61,24 +61,38 @@
                     <div id="wishlist"></div>
                 </div>
 
-                {{-- CARRITO --}}
-              <div class="d-none d-lg-block align-self-stretch ml-3 mr-0" data-hover="dropdown">
-             <div class="nav-cart-box dropdown h-100" id="cart_items">
-        <a href="javascript:void(0)" class="d-flex align-items-center text-reset h-100" data-toggle="dropdown" data-display="static">
-            <i class="la la-shopping-cart la-2x opacity-80"></i>
-            <span class="flex-grow-1 ml-1">
-                <span class="badge badge-primary badge-inline badge-pill cart-count">0</span>
-                <span class="nav-box-text d-none d-xl-block opacity-70">{{ __('Carrito') }}</span>
-            </span>
-        </a>
-        <div class="dropdown-menu dropdown-menu-right dropdown-menu-lg p-0 stop-propagation" id="nav-cart-dropdown">
-            {{-- Se carga dinámicamente con AJAX --}}
-            <div class="text-center p-3">
-                <i class="las la-spinner la-spin la-2x opacity-60"></i>
-            </div>
-        </div>
-    </div>
-</div>
+                {{-- CARRITO
+                     Visible en todos los anchos. Llevaba d-none d-lg-block y
+                     desaparecía por debajo de 992px (ventana estrecha o
+                     teléfono), igual que pasaba con "Cerrar sesión". --}}
+                <div class="align-self-stretch ml-1 ml-lg-3 mr-0" data-hover="dropdown">
+                    <div class="nav-cart-box dropdown h-100" id="cart_items">
+                        <a href="javascript:void(0)" class="d-flex align-items-center text-reset h-100 px-1 px-lg-0"
+                           data-toggle="dropdown" data-display="static" aria-label="{{ __('Carrito') }}">
+                            <i class="la la-shopping-cart la-2x opacity-80"></i>
+                            <span class="flex-grow-1 ml-1">
+                                <span class="badge badge-primary badge-inline badge-pill cart-count">0</span>
+                                <span class="nav-box-text d-none d-xl-block opacity-70">{{ __('Carrito') }}</span>
+                            </span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right dropdown-menu-lg p-0 stop-propagation" id="nav-cart-dropdown">
+                            @auth
+                                {{-- Se carga dinámicamente con AJAX (loadMiniCart en el layout) --}}
+                                <div class="text-center p-3">
+                                    <i class="las la-spinner la-spin la-2x opacity-60"></i>
+                                </div>
+                            @else
+                                {{-- loadMiniCart solo corre con sesión: antes el invitado
+                                     veía este desplegable con un spinner girando para siempre. --}}
+                                <div class="text-center p-4">
+                                    <i class="las la-shopping-cart la-3x opacity-60 mb-2 d-block"></i>
+                                    <p class="fs-14 mb-3">{{ __('Inicia sesión para ver tu carrito') }}</p>
+                                    <a href="{{ route('login') }}" class="btn btn-sm btn-primary">{{ __('topbar.login') }}</a>
+                                </div>
+                            @endauth
+                        </div>
+                    </div>
+                </div>
 
             </div>
         </div>
