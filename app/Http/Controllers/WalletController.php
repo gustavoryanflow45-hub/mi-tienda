@@ -9,6 +9,7 @@ use App\Models\SellerSettlement;
 use App\Models\WalletRecharge;
 use App\Models\WalletWithdrawal;
 use App\Models\User;
+use App\Services\ImageOptimizer;
 use App\Services\SettlementService;
 
 class WalletController extends Controller
@@ -48,7 +49,7 @@ class WalletController extends Controller
      | RECARGAS
     ───────────────────────────────────────── */
 
-    public function recharge(Request $request)
+    public function recharge(Request $request, ImageOptimizer $images)
     {
         $request->validate([
             'amount'         => 'required|numeric|min:1',
@@ -59,8 +60,8 @@ class WalletController extends Controller
 
         $proofPath = null;
         if ($request->hasFile('payment_proof')) {
-            $proofPath = $request->file('payment_proof')
-                            ->store('wallet/proofs', 'public');
+            // Un PDF pasa sin tocar; una foto del comprobante se reduce.
+            $proofPath = $images->store($request->file('payment_proof'), 'wallet/proofs', 'payment_proof');
         }
 
         WalletRecharge::create([

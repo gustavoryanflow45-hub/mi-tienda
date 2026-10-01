@@ -6,6 +6,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductStock;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -56,7 +57,7 @@ class SellerProductController extends Controller
     }
 
     // ── POST /seller/products ────────────────────────────────────
-    public function store(Request $request)
+    public function store(Request $request, ImageOptimizer $images)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -79,15 +80,14 @@ class SellerProductController extends Controller
             $slug .= '-'.($count + 1);
         }
 
-        // Imagen principal
-        $thumbnailPath = $request->file('thumbnail')
-            ->store('products/thumbnails', 'public');
+        // Imagen principal (reducida y en WebP: ver config/images.php)
+        $thumbnailPath = $images->store($request->file('thumbnail'), 'products/thumbnails', 'product_thumbnail');
 
         // Imágenes adicionales
         $photosPaths = [];
         if ($request->hasFile('photos')) {
             foreach (array_slice($request->file('photos'), 0, 5) as $photo) {
-                $photosPaths[] = $photo->store('products/photos', 'public');
+                $photosPaths[] = $images->store($photo, 'products/photos', 'product_photo');
             }
         }
 
@@ -227,7 +227,7 @@ class SellerProductController extends Controller
     }
 
     // ── PUT /seller/products/{id} ────────────────────────────────
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, ImageOptimizer $images)
     {
         $product = Product::with('stocks')->findOrFail($id);
 
@@ -251,15 +251,14 @@ class SellerProductController extends Controller
 
         // Imagen principal: solo se reemplaza si se sube una nueva
         if ($request->hasFile('thumbnail')) {
-            $product->thumbnail = $request->file('thumbnail')
-                ->store('products/thumbnails', 'public');
+            $product->thumbnail = $images->store($request->file('thumbnail'), 'products/thumbnails', 'product_thumbnail');
         }
 
         // Imágenes adicionales: si se suben nuevas, reemplazan las existentes
         if ($request->hasFile('photos')) {
             $photosPaths = [];
             foreach (array_slice($request->file('photos'), 0, 5) as $photo) {
-                $photosPaths[] = $photo->store('products/photos', 'public');
+                $photosPaths[] = $images->store($photo, 'products/photos', 'product_photo');
             }
             $product->photos = $photosPaths;
         }

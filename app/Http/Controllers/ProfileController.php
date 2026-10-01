@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -21,7 +22,7 @@ class ProfileController extends Controller
     }
 
     // PUT /profile
-    public function update(Request $request)
+    public function update(Request $request, ImageOptimizer $images)
     {
         $user = Auth::user();
 
@@ -41,7 +42,7 @@ class ProfileController extends Controller
         $user->phone = $request->phone;
 
         if ($request->hasFile('avatar')) {
-            $path = $request->file('avatar')->store('avatars', 'public');
+            $path = $images->store($request->file('avatar'), 'avatars', 'avatar');
             $user->avatar = $path;
         }
 

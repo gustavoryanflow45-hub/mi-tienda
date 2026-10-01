@@ -171,6 +171,14 @@ Ecuador IVA rate (15%) is read from `config/app.php` (key: `ec_iva_rate`). `Kush
 - `database/migrations/` has 23 migration files — always run `php artisan migrate` after pulling changes. `orders`/`order_details` come from `2026_06_10_200000_create_orders_table.php`; database notifications from `2026_06_22_184700_create_notifications_table.php`; `seller_settlements` + `order_details.settlement_id` from `2026_09_18_120000_create_seller_settlements_table.php`.
 - File uploads go to `storage/app/public/`; the `public/storage` symlink must exist (`php artisan storage:link`).
 
+### Image Uploads (`ImageOptimizer`)
+
+Every user upload goes through `app/Services/ImageOptimizer.php` — `$images->store($file, $dir, $profile)` instead of `$file->store($dir, 'public')`, returning the same disk-relative path. The five call sites: product thumbnail and photos (`SellerProductController` store/update), avatar (`ProfileController`), shop ID documents (`SellerController`) and recharge proofs (`WalletController`). **New upload points should use it too.**
+
+Per profile in `config/images.php` (`max` px on the long side + `quality`), it applies the EXIF orientation of phone photos (re-encoding drops EXIF, so the rotation must land in the pixels), downscales, and re-encodes to WebP keeping transparency. It keeps the original file when re-encoding would not shrink an image that needed no resize or rotation, and stores anything that is not JPEG/PNG/WebP (PDF proofs, GIFs, animated WebP) untouched, as it does on any processing error. On the existing catalog this took 6.4 MB down to 2.3 MB.
+
+It needs the **GD** extension. XAMPP ships it disabled: `extension=gd` in `C:\xampp\php\php.ini` (enabled 2026-10-01; a backup sits next to it as `php.ini.bak-20261001`), then restart `php artisan serve` / Apache. Without GD, or with `IMAGE_OPTIMIZE=false`, uploads are stored as-is — nothing breaks, they are just heavy. Only new uploads are optimized; existing files are untouched. Covered by `tests/Feature/ImageOptimizerTest.php` (skipped without GD).
+
 ### Restoring Seed Data (`legacy:restore`)
 
 The 2026-07 MySQL → PostgreSQL migration created the schema but **never moved the rows**. An empty `banners`/`categories`/`brands`/`products` makes the home page render with no images at all — the `@foreach` loops just iterate empty collections, so the symptom looks like broken image paths when it is actually missing data. `php artisan migrate:fresh` reproduces the same empty state.

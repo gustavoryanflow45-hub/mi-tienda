@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Shop;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -24,7 +25,7 @@ class SellerController extends Controller
     /**
      * Procesa el registro: crea el User + la Shop.
      */
-    public function register(Request $request)
+    public function register(Request $request, ImageOptimizer $images)
     {
         // ── Validación ──────────────────────────────────────────────
         $request->validate([
@@ -59,11 +60,9 @@ class SellerController extends Controller
 
         // ── Subir imágenes del ID ───────────────────────────────────
         // Se guardan en storage/app/public/sellers/id/
-        $idFrontPath = $request->file('id_front')
-            ->store('sellers/id', 'public');
+        $idFrontPath = $images->store($request->file('id_front'), 'sellers/id', 'id_document');
 
-        $idBackPath  = $request->file('id_back')
-            ->store('sellers/id', 'public');
+        $idBackPath  = $images->store($request->file('id_back'), 'sellers/id', 'id_document');
 
         // ── Crear el usuario con user_type = seller ─────────────────
         // user_type no es fillable (ver User::$fillable): se asigna aparte
