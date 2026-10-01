@@ -142,6 +142,10 @@ Tailwind CSS v4 via Vite plugin. No Vue/React — plain ES modules in `resources
 
 Note: much of the page JS (language/currency switchers, search autocomplete) lives inline in `resources/views/layouts/app.blade.php`, not in `resources/js/` — search both when hunting for a handler.
 
+**Mobile.** Tailwind is *not* loaded by the storefront layout — only the theme's Bootstrap 4 CSS (`public/assets/css/`) — so a Tailwind class such as `min-w-0` silently does nothing there (it once hid the mini-cart's remove button). Before hiding anything below a breakpoint (`d-none d-lg-block`), make sure the phone has another way to it: that pattern hid "Cerrar sesión" and the header cart. Hover-only UI is unreachable on touch screens: the product-card icons (wishlist, compare, quick-add) are revealed only on `:hover` by the theme, so the layout shows them permanently under `@media (hover: none), (max-width: 991.98px)`.
+
+**Search.** Every product text search goes through `Product::scopeSearch($term, $columns = ['name'])`: case-insensitive via `LOWER()` on both sides (PostgreSQL's `LIKE` is case-sensitive, so `where('name', 'like', …)` missed "Zapatillas" for "zapa"; SQLite ignores ASCII case, which is why tests never caught it) and with the user's `%`/`_` escaped. The header autocomplete posts `search` to `POST /ajax-search` (`SearchController@ajax`), which answers `partials/search-suggestions.blade.php` already rendered, or `'0'` for no results — the JS injects it with `.html()`, so it must not return JSON. The JS debounces 250 ms and drops responses for text no longer in the field. Covered by `tests/Feature/SearchTest.php`.
+
 ### Localization
 
 Default locale is `es` (`config/app.php` + `.env`). The topbar switcher POSTs to `/language` (`LanguageController@change`, param name `locale`), which stores `session('locale')`; `SetLocale` middleware applies it on every `web` request. Supported locales are declared once in `SetLocale::SUPPORTED` — the topbar dropdown and the controller both read from it, so adding a language means adding it there plus a `lang/<code>/` directory.

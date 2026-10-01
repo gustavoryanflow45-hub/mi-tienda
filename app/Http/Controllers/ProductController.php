@@ -17,7 +17,7 @@ class ProductController extends Controller
             ->where('published', 1);
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->search($request->search);
         }
 
         $products = $query->latest()->paginate(16)->withQueryString();
