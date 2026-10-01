@@ -17,7 +17,7 @@
                 <a href="{{ route('products.index') }}" style="color:#679941; font-size:.85rem;">← {{ __('Explorar productos') }}</a>
             </div>
         @else
-            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px;">
                 @foreach($wishlist as $item)
                     @if($item->product)
                         <div style="background:#fff; border-radius:10px; box-shadow:0 1px 8px rgba(0,0,0,.07); overflow:hidden; position:relative;">
@@ -29,9 +29,9 @@
                                 @if($item->product->thumbnail)
                                     <img src="{{ asset('storage/' . $item->product->thumbnail) }}"
                                          alt="{{ $item->product->name }}"
-                                         style="width:100%; height:180px; object-fit:cover;">
+                                         style="width:100%; aspect-ratio:1/1; object-fit:cover; display:block;">
                                 @else
-                                    <div style="width:100%; height:180px; background:#f0f0f0; display:flex; align-items:center; justify-content:center;">
+                                    <div style="width:100%; aspect-ratio:1/1; background:#f0f0f0; display:flex; align-items:center; justify-content:center;">
                                         <i class="las la-image" style="font-size:2rem; color:#ccc;"></i>
                                     </div>
                                 @endif

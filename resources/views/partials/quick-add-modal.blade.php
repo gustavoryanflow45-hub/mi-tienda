@@ -34,7 +34,7 @@
     .qa-field { margin-bottom:12px; }
     .qa-label { display:block; font-size:.78rem; color:#888; margin-bottom:6px; }
     .qa-chips { display:flex; flex-wrap:wrap; gap:6px; }
-    .qa-size { min-width:38px; padding:5px 10px; border:1px solid #ddd; border-radius:6px; font-size:.82rem;
+    .qa-size { display:inline-block; min-width:38px; padding:5px 10px; border:1px solid #ddd; border-radius:6px; font-size:.82rem;
                text-align:center; color:#444; background:#fff; transition:all .15s; }
     .qa-size.selected { border-color:#679941; background:#679941; color:#fff; }
     .qa-color { width:24px; height:24px; border-radius:50%; display:block; border:2px solid transparent;
@@ -57,6 +57,25 @@
                  text-decoration:none; display:inline-flex; align-items:center; }
     .qa-detail:hover { color:#679941; border-color:#679941; text-decoration:none; }
     .qa-out { padding:10px 16px; border-radius:6px; background:#f4f4f4; color:#999; font-size:.88rem; }
+
+    /* Teléfono: la foto de 180px empujaba el selector fuera de pantalla.
+       Va en miniatura junto al nombre y el precio; con .qa-main en
+       display:contents, tallas, colores y botones ocupan el ancho entero. */
+    @media (max-width: 575.98px) {
+        .qa-wrap { display:grid; grid-template-columns:88px minmax(0, 1fr); column-gap:12px; padding:16px; }
+        .qa-main { display:contents; }
+        .qa-img { width:88px; height:88px; grid-row:1 / span 2; }
+        .qa-name { font-size:.95rem; padding-right:40px; align-self:end; }
+        .qa-price { margin-bottom:14px; align-self:start; }
+        .qa-field, .qa-cta { grid-column:1 / -1; }
+        .qa-size { min-width:44px; padding:8px 10px; }
+        .qa-color { width:30px; height:30px; }
+        .qa-qty { flex-wrap:wrap; }
+        .qa-qty-btn, .qa-qty-input { height:36px; }
+        .qa-qty-btn { width:36px; }
+        .qa-cta { flex-direction:column; }
+        .qa-add, .qa-detail { width:100%; justify-content:center; min-height:44px; }
+    }
 </style>
 
 <div id="qa-root" class="qa-wrap"

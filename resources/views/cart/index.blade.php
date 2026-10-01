@@ -65,6 +65,24 @@
     .aiz-toast.show { opacity: 1; transform: translateY(0); }
     .aiz-toast.success { background: #679941; }
     .aiz-toast.error   { background: #e74c3c; }
+
+    /* ── Móvil: cada línea del carrito pasa a ser una tarjeta ──
+       La tabla de 6 columnas medía ~665px y desbordaba la pantalla del
+       teléfono: el botón de quitar (última columna) quedaba fuera de vista. */
+    @media (max-width: 767.98px) {
+        .cart-page { padding: 16px 0 40px; }
+        .cart-table, .cart-table tbody { display: block; background: transparent; box-shadow: none; border-radius: 0; overflow: visible; }
+        .cart-table thead { display: none; }
+        .cart-table tr { display: block; position: relative; background: #fff; border-radius: 10px; box-shadow: 0 1px 8px rgba(0,0,0,.07); padding: 12px 14px; margin-bottom: 12px; }
+        .cart-table tr:hover td { background: transparent; }
+        .cart-table td { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: none; }
+        .cart-table td[data-label]::before { content: attr(data-label); font-size: .75rem; color: #999; font-weight: 600; }
+        .cart-table td.cart-cell-product { display: block; padding: 0 40px 10px 0; margin-bottom: 4px; border-bottom: 1px solid #f0f0f0; }
+        .cart-table td.cart-cell-remove { position: absolute; top: 6px; right: 6px; padding: 0; }
+        .cart-product-img, .cart-product-img-placeholder { width: 56px; height: 56px; }
+        .btn-remove { width: 40px; height: 40px; font-size: 1.5rem; color: #aaa; display: flex; align-items: center; justify-content: center; }
+        .cart-summary { padding: 18px; }
+    }
 </style>
 @endsection
 
@@ -99,7 +117,7 @@
                         @foreach($cartItems as $item)
                         <tr id="cart-row-{{ $item->id }}">
                             {{-- Producto --}}
-                            <td>
+                            <td class="cart-cell-product">
                                 <div class="cart-product">
                                     @if($item->product->thumbnail)
                                         <img src="{{ asset('storage/' . $item->product->thumbnail) }}"
@@ -126,10 +144,10 @@
                             </td>
 
                             {{-- Precio unitario --}}
-                            <td>${{ number_format($item->price, 2) }}</td>
+                            <td data-label="{{ __('Precio') }}">${{ number_format($item->price, 2) }}</td>
 
                             {{-- Cantidad --}}
-                            <td>
+                            <td data-label="{{ __('Cantidad') }}">
                                 <div class="qty-control">
                                     <button class="qty-btn" onclick="changeQty({{ $item->id }}, -1)">−</button>
                                     <input type="number" class="qty-input" id="qty-{{ $item->id }}"
@@ -143,7 +161,7 @@
                             </td>
 
                             {{-- Envío del producto --}}
-                            <td>
+                            <td data-label="{{ __('Envío') }}">
                                 @if($item->shipping_cost > 0)
                                     ${{ number_format($item->shipping_cost, 2) }}
                                 @else
@@ -152,14 +170,14 @@
                             </td>
 
                             {{-- Subtotal --}}
-                            <td>
+                            <td data-label="{{ __('Subtotal') }}">
                                 <strong id="subtotal-{{ $item->id }}" style="color:#679941;">
                                     ${{ number_format($item->price * $item->quantity, 2) }}
                                 </strong>
                             </td>
 
                             {{-- Eliminar --}}
-                            <td>
+                            <td class="cart-cell-remove">
                                 <button class="btn-remove" onclick="removeItem({{ $item->id }})" title="{{ __('Quitar') }}">
                                     <i class="las la-times-circle"></i>
                                 </button>

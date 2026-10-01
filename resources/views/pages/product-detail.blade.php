@@ -111,7 +111,7 @@
     /* ── Colores ── */
     .color-chips { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
     .color-chip {
-        width:28px; height:28px; border-radius:3px;
+        display:block; width:28px; height:28px; border-radius:3px;
         border:2px solid transparent; cursor:pointer;
         transition:border-color .15s, transform .15s; position:relative;
     }
@@ -229,6 +229,36 @@
     .related-card-body { padding:8px 10px 10px; }
     .related-card-price { font-size:.85rem; font-weight:700; color:#679941; }
     .related-card-name  { font-size:.75rem; color:#666; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+    /* ── Teléfono ──
+       La galería reservaba 340px de alto mínimo más una columna de
+       miniaturas al lado: la foto se comía la primera pantalla entera.
+       Aquí va primero la foto, más baja, y las miniaturas en una fila
+       deslizable debajo. */
+    @media(max-width:575.98px){
+        .product-page { padding:12px 0 40px; }
+        .product-main { padding:14px; }
+        .gallery-col { flex-direction:column-reverse; gap:8px; }
+        .gallery-thumbs-vert { flex-direction:row; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
+        .gallery-thumbs-vert::-webkit-scrollbar { display:none; }
+        .gallery-thumb { width:48px; height:48px; }
+        .gallery-main-wrap { min-height:0; height:260px; }
+        .gallery-main-wrap img { max-height:250px; }
+        .gallery-main-wrap img:hover { transform:none; }
+        .info-panel { margin-top:14px; }
+        .info-row { flex-wrap:wrap; }
+        .info-label { min-width:72px; }
+        .size-chip { min-width:44px; height:40px; }
+        .color-chip { width:34px; height:34px; }
+        .cta-row { flex-direction:column; }
+        .btn-addcart, .btn-buynow, .btn-outstock { width:100%; justify-content:center; min-height:46px; }
+        .soft-links { flex-wrap:wrap; gap:12px 20px; }
+        .refund-box { flex-wrap:wrap; }
+        .refund-box a { margin-left:0; }
+        .tab-btn { padding:10px 14px; }
+        .tab-panel { padding:16px; }
+        .related-section { padding:14px; }
+    }
 </style>
 @endsection
 

@@ -109,7 +109,12 @@
     }
     @media (max-width: 1100px) { .products-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 768px)  { .products-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 480px)  { .products-grid { grid-template-columns: repeat(1, 1fr); } }
+    /* En el teléfono se quedan 2 columnas: a 1 columna cada foto ocupaba
+       el ancho entero (~345px) y se veía un producto por pantalla. */
+    @media (max-width: 480px)  {
+        .products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .products-grid .product-card-body { padding: 8px 9px 10px; }
+    }
 
     /* ── Product card ── */
     .product-card {

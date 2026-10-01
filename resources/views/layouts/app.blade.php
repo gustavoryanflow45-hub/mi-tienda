@@ -71,6 +71,26 @@
             height: 250px;
         }
         .pac-container { z-index: 100000; }
+
+        /* Modal "añadir al carrito": el contenido hace scroll por dentro y
+           la ✕ queda fija en la esquina. Antes era el modal entero el que
+           scrolleaba, y en un teléfono bajo la ✕ se iba con el contenido. */
+        #addToCart .modal-content { max-height: calc(100vh - 1rem); max-height: calc(100dvh - 1rem); overflow: hidden; }
+        #addToCart-modal-body { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        #addToCart .qa-close {
+            position: absolute; top: 8px; right: 8px; z-index: 5;
+            width: 40px; height: 40px; padding: 0; margin: 0; float: none;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; background: rgba(255,255,255,.95);
+            box-shadow: 0 1px 6px rgba(0,0,0,.18); opacity: 1; color: #333;
+        }
+        #addToCart .qa-close:hover { color: #000; }
+        @media (max-width: 575.98px) {
+            #addToCart .modal-dialog { margin: .5rem; }
+        }
+
+        /* Red de seguridad: ninguna imagen de contenido más ancha que su caja. */
+        img { max-width: 100%; }
     </style>
 </head>
 <body>
@@ -136,7 +156,7 @@
                 <div class="c-preloader text-center p-3">
                     <i class="las la-spinner la-spin la-3x"></i>
                 </div>
-                <button type="button" class="close absolute-top-right btn-icon close z-1" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close qa-close" data-dismiss="modal" aria-label="{{ __('Cerrar') }}">
                     <span aria-hidden="true" class="la-2x">&times;</span>
                 </button>
                 <div id="addToCart-modal-body"></div>

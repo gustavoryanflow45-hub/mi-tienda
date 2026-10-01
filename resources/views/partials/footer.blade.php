@@ -4,26 +4,26 @@
 <section class="bg-white border-top mt-auto">
     <div class="container">
         <div class="row no-gutters">
-            <div class="col-lg-3 col-md-6">
-                <a class="text-reset border-left text-center p-4 d-block" href="{{ route('terms') }}">
+            <div class="col-6 col-lg-3">
+                <a class="text-reset border-left text-center p-3 p-md-4 d-block h-100" href="{{ route('terms') }}">
                     <i class="la la-file-text la-3x text-primary mb-2"></i>
                     <h4 class="h6">{{ __('Términos y condiciones') }}</h4>
                 </a>
             </div>
-            <div class="col-lg-3 col-md-6">
-                <a class="text-reset border-left text-center p-4 d-block" href="{{ route('return-policy') }}">
+            <div class="col-6 col-lg-3">
+                <a class="text-reset border-left text-center p-3 p-md-4 d-block h-100" href="{{ route('return-policy') }}">
                     <i class="la la-mail-reply la-3x text-primary mb-2"></i>
                     <h4 class="h6">{{ __('Política de devoluciones') }}</h4>
                 </a>
             </div>
-            <div class="col-lg-3 col-md-6">
-                <a class="text-reset border-left text-center p-4 d-block" href="{{ route('support-policy') }}">
+            <div class="col-6 col-lg-3">
+                <a class="text-reset border-left text-center p-3 p-md-4 d-block h-100" href="{{ route('support-policy') }}">
                     <i class="la la-support la-3x text-primary mb-2"></i>
                     <h4 class="h6">{{ __('Política de soporte') }}</h4>
                 </a>
             </div>
-            <div class="col-lg-3 col-md-6">
-                <a class="text-reset border-left border-right text-center p-4 d-block" href="{{ route('privacy-policy') }}">
+            <div class="col-6 col-lg-3">
+                <a class="text-reset border-left border-right text-center p-3 p-md-4 d-block h-100" href="{{ route('privacy-policy') }}">
                     <i class="las la-exclamation-circle la-3x text-primary mb-2"></i>
                     <h4 class="h6">{{ __('Política de privacidad') }}</h4>
                 </a>

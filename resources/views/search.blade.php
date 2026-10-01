@@ -23,7 +23,12 @@
     .products-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
     @media (max-width: 1100px) { .products-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 768px)  { .products-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 480px)  { .products-grid { grid-template-columns: 1fr; } }
+    /* En el teléfono se quedan 2 columnas: a 1 columna cada foto ocupaba
+       el ancho entero (~345px) y se veía un producto por pantalla. */
+    @media (max-width: 480px)  {
+        .products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .products-grid .product-card-body { padding: 8px 9px 10px; }
+    }
     .pagination-wrap { display:flex; justify-content:center; margin-top:28px; gap:4px; flex-wrap:wrap; }
     .page-btn { min-width:32px; height:32px; border:1px solid #ddd; border-radius:5px; background:#fff; color:#555; font-size:.82rem; font-weight:600; display:flex; align-items:center; justify-content:center; text-decoration:none; padding:0 8px; transition:all .15s; }
     .page-btn:hover { border-color:#679941; color:#679941; text-decoration:none; }
