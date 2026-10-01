@@ -95,6 +95,14 @@
             #nav-cart-dropdown.dropdown-menu-lg { min-width: 0; width: calc(100vw - 30px); max-width: 320px; }
         }
 
+        /* Iconos de la tarjeta de producto (lista de deseos, comparar, añadir
+           al carrito). El tema los deja fuera de la tarjeta, que los recorta,
+           y solo los mete con :hover: en una pantalla táctil no hay hover y
+           eran inalcanzables. Ahí, y en ventanas estrechas, se ven siempre. */
+        @media (hover: none), (max-width: 991.98px) {
+            .aiz-card-box .aiz-p-hov-icon a { transform: none; -webkit-transform: none; }
+        }
+
         /* Red de seguridad: ninguna imagen de contenido más ancha que su caja. */
         img { max-width: 100%; }
     </style>
