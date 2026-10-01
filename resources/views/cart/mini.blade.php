@@ -19,7 +19,10 @@
                 @endif
             </a>
             {{-- Info --}}
-            <div class="flex-grow-1 min-w-0">
+            {{-- min-width:0 en línea: min-w-0 es de Tailwind y este layout no lo
+                 carga. Sin él el nombre no se recortaba, la fila desbordaba y
+                 el botón de quitar quedaba fuera de vista. --}}
+            <div class="flex-grow-1" style="min-width:0;">
                 <a href="{{ url('/product/' . $item->product->slug) }}"
                    class="d-block text-reset fw-600 fs-13 text-truncate">
                     {{ $item->product->name }}
