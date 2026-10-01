@@ -15,8 +15,8 @@
                                 <img src="{{ asset('assets/img/logo.png') }}"
                                      alt="Woot" height="40" class="mb-3">
                             </a>
-                            <h4 class="fw-700">Create Account</h4>
-                            <p class="text-muted fs-14">Join Woot and start shopping</p>
+                            <h4 class="fw-700">{{ __('Crear cuenta') }}</h4>
+                            <p class="text-muted fs-14">{{ __('Únete a Woot y empieza a comprar') }}</p>
                         </div>
 
                         @if($errors->any())
@@ -34,10 +34,10 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="fw-600 fs-14">First Name</label>
+                                        <label class="fw-600 fs-14">{{ __('Nombre') }}</label>
                                         <input type="text" name="first_name"
                                                class="form-control @error('first_name') is-invalid @enderror"
-                                               placeholder="First name"
+                                               placeholder="{{ __('Nombre') }}"
                                                value="{{ old('first_name') }}" required>
                                         @error('first_name')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -46,10 +46,10 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="fw-600 fs-14">Last Name</label>
+                                        <label class="fw-600 fs-14">{{ __('Apellido') }}</label>
                                         <input type="text" name="last_name"
                                                class="form-control @error('last_name') is-invalid @enderror"
-                                               placeholder="Last name"
+                                               placeholder="{{ __('Apellido') }}"
                                                value="{{ old('last_name') }}" required>
                                         @error('last_name')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -58,59 +58,59 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="fw-600 fs-14">Email Address</label>
+                                <label class="fw-600 fs-14">{{ __('Correo electrónico') }}</label>
                                 <input type="email" name="email"
                                        class="form-control @error('email') is-invalid @enderror"
-                                       placeholder="Enter your email"
+                                       placeholder="{{ __('Escribe tu correo') }}"
                                        value="{{ old('email') }}" required>
                                 @error('email')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="form-group">
-                                <label class="fw-600 fs-14">Phone Number</label>
+                                <label class="fw-600 fs-14">{{ __('Teléfono') }}</label>
                                 <input type="tel" name="phone"
                                        class="form-control @error('phone') is-invalid @enderror"
-                                       placeholder="Phone number"
+                                       placeholder="{{ __('Número de teléfono') }}"
                                        value="{{ old('phone') }}">
                                 @error('phone')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="form-group">
-                                <label class="fw-600 fs-14">Password</label>
+                                <label class="fw-600 fs-14">{{ __('Contraseña') }}</label>
                                 <input type="password" name="password"
                                        class="form-control @error('password') is-invalid @enderror"
-                                       placeholder="Create a password" required>
+                                       placeholder="{{ __('Crea una contraseña') }}" required>
                                 @error('password')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="form-group">
-                                <label class="fw-600 fs-14">Confirm Password</label>
+                                <label class="fw-600 fs-14">{{ __('Confirmar contraseña') }}</label>
                                 <input type="password" name="password_confirmation"
                                        class="form-control"
-                                       placeholder="Confirm your password" required>
+                                       placeholder="{{ __('Repite tu contraseña') }}" required>
                             </div>
                             <div class="form-group">
                                 <div class="custom-control custom-checkbox">
                                     <input type="checkbox" name="agree" class="custom-control-input" id="agree" required>
                                     <label class="custom-control-label fs-14" for="agree">
-                                        I agree to the
-                                        <a href="{{ route('terms') }}" class="text-primary">Terms &amp; Conditions</a>
-                                        and
-                                        <a href="{{ route('privacy-policy') }}" class="text-primary">Privacy Policy</a>
+                                        {{ __('Acepto los') }}
+                                        <a href="{{ route('terms') }}" class="text-primary">{{ __('Términos y condiciones') }}</a>
+                                        {{ __('y la') }}
+                                        <a href="{{ route('privacy-policy') }}" class="text-primary">{{ __('Política de privacidad') }}</a>
                                     </label>
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-primary btn-block fw-600">
-                                Create Account
+                                {{ __('Crear cuenta') }}
                             </button>
                         </form>
 
                         <div class="text-center mt-4 fs-14">
-                            Already have an account?
-                            <a href="{{ route('login') }}" class="text-primary fw-600">Sign In</a>
+                            {{ __('¿Ya tienes cuenta?') }}
+                            <a href="{{ route('login') }}" class="text-primary fw-600">{{ __('Iniciar sesión') }}</a>
                         </div>
                     </div>
                 </div>

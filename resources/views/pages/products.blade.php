@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Todos los Productos')
+@section('title', __('Todos los productos'))
 
 @section('extra_css')
 <style>
@@ -50,7 +50,12 @@
     }
     @media (max-width: 1100px) { .products-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 768px)  { .products-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 480px)  { .products-grid { grid-template-columns: 1fr; } }
+    /* En el teléfono se quedan 2 columnas: a 1 columna cada foto ocupaba
+       el ancho entero (~345px) y se veía un producto por pantalla. */
+    @media (max-width: 480px)  {
+        .products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .products-grid .product-card-body { padding: 8px 9px 10px; }
+    }
 
     /* ── Product card ── */
     .product-card {
@@ -114,7 +119,7 @@
     <div class="container">
 
         <div class="top-bar">
-            <h1>Todos los Productos
+            <h1>{{ __('Todos los productos') }}
                 <span style="color:#aaa; font-size:.85rem; font-weight:400;">({{ $products->total() }})</span>
             </h1>
             <div class="top-bar-right">
@@ -123,10 +128,10 @@
                         <input type="hidden" name="{{ $k }}" value="{{ $v }}">
                     @endforeach
                     <select name="sort" class="sort-select" onchange="this.form.submit()">
-                        <option value="newest"     {{ request('sort','newest')=='newest'     ? 'selected':'' }}>Más recientes</option>
-                        <option value="price_asc"  {{ request('sort')=='price_asc'           ? 'selected':'' }}>Precio: menor a mayor</option>
-                        <option value="price_desc" {{ request('sort')=='price_desc'          ? 'selected':'' }}>Precio: mayor a menor</option>
-                        <option value="popular"    {{ request('sort')=='popular'             ? 'selected':'' }}>Más vendidos</option>
+                        <option value="newest"     {{ request('sort','newest')=='newest'     ? 'selected':'' }}>{{ __('Más recientes') }}</option>
+                        <option value="price_asc"  {{ request('sort')=='price_asc'           ? 'selected':'' }}>{{ __('Precio: menor a mayor') }}</option>
+                        <option value="price_desc" {{ request('sort')=='price_desc'          ? 'selected':'' }}>{{ __('Precio: mayor a menor') }}</option>
+                        <option value="popular"    {{ request('sort')=='popular'             ? 'selected':'' }}>{{ __('Más vendidos') }}</option>
                     </select>
                 </form>
             </div>
@@ -139,7 +144,7 @@
             @endforeach
             <input type="text" name="search"
                    value="{{ request('search') }}"
-                   placeholder="Buscar productos...">
+                   placeholder="{{ __('Buscar productos...') }}">
             <button type="submit"><i class="las la-search"></i></button>
         </form>
 
@@ -215,12 +220,12 @@
                 <i class="las la-box-open"></i>
                 <p style="font-size:.95rem; font-weight:600; color:#888;">
                     @if(request('search'))
-                        No se encontraron resultados para <strong>"{{ request('search') }}"</strong>
+                        {{ __('No se encontraron resultados para') }} <strong>"{{ request('search') }}"</strong>
                     @else
-                        No hay productos disponibles.
+                        {{ __('No hay productos disponibles.') }}
                     @endif
                 </p>
-                <a href="{{ route('products.index') }}" style="color:#679941; font-size:.85rem;">← Ver todos</a>
+                <a href="{{ route('products.index') }}" style="color:#679941; font-size:.85rem;">← {{ __('Ver todos') }}</a>
             </div>
         @endif
 

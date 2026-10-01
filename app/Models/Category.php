@@ -53,7 +53,35 @@ class Category extends Model
     /** Etiqueta del selector de talla ("Talla", "Talla US", "Cintura"). */
     public function sizeLabel(): string
     {
-        return $this->variantConfig()['size_label'] ?? 'Talla';
+        return __($this->variantConfig()['size_label'] ?? 'Talla');
+    }
+
+    /**
+     * Asigna a cada categoría el variant_type que le corresponde según
+     * config('variants.category_types'). Devuelve cuántas filas cambiaron.
+     *
+     * Vive aquí, y no dentro de la migración que creó la columna, porque hay
+     * que poder reaplicarlo: variant_type nace en 'none' y cada repoblado del
+     * catálogo (legacy:restore) vuelve a traerlo así. La migración original
+     * hizo el UPDATE una sola vez, y como en esta base el esquema se migró
+     * antes de que existieran las filas, lo hizo sobre una tabla vacía: todas
+     * las categorías quedaron en 'none' y ninguna llegó a ofrecer tallas.
+     *
+     * Es idempotente: solo toca las categorías cuyo tipo no coincide ya.
+     */
+    public static function applyConfiguredVariantTypes(): int
+    {
+        $changed = 0;
+
+        foreach (config('variants.category_types', []) as $slug => $type) {
+            $changed += static::where('slug', $slug)
+                ->where(function ($query) use ($type) {
+                    $query->where('variant_type', '!=', $type)->orWhereNull('variant_type');
+                })
+                ->update(['variant_type' => $type]);
+        }
+
+        return $changed;
     }
 
     /**

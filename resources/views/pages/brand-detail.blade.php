@@ -13,15 +13,15 @@
             @endif
             <div>
                 <h1 style="font-size:1.2rem; font-weight:700; color:#222; margin:0;">{{ $brand->name }}</h1>
-                <p style="font-size:.83rem; color:#888; margin:0;">{{ $products->total() }} productos</p>
+                <p style="font-size:.83rem; color:#888; margin:0;">{{ __(':count productos', ['count' => $products->total()]) }}</p>
             </div>
         </div>
 
         @if($products->isEmpty())
             <div style="text-align:center; padding:60px 20px; color:#bbb;">
                 <i class="las la-box-open" style="font-size:3rem; display:block; margin-bottom:12px;"></i>
-                <p>No hay productos para esta marca.</p>
-                <a href="{{ route('products.index') }}" style="color:#679941; font-size:.85rem;">← Ver todos los productos</a>
+                <p>{{ __('No hay productos para esta marca.') }}</p>
+                <a href="{{ route('products.index') }}" style="color:#679941; font-size:.85rem;">← {{ __('Ver todos los productos') }}</a>
             </div>
         @else
             <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:16px;">

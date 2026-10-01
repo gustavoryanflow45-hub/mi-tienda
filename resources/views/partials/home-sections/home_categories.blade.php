@@ -4,7 +4,7 @@
         <div class="px-2 py-4 px-md-4 py-md-3 bg-white shadow-sm rounded">
             <div class="d-flex mb-3 align-items-baseline border-bottom">
                 <h3 class="h5 fw-700 mb-0">
-                    <span class="border-bottom border-primary border-width-2 pb-3 d-inline-block">Shop by Category</span>
+                    <span class="border-bottom border-primary border-width-2 pb-3 d-inline-block">{{ __('Compra por categoría') }}</span>
                 </h3>
             </div>
             <div class="row gutters-10">
@@ -12,7 +12,7 @@
                 <div class="col-6 col-md-4 col-lg-2">
                     <a href="{{ route('category.show', $category->slug) }}"
                        class="d-block text-center p-3 bg-soft-primary rounded mb-3 text-reset">
-                        <img src="{{ asset('storage/' . $category->banner) }}"
+                        <img loading="lazy" src="{{ asset('storage/' . $category->banner) }}"
                              alt="{{ $category->name }}"
                              class="img-fluid mb-2"
                              style="height:60px; object-fit:contain;"

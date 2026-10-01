@@ -10,7 +10,7 @@
                     </span>
                 </h3>
                 <a href="{{ route('category.show', $category->slug) }}" class="ml-auto mr-0 btn btn-primary btn-sm shadow-md">
-                    View All
+                    {{ __('Ver todo') }}
                 </a>
             </div>
             <div class="aiz-carousel gutters-10 half-outside-arrow"

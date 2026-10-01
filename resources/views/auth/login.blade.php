@@ -1,7 +1,7 @@
 {{-- resources/views/auth/login.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Login')
+@section('title', __('Iniciar sesión'))
 
 @section('content')
 <section class="py-5 my-5">
@@ -15,8 +15,8 @@
                                 <img src="{{ asset('assets/img/logo.png') }}"
                                      alt="Woot" height="40" class="mb-3">
                             </a>
-                            <h4 class="fw-700">Welcome Back!</h4>
-                            <p class="text-muted fs-14">Sign in to your account</p>
+                            <h4 class="fw-700">{{ __('¡Bienvenido de nuevo!') }}</h4>
+                            <p class="text-muted fs-14">{{ __('Inicia sesión en tu cuenta') }}</p>
                         </div>
 
                         @if(session('error'))
@@ -29,20 +29,20 @@
                         <form method="POST" action="{{ route('login') }}">
                             @csrf
                             <div class="form-group">
-                                <label class="fw-600 fs-14">Email Address</label>
+                                <label class="fw-600 fs-14">{{ __('Correo electrónico') }}</label>
                                 <input type="email" name="email"
                                        class="form-control @error('email') is-invalid @enderror"
-                                       placeholder="Enter your email"
+                                       placeholder="{{ __('Escribe tu correo') }}"
                                        value="{{ old('email') }}" required autofocus>
                                 @error('email')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="form-group">
-                                <label class="fw-600 fs-14">Password</label>
+                                <label class="fw-600 fs-14">{{ __('Contraseña') }}</label>
                                 <input type="password" name="password"
                                        class="form-control @error('password') is-invalid @enderror"
-                                       placeholder="Enter your password" required>
+                                       placeholder="{{ __('Escribe tu contraseña') }}" required>
                                 @error('password')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -50,18 +50,18 @@
                             <div class="form-group d-flex justify-content-between align-items-center">
                                 <div class="custom-control custom-checkbox">
                                     <input type="checkbox" name="remember" class="custom-control-input" id="remember">
-                                    <label class="custom-control-label fs-14" for="remember">Remember me</label>
+                                    <label class="custom-control-label fs-14" for="remember">{{ __('Recordarme') }}</label>
                                 </div>
-                                <a href="{{ route('password.request') }}" class="text-primary fs-14">Forgot password?</a>
+                                <a href="{{ route('password.request') }}" class="text-primary fs-14">{{ __('¿Olvidaste tu contraseña?') }}</a>
                             </div>
                             <button type="submit" class="btn btn-primary btn-block fw-600">
-                                Sign In
+                                {{ __('Iniciar sesión') }}
                             </button>
                         </form>
 
                         <div class="text-center mt-4 fs-14">
-                            Don't have an account?
-                            <a href="{{ route('register') }}" class="text-primary fw-600">Register Now</a>
+                            {{ __('¿No tienes cuenta?') }}
+                            <a href="{{ route('register') }}" class="text-primary fw-600">{{ __('Regístrate') }}</a>
                         </div>
                     </div>
                 </div>

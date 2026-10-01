@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Pedidos de mi Tienda')
+@section('title', __('Pedidos de mi tienda'))
 
 @section('extra_css')
 <style>
@@ -129,18 +129,18 @@
                         <ul class="aiz-side-nav-list list-unstyled mb-0">
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/dashboard') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-home mr-2 fs-16"></i><span>Dashboard</span>
+                                    <i class="las la-home mr-2 fs-16"></i><span>{{ __('dashboard.nav.dashboard') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('seller.products.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-box mr-2 fs-16"></i><span>Productos</span>
+                                    <i class="las la-box mr-2 fs-16"></i><span>{{ __('dashboard.nav.products') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('seller.orders.index') }}" class="aiz-side-nav-link bg-soft-primary active d-flex align-items-center text-reset p-2">
                                     <i class="las la-shopping-cart mr-2 fs-16"></i>
-                                    <span>Pedidos</span>
+                                    <span>{{ __('dashboard.nav.orders') }}</span>
                                     @php $newOrders = Auth::user()->newOrderNotificationsCount(); @endphp
                                     @if($newOrders > 0)
                                         <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ $newOrders }}</span>
@@ -150,18 +150,18 @@
                             @if(Auth::user()->isAdmin())
                                 <li class="aiz-side-nav-item mb-1">
                                     <a href="{{ route('warehouse.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                        <i class="las la-warehouse mr-2 fs-16"></i><span>Almacén</span>
+                                        <i class="las la-warehouse mr-2 fs-16"></i><span>{{ __('dashboard.nav.warehouse') }}</span>
                                     </a>
                                 </li>
                             @endif
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('wallet.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-wallet mr-2 fs-16"></i><span>Mi Billetera</span>
+                                    <i class="las la-wallet mr-2 fs-16"></i><span>{{ __('dashboard.nav.wallet') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/profile') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-user-cog mr-2 fs-16"></i><span>Administrar Perfil</span>
+                                    <i class="las la-user-cog mr-2 fs-16"></i><span>{{ __('dashboard.nav.manage_profile') }}</span>
                                 </a>
                             </li>
                         </ul>
@@ -175,7 +175,7 @@
             ══════════════════════════════════════ --}}
             <div class="col-lg-9">
 
-                <h3 class="h4 fw-700 mb-4">Pedidos de mi Tienda</h3>
+                <h3 class="h4 fw-700 mb-4">{{ __('Pedidos de mi tienda') }}</h3>
 
                 @if(session('warehouse_success'))
                     <div class="alert-warehouse-success">
@@ -192,18 +192,18 @@
 
                 <div class="orders-panel">
                     <div class="orders-panel-header">
-                        <h5>Pedidos pagados</h5>
+                        <h5>{{ __('Pedidos pagados') }}</h5>
                         <form method="GET" action="{{ route('seller.orders.index') }}" class="filter-bar">
-                            <input type="text" name="code" value="{{ request('code') }}" placeholder="Código de pedido">
+                            <input type="text" name="code" value="{{ request('code') }}" placeholder="{{ __('Código de pedido') }}">
                             <select name="delivery_status" onchange="this.form.submit()">
-                                <option value="">Todos los estados</option>
-                                <option value="pending"    @selected(request('delivery_status') === 'pending')>Pendiente</option>
-                                <option value="confirmed"  @selected(request('delivery_status') === 'confirmed')>Confirmado</option>
-                                <option value="warehouse"  @selected(request('delivery_status') === 'warehouse')>En almacén</option>
-                                <option value="on_the_way" @selected(request('delivery_status') === 'on_the_way')>En camino</option>
-                                <option value="delivered"  @selected(request('delivery_status') === 'delivered')>Entregado</option>
+                                <option value="">{{ __('Todos los estados') }}</option>
+                                <option value="pending"    @selected(request('delivery_status') === 'pending')>{{ __('Pendiente') }}</option>
+                                <option value="confirmed"  @selected(request('delivery_status') === 'confirmed')>{{ __('Confirmado') }}</option>
+                                <option value="warehouse"  @selected(request('delivery_status') === 'warehouse')>{{ __('En almacén') }}</option>
+                                <option value="on_the_way" @selected(request('delivery_status') === 'on_the_way')>{{ __('En camino') }}</option>
+                                <option value="delivered"  @selected(request('delivery_status') === 'delivered')>{{ __('Entregado') }}</option>
                             </select>
-                            <button type="submit" class="btn-search">Buscar</button>
+                            <button type="submit" class="btn-search">{{ __('Buscar') }}</button>
                         </form>
                     </div>
 
@@ -212,13 +212,14 @@
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Código</th>
-                                    <th>Cliente</th>
-                                    <th>Fecha</th>
-                                    <th>Total (tus productos)</th>
-                                    <th>Pago</th>
-                                    <th>Entrega</th>
-                                    <th>Acciones</th>
+                                    <th>{{ __('Código') }}</th>
+                                    <th>{{ __('Cliente') }}</th>
+                                    <th>{{ __('Tus productos') }}</th>
+                                    <th>{{ __('Fecha') }}</th>
+                                    <th>{{ __('Total (tus productos)') }}</th>
+                                    <th>{{ __('Pago') }}</th>
+                                    <th>{{ __('Entrega') }}</th>
+                                    <th>{{ __('Acciones') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -241,6 +242,9 @@
                                                 </small>
                                             @endif
                                         </td>
+                                        <td>
+                                            @include('partials.order-items-cell', ['details' => $order->orderDetails])
+                                        </td>
                                         <td>{{ $order->created_at->format('d-m-Y H:i') }}</td>
                                         <td style="font-weight:600;">
                                             ${{ number_format($sellerSubtotal + $sellerShipping, 2) }}
@@ -252,35 +256,35 @@
                                         </td>
                                         <td>
                                             <span class="badge-status badge-{{ $order->payment_status === 'paid' ? 'paid' : 'unpaid' }}">
-                                                {{ $order->payment_status === 'paid' ? 'Pagado' : 'Pendiente' }}
+                                                {{ $order->payment_status === 'paid' ? __('Pagado') : __('Pendiente') }}
                                             </span>
                                         </td>
                                         <td>
                                             <span class="badge-status badge-{{ $order->delivery_status }}">
-                                                {{ ucwords(str_replace('_', ' ', $order->delivery_status)) }}
+                                                {{ delivery_status_label($order->delivery_status) }}
                                             </span>
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center gap-2" style="gap:10px;">
                                                 @if($order->delivery_status === 'pending')
                                                     <form method="POST" action="{{ route('seller.orders.confirm', $order->id) }}"
-                                                          onsubmit="return confirm('¿Confirmar el pedido #{{ $order->code }}?')">
+                                                          onsubmit="return confirm({{ json_encode(__('¿Confirmar el pedido #:code?', ['code' => $order->code])) }})">
                                                         @csrf
-                                                        <button type="submit" class="btn-confirm">Confirmar</button>
+                                                        <button type="submit" class="btn-confirm">{{ __('Confirmar') }}</button>
                                                     </form>
                                                 @endif
                                                 <a href="{{ route('orders.show', $order->id) }}" class="btn-view">
-                                                    Ver detalle <i class="las la-arrow-right"></i>
+                                                    {{ __('Ver detalle') }} <i class="las la-arrow-right"></i>
                                                 </a>
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8">
+                                        <td colspan="9">
                                             <div class="nothing-found">
                                                 <i class="las la-frown-open"></i>
-                                                <span>No tienes pedidos pagados todavía</span>
+                                                <span>{{ __('No tienes pedidos pagados todavía') }}</span>
                                             </div>
                                         </td>
                                     </tr>

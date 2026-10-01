@@ -17,6 +17,11 @@ return [
 
     'ec_iva_rate' => 0.15,
 
+    // Comisión del marketplace sobre las ventas de cada vendedor. Las
+    // "ganancias" del panel son las ventas menos esta fracción, y es la
+    // que se descuenta al liquidar (SettlementService).
+    'seller_commission_rate' => 0.25,
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

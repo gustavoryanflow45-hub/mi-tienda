@@ -70,11 +70,6 @@
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-reply mr-2 fs-16"></i><span>{{ __('dashboard.nav.refund_sent') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/wishlist') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-heart mr-2 fs-16"></i><span>{{ __('dashboard.nav.wishlist') }}</span>
                                 </a>
@@ -82,21 +77,6 @@
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('seller.products.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-box mr-2 fs-16"></i><span>{{ __('dashboard.nav.products') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-boxes mr-2 fs-16"></i><span>{{ __('dashboard.nav.wholesale') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-ticket-alt mr-2 fs-16"></i><span>{{ __('dashboard.nav.coupons') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-tags mr-2 fs-16"></i><span>{{ __('dashboard.nav.classified') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
@@ -115,6 +95,11 @@
                                     </a>
                                 </li>
                                 <li class="aiz-side-nav-item mb-1">
+                                    <a href="{{ route('admin.settlements') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
+                                        <i class="las la-hand-holding-usd mr-2 fs-16"></i><span>{{ __('dashboard.nav.settlements') }}</span>
+                                    </a>
+                                </li>
+                                <li class="aiz-side-nav-item mb-1">
                                     <a href="{{ route('admin.shops') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                         <i class="las la-store mr-2 fs-16"></i><span>{{ __('dashboard.nav.shop_approvals') }}</span>
                                         @php $pendingShops = \App\Models\Shop::where('status', 0)->count(); @endphp
@@ -125,22 +110,12 @@
                                 </li>
                             @endif
                             <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-undo mr-2 fs-16"></i><span>{{ __('dashboard.nav.refund_received') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                    <i class="las la-star mr-2 fs-16"></i><span>{{ __('dashboard.nav.reviews') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('wallet.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-wallet mr-2 fs-16"></i><span>{{ __('dashboard.nav.wallet') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
+                                <a href="{{ route('support-policy') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-headset mr-2 fs-16"></i><span>{{ __('dashboard.nav.support') }}</span>
                                 </a>
                             </li>
@@ -159,6 +134,7 @@
                 <h3 class="h4 fw-700 mb-4">{{ __('dashboard.heading', ['name' => Auth::user()->name]) }}</h3>
 
                 @include('partials.shop-status-banner')
+                @include('partials.settlement-banner')
 
                 <div class="row gutters-10 mb-3">
                     <div class="col-6 col-md-3 mb-3">
@@ -180,6 +156,7 @@
                             <i class="las la-chart-line stat-icon"></i>
                             <h2 class="fw-700 fs-32 mb-1 position-relative">${{ number_format($stats['total_profits'] ?? 0, 2) }}</h2>
                             <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.total_profits') }}</p>
+                            <p class="mb-0 opacity-60 fs-12 position-relative">{{ __('dashboard.stats.commission_note', ['rate' => round(($stats['commission_rate'] ?? 0) * 100)]) }}</p>
                         </div>
                     </div>
                     <div class="col-6 col-md-3 mb-3">
@@ -191,13 +168,25 @@
                     </div>
                 </div>
 
+                <p class="fs-13 opacity-60 mb-3">
+                    <i class="las la-info-circle"></i>
+                    @if(isset($lastSettlement) && $lastSettlement)
+                        {{ __('dashboard.stats.since_settlement', [
+                            'date' => $lastSettlement->settled_at->format('d/m/Y'),
+                            'amount' => number_format($lastSettlement->net_amount, 2),
+                        ]) }}
+                    @else
+                        {{ __('dashboard.stats.no_settlement') }}
+                    @endif
+                </p>
+
                 <div class="row gutters-10 mb-4">
                     <div class="col-6 col-md-3 mb-3">
-                        <div class="wave-card" style="background: linear-gradient(135deg, #c471ed, #f64f59);">
-                            <i class="las la-eye stat-icon"></i>
-                            <h2 class="fw-700 fs-32 mb-1 position-relative">{{ $stats['visitors'] ?? 0 }}</h2>
-                            <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.visitors') }}</p>
-                        </div>
+                        <a href="{{ route('seller.orders.index', ['delivery_status' => 'pending']) }}" class="wave-card d-block text-white text-decoration-none" style="background: linear-gradient(135deg, #c471ed, #f64f59);">
+                            <i class="las la-hourglass-half stat-icon"></i>
+                            <h2 class="fw-700 fs-32 mb-1 position-relative">{{ $stats['pending_orders'] ?? 0 }}</h2>
+                            <p class="mb-0 opacity-80 fs-14 position-relative">{{ __('dashboard.stats.pending_orders') }}</p>
+                        </a>
                     </div>
                 </div>
 

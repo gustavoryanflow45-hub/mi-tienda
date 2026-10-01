@@ -12,15 +12,15 @@
         </a>
         <div class="absolute-top-right aiz-p-hov-icon">
             <a href="javascript:void(0)" onclick="addToWishList({{ $product->id }})"
-               data-toggle="tooltip" data-title="Add to wishlist" data-placement="left">
+               data-toggle="tooltip" data-title="{{ __('Añadir a la lista de deseos') }}" data-placement="left">
                 <i class="la la-heart-o"></i>
             </a>
             <a href="javascript:void(0)" onclick="addToCompare({{ $product->id }})"
-               data-toggle="tooltip" data-title="Add to compare" data-placement="left">
+               data-toggle="tooltip" data-title="{{ __('Añadir a comparar') }}" data-placement="left">
                 <i class="las la-sync"></i>
             </a>
             <a href="javascript:void(0)" onclick="showAddToCartModal({{ $product->id }})"
-               data-toggle="tooltip" data-title="Add to cart" data-placement="left">
+               data-toggle="tooltip" data-title="{{ __('Añadir al carrito') }}" data-placement="left">
                 <i class="las la-shopping-cart"></i>
             </a>
         </div>

@@ -1,7 +1,11 @@
 @extends('layouts.app')
 
 @section('title', $product->name)
-@section('meta_description', $product->meta_description ?? $product->short_description)
+{{-- El '' final no es decorativo: con los dos campos en null, Blade toma el
+     @section como "de bloque", abre un buffer de salida y se queda esperando
+     un @endsection que no existe. El meta salía vacío y cada render dejaba un
+     nivel de ob_start() colgando. --}}
+@section('meta_description', $product->meta_description ?? $product->short_description ?? '')
 
 @section('extra_css')
 <style>
@@ -107,7 +111,7 @@
     /* ── Colores ── */
     .color-chips { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
     .color-chip {
-        width:28px; height:28px; border-radius:3px;
+        display:block; width:28px; height:28px; border-radius:3px;
         border:2px solid transparent; cursor:pointer;
         transition:border-color .15s, transform .15s; position:relative;
     }
@@ -225,6 +229,36 @@
     .related-card-body { padding:8px 10px 10px; }
     .related-card-price { font-size:.85rem; font-weight:700; color:#679941; }
     .related-card-name  { font-size:.75rem; color:#666; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+    /* ── Teléfono ──
+       La galería reservaba 340px de alto mínimo más una columna de
+       miniaturas al lado: la foto se comía la primera pantalla entera.
+       Aquí va primero la foto, más baja, y las miniaturas en una fila
+       deslizable debajo. */
+    @media(max-width:575.98px){
+        .product-page { padding:12px 0 40px; }
+        .product-main { padding:14px; }
+        .gallery-col { flex-direction:column-reverse; gap:8px; }
+        .gallery-thumbs-vert { flex-direction:row; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
+        .gallery-thumbs-vert::-webkit-scrollbar { display:none; }
+        .gallery-thumb { width:48px; height:48px; }
+        .gallery-main-wrap { min-height:0; height:260px; }
+        .gallery-main-wrap img { max-height:250px; }
+        .gallery-main-wrap img:hover { transform:none; }
+        .info-panel { margin-top:14px; }
+        .info-row { flex-wrap:wrap; }
+        .info-label { min-width:72px; }
+        .size-chip { min-width:44px; height:40px; }
+        .color-chip { width:34px; height:34px; }
+        .cta-row { flex-direction:column; }
+        .btn-addcart, .btn-buynow, .btn-outstock { width:100%; justify-content:center; min-height:46px; }
+        .soft-links { flex-wrap:wrap; gap:12px 20px; }
+        .refund-box { flex-wrap:wrap; }
+        .refund-box a { margin-left:0; }
+        .tab-btn { padding:10px 14px; }
+        .tab-panel { padding:16px; }
+        .related-section { padding:14px; }
+    }
 </style>
 @endsection
 
@@ -234,7 +268,7 @@
 
         {{-- Breadcrumb --}}
         <div class="breadcrumb-bar">
-            <a href="{{ url('/') }}">Home</a>
+            <a href="{{ url('/') }}">{{ __('Inicio') }}</a>
             <span>/</span>
             @if($product->category)
                 <a href="{{ route('category.show', $product->category->slug) }}">{{ $product->category->name }}</a>
@@ -294,17 +328,17 @@
                                     <i class="{{ $s<=round($product->rating)?'las filled':'lar' }} la-star"></i>
                                 @endfor
                             </div>
-                            <span class="reviews-count">({{ $product->reviews_count }} reviews)</span>
+                            <span class="reviews-count">({{ __(':count reseñas', ['count' => $product->reviews_count]) }})</span>
                         </div>
 
                         {{-- Sold by --}}
                         @if(isset($product->addedBy) && $product->addedBy)
                         <div class="info-row">
-                            <span class="info-label">Sold by:</span>
+                            <span class="info-label">{{ __('Vendido por:') }}</span>
                             <div class="info-value seller-row">
                                 <span class="seller-name">{{ $product->addedBy->name }}</span>
                                 <a href="#" class="btn-msg-seller">
-                                    <i class="las la-comment-dots"></i> Message Seller
+                                    <i class="las la-comment-dots"></i> {{ __('Contactar al vendedor') }}
                                 </a>
                             </div>
                         </div>
@@ -325,20 +359,15 @@
                             $sizes     = $product->availableSizes();
                             $colors    = $product->availableColors();
                             $palette   = config('variants.colors', []);
-                            $sizeLabel = $product->category?->sizeLabel() ?? 'Talla';
+                            $sizeLabel = $product->sizeLabel();
 
                             // Mapa combinación -> stock, para que el JS pueda desactivar
                             // las que no existen o están agotadas sin pedir nada al servidor.
-                            $stockMap = $product->stocks->mapWithKeys(fn($s) => [
-                                \App\Models\ProductStock::buildVariant($s->size, $s->color) => [
-                                    'qty'   => (int) $s->qty,
-                                    'price' => (float) $s->price,
-                                ],
-                            ]);
+                            $stockMap = $product->stockMap();
                         @endphp
 
                         <div class="info-row">
-                            <span class="info-label">Price:</span>
+                            <span class="info-label">{{ __('Precio:') }}</span>
                             <div class="info-value" style="display:flex;align-items:baseline;flex-wrap:wrap;gap:4px;">
                                 <span class="price-big" id="shown-price">
                                     ${{ number_format($finalPrice, 2) }}
@@ -378,13 +407,13 @@
                             {{-- COLORES --}}
                             @if(count($colors) > 0)
                             <div class="info-row">
-                                <span class="info-label">Color:</span>
+                                <span class="info-label">{{ __('Color:') }}</span>
                                 <div class="info-value">
                                     <div class="color-chips">
                                         @foreach($colors as $color)
                                             @php
                                                 $hex   = $palette[$color]['hex']   ?? '#888';
-                                                $label = $palette[$color]['label'] ?? ucfirst($color);
+                                                $label = __($palette[$color]['label'] ?? ucfirst($color));
                                             @endphp
                                             <label style="cursor:pointer;margin:0;" title="{{ $label }}">
                                                 <input type="radio" name="color" value="{{ $color }}"
@@ -401,7 +430,7 @@
 
                             {{-- CANTIDAD --}}
                             <div class="info-row">
-                                <span class="info-label">Quantity:</span>
+                                <span class="info-label">{{ __('Cantidad:') }}</span>
                                 <div class="info-value">
                                     <div class="qty-row">
                                         <div class="qty-control">
@@ -411,7 +440,7 @@
                                             <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
                                         </div>
                                         <span class="stock-available" id="stock-label">
-                                            ({{ $totalStock }} available)
+                                            ({{ __(':qty disponibles', ['qty' => $totalStock]) }})
                                         </span>
                                     </div>
                                 </div>
@@ -421,7 +450,7 @@
 
                         {{-- Precio variante seleccionada --}}
                         <div id="chosen_price_div" style="display:none; padding:6px 0 2px;">
-                            <span style="font-size:.8rem;color:#888;">Selected price:</span>
+                            <span style="font-size:.8rem;color:#888;">{{ __('Precio de la selección:') }}</span>
                             <strong id="chosen_price" style="color:#679941;font-size:1rem;margin-left:6px;"></strong>
                         </div>
 
@@ -429,44 +458,44 @@
                         <div class="cta-row">
                             @if($totalStock > 0)
                                 <button type="button" class="btn-addcart add-to-cart" onclick="addToCart()">
-                                    <i class="las la-shopping-cart"></i> Add to cart
+                                    <i class="las la-shopping-cart"></i> {{ __('Añadir al carrito') }}
                                 </button>
                                 <button type="button" class="btn-buynow buy-now" onclick="addToCart()">
-                                    <i class="las la-bolt"></i> Buy Now
+                                    <i class="las la-bolt"></i> {{ __('Comprar ahora') }}
                                 </button>
                             @else
-                                <button type="button" class="btn-outstock" disabled>Out of Stock</button>
+                                <button type="button" class="btn-outstock" disabled>{{ __('Agotado') }}</button>
                             @endif
                         </div>
 
                         {{-- Wishlist / Compare --}}
                         <div class="soft-links">
                             <button class="soft-link" onclick="addToWishList({{ $product->id }})">
-                                <i class="las la-heart"></i> Add to wishlist
+                                <i class="las la-heart"></i> {{ __('Añadir a la lista de deseos') }}
                             </button>
                             <button class="soft-link" onclick="addToCompare({{ $product->id }})">
-                                <i class="las la-exchange-alt"></i> Add to compare
+                                <i class="las la-exchange-alt"></i> {{ __('Añadir a comparar') }}
                             </button>
                         </div>
 
                         {{-- Refund --}}
                         <div class="info-row">
-                            <span class="info-label">Refund:</span>
+                            <span class="info-label">{{ __('Reembolso:') }}</span>
                             <div class="info-value">
                                 <div class="refund-box">
                                     <i class="las la-shield-alt"></i>
                                     <div class="refund-text">
-                                        <strong>Active eCommerce Refund Protection</strong>
-                                        30 Days Cash Back Guarantee
+                                        <strong>{{ __('Protección de reembolso') }}</strong>
+                                        {{ __('Garantía de devolución de 30 días') }}
                                     </div>
-                                    <a href="{{ route('return-policy') }}">View Policy</a>
+                                    <a href="{{ route('return-policy') }}">{{ __('Ver política') }}</a>
                                 </div>
                             </div>
                         </div>
 
                         {{-- Share --}}
                         <div class="info-row">
-                            <span class="info-label">Share:</span>
+                            <span class="info-label">{{ __('Compartir:') }}</span>
                             <div class="info-value">
                                 <div class="share-row">
                                     @php
@@ -474,7 +503,7 @@
                                         $shareTitle = urlencode($product->name);
                                     @endphp
                                     <a href="mailto:?subject={{ $shareTitle }}&body={{ $shareUrl }}"
-                                       class="share-btn share-email" title="Email">
+                                       class="share-btn share-email" title="{{ __('Correo') }}">
                                         <i class="las la-envelope"></i>
                                     </a>
                                     <a href="https://twitter.com/intent/tweet?url={{ $shareUrl }}&text={{ $shareTitle }}"
@@ -506,16 +535,16 @@
         {{-- ════ Descripción / Reseñas ════ --}}
         <div class="tabs-wrap">
             <div class="tabs-bar">
-                <button class="tab-btn active" onclick="switchTab('desc',this)">Description</button>
+                <button class="tab-btn active" onclick="switchTab('desc',this)">{{ __('Descripción') }}</button>
                 <button class="tab-btn" onclick="switchTab('reviews',this)">
-                    Reviews ({{ $product->reviews_count }})
+                    {{ __('Reseñas') }} ({{ $product->reviews_count }})
                 </button>
             </div>
             <div class="tab-panel active" id="tab-desc">
                 @if($product->description)
                     <div class="description-text">{!! nl2br(e($product->description)) !!}</div>
                 @else
-                    <p style="color:#bbb;font-size:.85rem;">No description available.</p>
+                    <p style="color:#bbb;font-size:.85rem;">{{ __('Sin descripción.') }}</p>
                 @endif
             </div>
             <div class="tab-panel" id="tab-reviews">
@@ -523,7 +552,7 @@
                     @foreach($product->reviews as $review)
                         <div style="border-bottom:1px solid #f0f0f0;padding:12px 0;">
                             <div style="font-size:.83rem;font-weight:600;color:#333;margin-bottom:4px;">
-                                {{ $review->user->name ?? 'User' }}
+                                {{ $review->user->name ?? __('Usuario') }}
                                 <span style="color:#f0ad00;margin-left:8px;">
                                     @for($s=1;$s<=5;$s++)
                                         <i class="{{ $s<=$review->rating?'las':'lar' }} la-star" style="font-size:.75rem;"></i>
@@ -534,7 +563,7 @@
                         </div>
                     @endforeach
                 @else
-                    <p style="color:#bbb;font-size:.85rem;">No reviews yet.</p>
+                    <p style="color:#bbb;font-size:.85rem;">{{ __('Aún no hay reseñas.') }}</p>
                 @endif
             </div>
         </div>
@@ -542,12 +571,12 @@
         {{-- ════ Relacionados ════ --}}
         @if($related->count() > 0)
         <div class="related-section">
-            <h3 class="related-title">Related Products</h3>
+            <h3 class="related-title">{{ __('Productos relacionados') }}</h3>
             <div class="related-grid">
                 @foreach($related as $rel)
                     <a href="{{ url('/product/' . $rel->slug) }}" class="related-card">
                         @if($rel->thumbnail)
-                            <img src="{{ asset('storage/' . $rel->thumbnail) }}" alt="{{ $rel->name }}">
+                            <img loading="lazy" src="{{ asset('storage/' . $rel->thumbnail) }}" alt="{{ $rel->name }}">
                         @else
                             <div style="width:100%;aspect-ratio:1/1;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">
                                 <i class="las la-image" style="font-size:2rem;color:#ccc;"></i>
@@ -654,7 +683,7 @@ function updatePriceAndStock() {
 
     if (!complete) {
         priceDiv.style.display = 'none';
-        if (stockLabel) stockLabel.textContent = '(' + TOTAL_STOCK + ' available)';
+        if (stockLabel) stockLabel.textContent = '(' + @json(__(':qty disponibles')).replace(':qty', TOTAL_STOCK) + ')';
         if (qtyInput) qtyInput.max = TOTAL_STOCK;
         return;
     }
@@ -663,14 +692,14 @@ function updatePriceAndStock() {
 
     if (!entry) {
         priceDiv.style.display = 'none';
-        if (stockLabel) stockLabel.textContent = '(combinación no disponible)';
+        if (stockLabel) stockLabel.textContent = '(' + @json(__('combinación no disponible')) + ')';
         if (qtyInput) { qtyInput.max = 0; qtyInput.value = 1; }
         return;
     }
 
     priceDiv.style.display = 'block';
     document.getElementById('chosen_price').textContent = '$' + entry.price.toFixed(2);
-    if (stockLabel) stockLabel.textContent = '(' + entry.qty + ' available)';
+    if (stockLabel) stockLabel.textContent = '(' + @json(__(':qty disponibles')).replace(':qty', entry.qty) + ')';
     if (qtyInput) {
         qtyInput.max = entry.qty;
         if (parseInt(qtyInput.value) > entry.qty) qtyInput.value = Math.max(1, entry.qty);
@@ -714,12 +743,12 @@ function getFormData() {
 /** Mensaje si falta elegir talla o color; null si la selección está completa. */
 function missingSelection() {
     const sel = currentSelection();
-    if (HAS_SIZES && !sel.size)   return 'Elige una talla antes de continuar.';
-    if (HAS_COLORS && !sel.color) return 'Elige un color antes de continuar.';
+    if (HAS_SIZES && !sel.size)   return @json(__('Elige una talla antes de continuar.'));
+    if (HAS_COLORS && !sel.color) return @json(__('Elige un color antes de continuar.'));
     if (HAS_SIZES || HAS_COLORS) {
         const entry = STOCK_MAP[variantKey(sel.size, sel.color)];
-        if (!entry)        return 'Esa combinación no está disponible.';
-        if (entry.qty <= 0) return 'Esa combinación está agotada.';
+        if (!entry)        return @json(__('Esa combinación no está disponible.'));
+        if (entry.qty <= 0) return @json(__('Esa combinación está agotada.'));
     }
     return null;
 }
@@ -728,7 +757,7 @@ function missingSelection() {
 function addToCart(isBuyNow = false) {
     // ── Si no está logueado, redirigir al login ──
     @guest
-    showToast('Please login to add products to cart', 'error');
+    showToast(@json(__('Inicia sesión para añadir productos al carrito')), 'error');
     setTimeout(() => { window.location.href = '{{ url("/login") }}'; }, 1500);
     return;
     @endguest
@@ -765,15 +794,15 @@ function addToCart(isBuyNow = false) {
             document.querySelectorAll('.cart-count').forEach(el => {
                 el.textContent = res.cart_count;
             });
-            showToast('✓ Added to cart!', 'success');
+            showToast('✓ ' + @json(__('Producto añadido al carrito')), 'success');
             if (isBuyNow) {
                 window.location.href = '{{ url("/cart") }}';
             }
         } else {
-            showToast(res.message || 'Could not add to cart', 'error');
+            showToast(res.message || @json(__('No se pudo añadir al carrito')), 'error');
         }
     })
-    .catch(() => showToast('Network error, try again', 'error'))
+    .catch(() => showToast(@json(__('Error de red, inténtalo de nuevo')), 'error'))
     .finally(() => {
         btn.disabled = false;
         btn.innerHTML = originalText;
@@ -795,7 +824,7 @@ function addToWishList(productId) {
     })
     .then(r => r.json())
     .then(res => showToast(res.message || '♡ Added to wishlist', 'success'))
-    .catch(() => showToast('Could not add to wishlist', 'error'));
+    .catch(() => showToast(@json(__('No se pudo añadir a la lista de deseos')), 'error'));
     @else
     window.location.href = '{{ url("/login") }}';
     @endauth
@@ -803,7 +832,7 @@ function addToWishList(productId) {
 
 // ── COMPARE ───────────────────────────────────────────────────
 function addToCompare(productId) {
-    showToast('Compare feature coming soon', 'error');
+    showToast(@json(__('Comparar estará disponible pronto')), 'error');
 }
 
 // ── Tabs ──────────────────────────────────────────────────────

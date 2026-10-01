@@ -24,7 +24,7 @@ class LoginController extends Controller
             return redirect('/dashboard');
         }
 
-        return back()->withErrors(['email' => 'Email o contraseña incorrectos.']);
+        return back()->withErrors(['email' => __('Correo o contraseña incorrectos.')]);
     }
 
     public function logout(Request $request)

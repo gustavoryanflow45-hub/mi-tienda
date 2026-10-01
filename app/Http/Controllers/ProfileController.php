@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -21,7 +22,7 @@ class ProfileController extends Controller
     }
 
     // PUT /profile
-    public function update(Request $request)
+    public function update(Request $request, ImageOptimizer $images)
     {
         $user = Auth::user();
 
@@ -29,7 +30,7 @@ class ProfileController extends Controller
             'name'   => 'required|string|max:255',
             'email'  => 'required|email|max:255|unique:users,email,' . $user->id,
             'phone'  => 'nullable|string|max:20',
-            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:'.config('images.max_upload_kb'),
         ], [
             'name.required'  => 'El nombre es obligatorio.',
             'email.required' => 'El correo es obligatorio.',
@@ -41,13 +42,13 @@ class ProfileController extends Controller
         $user->phone = $request->phone;
 
         if ($request->hasFile('avatar')) {
-            $path = $request->file('avatar')->store('avatars', 'public');
+            $path = $images->store($request->file('avatar'), 'avatars', 'avatar');
             $user->avatar = $path;
         }
 
         $user->save();
 
-        return back()->with('success', 'Perfil actualizado correctamente.');
+        return back()->with('success', __('Perfil actualizado correctamente.'));
     }
 
     // PUT /profile/password
@@ -63,13 +64,13 @@ class ProfileController extends Controller
         ]);
 
         if (!Hash::check($request->current_password, Auth::user()->password)) {
-            return back()->withErrors(['current_password' => 'La contraseña actual no es correcta.']);
+            return back()->withErrors(['current_password' => __('La contraseña actual no es correcta.')]);
         }
 
         Auth::user()->update([
             'password' => Hash::make($request->password),
         ]);
 
-        return back()->with('success', 'Contraseña actualizada correctamente.');
+        return back()->with('success', __('Contraseña actualizada correctamente.'));
     }
 }

@@ -19,7 +19,9 @@ class OrderController extends Controller
     // ── GET /orders ──────────────────────────────────────────────
     public function index(Request $request)
     {
-        $query = Order::with(['orderDetails.product'])
+        // La categoría entra por la etiqueta de la talla ("Talla US" vs
+        // "Cintura"), que sale del producto y, si no la declara, de ella.
+        $query = Order::with(['orderDetails.product.category'])
             ->where('user_id', Auth::id());
 
         // Filtro estado de pago
@@ -95,14 +97,14 @@ class OrderController extends Controller
         $user = Auth::user();
 
         if (! in_array($user->user_type, ['seller', 'admin'])) {
-            abort(403, 'Solo los vendedores pueden enviar pedidos al almacén.');
+            abort(403, __('Solo los vendedores pueden enviar pedidos al almacén.'));
         }
 
         $order = Order::whereHas('orderDetails', fn ($q) => $q->where('seller_id', $user->id))
             ->findOrFail($id);
 
         if ($order->delivery_status !== 'confirmed') {
-            return back()->with('warehouse_error', 'El pedido debe estar en estado "Confirmado" para enviarlo al almacén.');
+            return back()->with('warehouse_error', __('El pedido debe estar en estado "Confirmado" para enviarlo al almacén.'));
         }
 
         // El almacén no puede despachar sin los datos del comprador:
@@ -115,7 +117,7 @@ class OrderController extends Controller
         }
 
         if (! $order->hasCompleteShippingInfo()) {
-            return back()->with('warehouse_error', 'No se puede enviar al almacén: faltan datos de envío del cliente (nombre, teléfono, correo, dirección o ciudad). Pide al cliente que complete su dirección de envío.');
+            return back()->with('warehouse_error', __('No se puede enviar al almacén: faltan datos de envío del cliente (nombre, teléfono, correo, dirección o ciudad). Pide al cliente que complete su dirección de envío.'));
         }
 
         $order->update([
@@ -132,6 +134,6 @@ class OrderController extends Controller
         // Avisar al cliente que su pedido está en el almacén
         $order->user?->notify(new OrderStatusUpdatedNotification($order, 'warehouse'));
 
-        return back()->with('warehouse_success', '¡Pedido enviado al almacén correctamente! El personal de despacho fue notificado.');
+        return back()->with('warehouse_success', __('¡Pedido enviado al almacén correctamente! El personal de despacho fue notificado.'));
     }
 }

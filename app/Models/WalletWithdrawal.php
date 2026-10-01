@@ -13,6 +13,11 @@ class WalletWithdrawal extends Model
         'bank_name',
         'account_number',
         'status',
+        'from_settlement',
+    ];
+
+    protected $casts = [
+        'from_settlement' => 'boolean',
     ];
 
     public function user()

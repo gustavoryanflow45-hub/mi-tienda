@@ -39,7 +39,7 @@ class KushkiController extends Controller
             : null;
 
         if (! $order) {
-            return response()->json(['status' => 'error', 'message' => 'Tu carrito está vacío.'], 422);
+            return response()->json(['status' => 'error', 'message' => __('Tu carrito está vacío.')], 422);
         }
 
         $total   = (float) $order->grand_total;
@@ -83,7 +83,7 @@ class KushkiController extends Controller
 
         return response()->json([
             'status'  => 'error',
-            'message' => $response->json('message') ?? 'El pago fue rechazado',
+            'message' => $response->json('message') ?? __('El pago fue rechazado'),
         ], 422);
     }
 

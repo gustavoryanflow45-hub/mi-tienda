@@ -52,42 +52,4 @@ class ProductController extends Controller
 
         return view('pages.product-detail', compact('product', 'related', 'photos'));
     }
-
-    // ── POST /product/variant_price ──────────────────────────────
-    // Devuelve precio y stock de una variante seleccionada (AJAX)
-    public function variantPrice(Request $request)
-    {
-        $product = Product::with('stocks')->findOrFail($request->id);
-
-        // Buscar stock por variante
-        $variant = $request->get('variant');
-        $stock   = $product->stocks->firstWhere('variant', $variant)
-                ?? $product->stocks->first();
-
-        if (!$stock) {
-            return response()->json([
-                'price'    => number_format($product->unit_price, 2),
-                'quantity' => 0,
-                'in_stock' => 0,
-                'digital'  => $product->digital,
-                'max_limit'=> 0,
-            ]);
-        }
-
-        // Calcular precio con descuento
-        $price = $stock->price;
-        if ($product->discount > 0) {
-            $price = $product->discount_type === 'percent'
-                ? $stock->price * (1 - $product->discount / 100)
-                : $stock->price - $product->discount;
-        }
-
-        return response()->json([
-            'price'    => '$' . number_format($price, 2),
-            'quantity' => $stock->qty,
-            'in_stock' => $stock->qty > 0 ? 1 : 0,
-            'digital'  => $product->digital,
-            'max_limit'=> $stock->qty,
-        ]);
-    }
 }

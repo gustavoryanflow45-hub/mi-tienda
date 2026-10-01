@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Search: ' . $keyword)
+@section('title', __('Búsqueda') . ': ' . $keyword)
 
 @section('extra_css')
 <style>
@@ -23,7 +23,12 @@
     .products-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
     @media (max-width: 1100px) { .products-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 768px)  { .products-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 480px)  { .products-grid { grid-template-columns: 1fr; } }
+    /* En el teléfono se quedan 2 columnas: a 1 columna cada foto ocupaba
+       el ancho entero (~345px) y se veía un producto por pantalla. */
+    @media (max-width: 480px)  {
+        .products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .products-grid .product-card-body { padding: 8px 9px 10px; }
+    }
     .pagination-wrap { display:flex; justify-content:center; margin-top:28px; gap:4px; flex-wrap:wrap; }
     .page-btn { min-width:32px; height:32px; border:1px solid #ddd; border-radius:5px; background:#fff; color:#555; font-size:.82rem; font-weight:600; display:flex; align-items:center; justify-content:center; text-decoration:none; padding:0 8px; transition:all .15s; }
     .page-btn:hover { border-color:#679941; color:#679941; text-decoration:none; }
@@ -47,10 +52,10 @@
         <div class="d-flex align-items-center justify-content-between flex-wrap mb-3">
             <h1 style="font-size:1.1rem; font-weight:700; color:#222; margin:0;">
                 @if($keyword)
-                    Results for: <span style="color:#679941;">"{{ $keyword }}"</span>
+                    {{ __('Resultados para:') }} <span style="color:#679941;">"{{ $keyword }}"</span>
                     <span style="color:#aaa; font-size:.85rem; font-weight:400;">({{ $products->total() }})</span>
                 @else
-                    All Products
+                    {{ __('Todos los productos') }}
                     <span style="color:#aaa; font-size:.85rem; font-weight:400;">({{ $products->total() }})</span>
                 @endif
             </h1>
@@ -60,7 +65,7 @@
         <form method="GET" action="{{ url('/search') }}" class="search-bar-wrap">
             <input type="text" name="keyword"
                    value="{{ $keyword }}"
-                   placeholder="Search products..." autofocus>
+                   placeholder="{{ __('Buscar productos...') }}" autofocus>
             <button type="submit"><i class="las la-search"></i></button>
         </form>
 
@@ -136,12 +141,12 @@
                 <i class="las la-search"></i>
                 <p style="font-size:.95rem; font-weight:600; color:#888;">
                     @if($keyword)
-                        No results found for <strong>"{{ $keyword }}"</strong>
+                        {{ __('No se encontraron resultados para') }} <strong>"{{ $keyword }}"</strong>
                     @else
-                        No products available.
+                        {{ __('No hay productos disponibles.') }}
                     @endif
                 </p>
-                <a href="{{ url('/') }}" style="color:#679941; font-size:.85rem;">← Back to Home</a>
+                <a href="{{ url('/') }}" style="color:#679941; font-size:.85rem;">← {{ __('Volver al inicio') }}</a>
             </div>
         @endif
 

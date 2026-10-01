@@ -6,8 +6,11 @@ use App\Models\Address;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\SellerSettlement;
 use App\Models\Wishlist;
+use App\Notifications\SellerSettledNotification;
 use App\Notifications\ShopStatusUpdatedNotification;
+use App\Services\SettlementService;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -17,7 +20,7 @@ class DashboardController extends Controller
         $this->middleware('auth');
     }
 
-    public function index()
+    public function index(SettlementService $settlements)
     {
         $user    = Auth::user();
         $address = Address::where('user_id', $user->id)
@@ -35,6 +38,17 @@ class DashboardController extends Controller
                  ->update(['read_at' => now()]);
         }
 
+        // Aviso de liquidación acreditada en la billetera: mismo patrón, una vez.
+        $settlementUpdates = $user->unreadNotifications()
+                                  ->where('type', SellerSettledNotification::class)
+                                  ->get();
+
+        if ($settlementUpdates->isNotEmpty()) {
+            $user->unreadNotifications()
+                 ->where('type', SellerSettledNotification::class)
+                 ->update(['read_at' => now()]);
+        }
+
         // ── Usuario NO verificado → vista simple ─────────────────
         if (!$user->isVerified()) {
             $cartCount     = session('cart') ? count(session('cart')) : 0;
@@ -47,6 +61,7 @@ class DashboardController extends Controller
                 'wishlistCount',
                 'orderCount',
                 'shopUpdates',
+                'settlementUpdates',
             ));
         }
 
@@ -55,22 +70,32 @@ class DashboardController extends Controller
         // pedido está pagado: antes sumaba el grand_total completo de cualquier
         // pedido —incluidos los pendientes y lo vendido por otros vendedores—,
         // así que abrir el checkout sin pagar ya inflaba el total.
-        $soldLines = OrderDetail::where('seller_id', $user->id)
+        //
+        // Además solo cuentan las líneas ya entregadas y que el admin aún no
+        // liquidó: cada liquidación (SettlementService) deja ventas y
+        // ganancias en cero y empieza un ciclo nuevo. Las ganancias son las
+        // ventas menos la comisión del marketplace (app.seller_commission_rate).
+        $pending = $settlements->pendingFor($user->id);
+
+        $paidLines = OrderDetail::where('seller_id', $user->id)
                                 ->where('payment_status', 'paid');
 
         $stats = [
-            'products'       => Product::where('added_by', $user->id)->count(),
-            'total_sale'     => (clone $soldLines)
-                                    ->selectRaw('COALESCE(SUM((price * quantity) + shipping_cost + tax - discount_on_product), 0) AS total')
-                                    ->value('total'),
-            'total_profits'  => (clone $soldLines)
-                                    ->selectRaw('COALESCE(SUM((price * quantity) - discount_on_product), 0) AS total')
-                                    ->value('total'),
-            'success_orders' => (clone $soldLines)->where('delivery_status', 'delivered')
+            'products'        => Product::where('added_by', $user->id)->count(),
+            'total_sale'      => $pending['total_sales'],
+            'total_profits'   => $pending['net_amount'],
+            'commission_rate' => $pending['commission_rate'],
+            'success_orders'  => (clone $paidLines)->where('delivery_status', 'delivered')
                                     ->distinct()->count('order_id'),
-            'visitors'       => 0, // implementar con analytics si se desea
+            // Pagados y aún sin confirmar: lo que el vendedor tiene que atender.
+            'pending_orders'  => (clone $paidLines)->where('delivery_status', 'pending')
+                                    ->distinct()->count('order_id'),
         ];
 
-        return view('pages.dashboard-verified', compact('address', 'stats', 'shopUpdates'));
+        $lastSettlement = SellerSettlement::where('seller_id', $user->id)
+                                          ->latest('settled_at')
+                                          ->first();
+
+        return view('pages.dashboard-verified', compact('address', 'stats', 'shopUpdates', 'settlementUpdates', 'lastSettlement'));
     }
 }

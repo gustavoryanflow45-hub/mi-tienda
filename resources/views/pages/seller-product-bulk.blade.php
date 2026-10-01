@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Carga Masiva de Productos')
+@section('title', __('Carga masiva de productos'))
 
 @section('extra_css')
 <style>
@@ -69,13 +69,6 @@
     .result-row-err td { background:#fff5f5; }
 
     /* Logout */
-    .logout-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:9999; align-items:center; justify-content:center; }
-    .logout-modal-overlay.show { display:flex; }
-    .logout-modal-box { background:#fff; border-radius:16px; padding:2rem 1.75rem; width:90%; max-width:360px; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,.18); }
-    .logout-icon { width:64px; height:64px; background:linear-gradient(135deg,#f64f59,#c471ed); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; }
-    .logout-icon i { font-size:2rem; color:#fff; }
-    .btn-logout-confirm { display:block; width:100%; padding:.65rem; background:linear-gradient(135deg,#679941,#4e7a2e); color:#fff; border:none; border-radius:8px; font-weight:600; font-size:1rem; cursor:pointer; margin-bottom:.75rem; }
-    .btn-logout-cancel { display:block; width:100%; padding:.65rem; background:#f1f3f5; color:#444; border:none; border-radius:8px; font-weight:600; font-size:1rem; cursor:pointer; }
 </style>
 @endsection
 
@@ -95,23 +88,23 @@
                         </div>
                         <h4 class="h5 fw-600 fs-18 mb-1">{{ strtoupper(Auth::user()->name) }}</h4>
                         <p class="mb-2 text-truncate opacity-80 fs-13">{{ Auth::user()->email }}</p>
-                        <span class="verified-badge"><i class="las la-check-circle"></i> Verified</span>
+                        <span class="verified-badge"><i class="las la-check-circle"></i> {{ __('dashboard.verified') }}</span>
                     </div>
                     <div class="bg-white shadow-sm rounded-bottom p-3">
                         <ul class="aiz-side-nav-list list-unstyled mb-0">
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/dashboard') }}" class="aiz-side-nav-link d-flex align-items-center p-2">
-                                    <i class="las la-home mr-2 fs-16"></i><span>Dashboard</span>
+                                    <i class="las la-home mr-2 fs-16"></i><span>{{ __('dashboard.nav.dashboard') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/seller/products') }}" class="aiz-side-nav-link active d-flex align-items-center p-2">
-                                    <i class="las la-box mr-2 fs-16"></i><span>Products</span>
+                                    <i class="las la-box mr-2 fs-16"></i><span>{{ __('dashboard.nav.products') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('seller.orders.index') }}" class="aiz-side-nav-link d-flex align-items-center p-2">
-                                    <i class="las la-shopping-cart mr-2 fs-16"></i><span>Pedidos</span>
+                                    <i class="las la-shopping-cart mr-2 fs-16"></i><span>{{ __('dashboard.nav.orders') }}</span>
                                     @php $newOrders = Auth::user()->newOrderNotificationsCount(); @endphp
                                     @if($newOrders > 0)
                                         <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ $newOrders }}</span>
@@ -120,12 +113,12 @@
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('wallet.index') }}" class="aiz-side-nav-link d-flex align-items-center p-2">
-                                    <i class="las la-wallet mr-2 fs-16"></i><span>Mi Billetera</span>
+                                    <i class="las la-wallet mr-2 fs-16"></i><span>{{ __('dashboard.nav.wallet') }}</span>
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/profile') }}" class="aiz-side-nav-link d-flex align-items-center p-2">
-                                    <i class="las la-user-cog mr-2 fs-16"></i><span>Administrar Perfil</span>
+                                    <i class="las la-user-cog mr-2 fs-16"></i><span>{{ __('dashboard.nav.manage_profile') }}</span>
                                 </a>
                             </li>
                         </ul>
@@ -140,7 +133,7 @@
                     <a href="{{ url('/seller/products') }}" class="btn btn-sm btn-outline-secondary mr-3">
                         <i class="las la-arrow-left mr-1"></i> Volver
                     </a>
-                    <h3 class="h4 fw-700 mb-0">Carga Masiva de Productos (CSV)</h3>
+                    <h3 class="h4 fw-700 mb-0">{{ __('Carga masiva de productos (CSV)') }}</h3>
                 </div>
 
                 {{-- Mensajes --}}
@@ -151,7 +144,7 @@
                 @endif
                 @if(session('bulk_errors'))
                     <div class="alert alert-warning mb-4" style="border-radius:8px; font-size:.85rem;">
-                        <strong>Algunas filas tuvieron errores:</strong>
+                        <strong>{{ __('Algunas filas tuvieron errores:') }}</strong>
                         <ul class="mb-0 mt-2 pl-3">
                             @foreach(session('bulk_errors') as $err)
                                 <li>{{ $err }}</li>
@@ -162,28 +155,28 @@
 
                 {{-- Pasos --}}
                 <div class="steps mb-4">
-                    <div class="step done"><span class="step-label">Descargar plantilla</span></div>
-                    <div class="step done"><span class="step-label">Completar CSV</span></div>
-                    <div class="step done"><span class="step-label">Subir archivo</span></div>
-                    <div class="step"><span class="step-label">Resultado</span></div>
+                    <div class="step done"><span class="step-label">{{ __('Descargar plantilla') }}</span></div>
+                    <div class="step done"><span class="step-label">{{ __('Completar CSV') }}</span></div>
+                    <div class="step done"><span class="step-label">{{ __('Subir archivo') }}</span></div>
+                    <div class="step"><span class="step-label">{{ __('Resultado') }}</span></div>
                 </div>
 
                 {{-- Panel principal --}}
                 <div class="bulk-panel mb-4">
                     <div class="bulk-panel-header">
                         <div class="ph-icon"><i class="las la-file-csv"></i></div>
-                        <h5>Subir archivo CSV</h5>
+                        <h5>{{ __('Subir archivo CSV') }}</h5>
                     </div>
                     <div class="bulk-panel-body">
 
                         {{-- Descargar plantilla --}}
                         <div class="template-box mb-4">
                             <div>
-                                <p class="fw-600 mb-1" style="color:#333;">📄 Plantilla CSV de ejemplo</p>
-                                <p>Descarga la plantilla, completa los datos y súbela aquí.</p>
+                                <p class="fw-600 mb-1" style="color:#333;">📄 {{ __('Plantilla CSV de ejemplo') }}</p>
+                                <p>{{ __('Descarga la plantilla, completa los datos y súbela aquí.') }}</p>
                             </div>
                             <a href="{{ route('seller.products.bulk.template') }}" class="btn-download">
-                                <i class="las la-download"></i> Descargar plantilla
+                                <i class="las la-download"></i> {{ __('Descargar plantilla') }}
                             </a>
                         </div>
 
@@ -192,9 +185,9 @@
                             @csrf
                             <div class="csv-upload-zone mb-3" id="drop-zone" onclick="document.getElementById('csv-file').click()">
                                 <i class="las la-file-upload upload-icon"></i>
-                                <h6>Arrastra tu archivo CSV aquí</h6>
-                                <p>o haz clic para seleccionar desde tu computadora</p>
-                                <p class="mt-2" style="font-size:.78rem; color:#bbb;">Solo archivos .csv — máximo 5 MB</p>
+                                <h6>{{ __('Arrastra tu archivo CSV aquí') }}</h6>
+                                <p>{{ __('o haz clic para seleccionarlo desde tu computadora') }}</p>
+                                <p class="mt-2" style="font-size:.78rem; color:#bbb;">{{ __('Solo archivos .csv — máximo 5 MB') }}</p>
                                 <div class="file-name" id="csv-file-name">
                                     <i class="las la-check-circle mr-1"></i> <span></span>
                                 </div>
@@ -203,9 +196,9 @@
                             </div>
 
                             <div class="text-right">
-                                <a href="{{ url('/seller/products') }}" class="btn btn-outline-secondary mr-2 px-4">Cancelar</a>
+                                <a href="{{ url('/seller/products') }}" class="btn btn-outline-secondary mr-2 px-4">{{ __('Cancelar') }}</a>
                                 <button type="submit" class="btn-submit">
-                                    <i class="las la-upload mr-1"></i> Procesar CSV
+                                    <i class="las la-upload mr-1"></i> {{ __('Procesar CSV') }}
                                 </button>
                             </div>
                         </form>
@@ -219,37 +212,37 @@
                         <div class="ph-icon" style="background:linear-gradient(135deg,#679941,#4e7a2e);">
                             <i class="las la-table"></i>
                         </div>
-                        <h5>Columnas requeridas en el CSV</h5>
+                        <h5>{{ __('Columnas del CSV') }}</h5>
                     </div>
                     <div class="bulk-panel-body p-0">
                         <div class="table-responsive">
                             <table class="col-map-table">
                                 <thead>
                                     <tr>
-                                        <th>Columna CSV</th>
-                                        <th>Campo</th>
-                                        <th>Obligatorio</th>
-                                        <th>Ejemplo</th>
+                                        <th>{{ __('Columna CSV') }}</th>
+                                        <th>{{ __('Campo') }}</th>
+                                        <th>{{ __('Obligatorio') }}</th>
+                                        <th>{{ __('Ejemplo') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr><td><span class="col-badge req">name</span></td><td>Nombre del producto</td><td>✅ Sí</td><td>Camiseta Azul</td></tr>
-                                    <tr><td><span class="col-badge req">category_id</span></td><td>ID de categoría</td><td>✅ Sí</td><td>3</td></tr>
-                                    <tr><td><span class="col-badge req">unit_price</span></td><td>Precio de venta</td><td>✅ Sí</td><td>29.99</td></tr>
-                                    <tr><td><span class="col-badge req">stock_qty</span></td><td>Cantidad en stock</td><td>✅ Sí</td><td>50</td></tr>
-                                    <tr><td><span class="col-badge req">stock_price</span></td><td>Precio de stock/variante</td><td>✅ Sí</td><td>29.99</td></tr>
-                                    <tr><td><span class="col-badge">brand_id</span></td><td>ID de marca</td><td>No</td><td>2</td></tr>
-                                    <tr><td><span class="col-badge">purchase_price</span></td><td>Precio de compra</td><td>No</td><td>15.00</td></tr>
-                                    <tr><td><span class="col-badge">discount</span></td><td>Descuento (%)</td><td>No</td><td>10</td></tr>
-                                    <tr><td><span class="col-badge">discount_type</span></td><td>Tipo descuento</td><td>No</td><td>percent / amount</td></tr>
-                                    <tr><td><span class="col-badge">unit</span></td><td>Unidad de medida</td><td>No</td><td>pieza</td></tr>
-                                    <tr><td><span class="col-badge">shipping_cost</span></td><td>Costo de envío</td><td>No</td><td>5.00</td></tr>
-                                    <tr><td><span class="col-badge">short_description</span></td><td>Descripción corta</td><td>No</td><td>Algodón 100%</td></tr>
-                                    <tr><td><span class="col-badge">description</span></td><td>Descripción completa</td><td>No</td><td>Descripción larga...</td></tr>
-                                    <tr><td><span class="col-badge">sku</span></td><td>SKU del stock</td><td>No</td><td>CAM-AZU-001</td></tr>
-                                    <tr><td><span class="col-badge">variant</span></td><td>Variante (color, talla...)</td><td>No</td><td>Azul-L</td></tr>
-                                    <tr><td><span class="col-badge">published</span></td><td>Publicado (1/0)</td><td>No</td><td>1</td></tr>
-                                    <tr><td><span class="col-badge">featured</span></td><td>Destacado (1/0)</td><td>No</td><td>0</td></tr>
+                                    <tr><td><span class="col-badge req">name</span></td><td>{{ __('Nombre del producto') }}</td><td>✅ {{ __('Sí') }}</td><td>Camiseta Azul</td></tr>
+                                    <tr><td><span class="col-badge req">category_id</span></td><td>{{ __('ID de categoría') }}</td><td>✅ {{ __('Sí') }}</td><td>3</td></tr>
+                                    <tr><td><span class="col-badge req">unit_price</span></td><td>{{ __('Precio de venta') }}</td><td>✅ {{ __('Sí') }}</td><td>29.99</td></tr>
+                                    <tr><td><span class="col-badge req">stock_qty</span></td><td>{{ __('Cantidad en stock') }}</td><td>✅ {{ __('Sí') }}</td><td>50</td></tr>
+                                    <tr><td><span class="col-badge req">stock_price</span></td><td>{{ __('Precio de stock/variante') }}</td><td>✅ {{ __('Sí') }}</td><td>29.99</td></tr>
+                                    <tr><td><span class="col-badge">brand_id</span></td><td>{{ __('ID de marca') }}</td><td>{{ __('No') }}</td><td>2</td></tr>
+                                    <tr><td><span class="col-badge">purchase_price</span></td><td>{{ __('Precio de compra') }}</td><td>{{ __('No') }}</td><td>15.00</td></tr>
+                                    <tr><td><span class="col-badge">discount</span></td><td>{{ __('Descuento (%)') }}</td><td>{{ __('No') }}</td><td>10</td></tr>
+                                    <tr><td><span class="col-badge">discount_type</span></td><td>{{ __('Tipo de descuento') }}</td><td>{{ __('No') }}</td><td>percent / amount</td></tr>
+                                    <tr><td><span class="col-badge">unit</span></td><td>{{ __('Unidad de medida') }}</td><td>{{ __('No') }}</td><td>pieza</td></tr>
+                                    <tr><td><span class="col-badge">shipping_cost</span></td><td>{{ __('Costo de envío') }}</td><td>{{ __('No') }}</td><td>5.00</td></tr>
+                                    <tr><td><span class="col-badge">short_description</span></td><td>{{ __('Descripción corta') }}</td><td>{{ __('No') }}</td><td>Algodón 100%</td></tr>
+                                    <tr><td><span class="col-badge">description</span></td><td>{{ __('Descripción completa') }}</td><td>{{ __('No') }}</td><td>{{ __('Descripción larga...') }}</td></tr>
+                                    <tr><td><span class="col-badge">sku</span></td><td>{{ __('SKU del stock') }}</td><td>{{ __('No') }}</td><td>CAM-AZU-001</td></tr>
+                                    <tr><td><span class="col-badge">variant</span></td><td>{{ __('Variante (color, talla...)') }}</td><td>{{ __('No') }}</td><td>Azul-L</td></tr>
+                                    <tr><td><span class="col-badge">published</span></td><td>{{ __('Publicado (1/0)') }}</td><td>{{ __('No') }}</td><td>1</td></tr>
+                                    <tr><td><span class="col-badge">featured</span></td><td>{{ __('Destacado (1/0)') }}</td><td>{{ __('No') }}</td><td>0</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -261,19 +254,6 @@
     </div>
 </section>
 
-{{-- Logout modal --}}
-<div class="logout-modal-overlay" id="logoutModal">
-    <div class="logout-modal-box">
-        <div class="logout-icon"><i class="las la-sign-out-alt"></i></div>
-        <h5 class="fw-700 mb-1">Sign out?</h5>
-        <p class="opacity-60 fs-14 mb-4">Are you sure you want to log out?</p>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" class="btn-logout-confirm"><i class="las la-sign-out-alt mr-1"></i> Yes, sign out</button>
-        </form>
-        <button class="btn-logout-cancel" onclick="document.getElementById('logoutModal').classList.remove('show')">Cancel</button>
-    </div>
-</div>
 @endsection
 
 @section('extra_js')
@@ -298,10 +278,6 @@ zone.addEventListener('drop', e => {
         document.getElementById('csv-file').files = e.dataTransfer.files;
         showFileName(document.getElementById('csv-file'));
     }
-});
-
-document.getElementById('logoutModal').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('show');
 });
 </script>
 @endsection

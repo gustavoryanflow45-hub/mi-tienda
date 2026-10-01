@@ -14,7 +14,7 @@ class SellerOrderController extends Controller
         $this->middleware('auth');
         $this->middleware(function ($request, $next) {
             if (! in_array(Auth::user()->user_type, ['seller', 'admin'])) {
-                abort(403, 'No autorizado.');
+                abort(403, __('No autorizado.'));
             }
 
             return $next($request);
@@ -26,7 +26,7 @@ class SellerOrderController extends Controller
     {
         $sellerId = Auth::id();
 
-        $query = Order::with(['user', 'orderDetails' => fn ($q) => $q->where('seller_id', $sellerId)])
+        $query = Order::with(['user', 'orderDetails' => fn ($q) => $q->where('seller_id', $sellerId)->with('product.category')])
             ->whereHas('orderDetails', fn ($q) => $q->where('seller_id', $sellerId))
             ->where('payment_status', 'paid');
 
@@ -57,11 +57,11 @@ class SellerOrderController extends Controller
             ->findOrFail($id);
 
         if ($order->payment_status !== 'paid') {
-            return back()->with('warehouse_error', 'El pedido aún no tiene el pago confirmado.');
+            return back()->with('warehouse_error', __('El pedido aún no tiene el pago confirmado.'));
         }
 
         if ($order->delivery_status !== 'pending') {
-            return back()->with('warehouse_error', 'Solo se pueden confirmar pedidos en estado "Pendiente".');
+            return back()->with('warehouse_error', __('Solo se pueden confirmar pedidos en estado "Pendiente".'));
         }
 
         $order->update([
@@ -72,6 +72,6 @@ class SellerOrderController extends Controller
 
         $order->user?->notify(new OrderStatusUpdatedNotification($order, 'confirmed'));
 
-        return back()->with('warehouse_success', 'Pedido #'.$order->code.' confirmado correctamente.');
+        return back()->with('warehouse_success', __('Pedido #:code confirmado correctamente.', ['code' => $order->code]));
     }
 }

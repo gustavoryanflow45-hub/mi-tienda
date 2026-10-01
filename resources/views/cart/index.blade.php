@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Shopping Cart')
+@section('title', __('Carrito de compras'))
 
 @section('extra_css')
 <style>
@@ -65,6 +65,24 @@
     .aiz-toast.show { opacity: 1; transform: translateY(0); }
     .aiz-toast.success { background: #679941; }
     .aiz-toast.error   { background: #e74c3c; }
+
+    /* ── Móvil: cada línea del carrito pasa a ser una tarjeta ──
+       La tabla de 6 columnas medía ~665px y desbordaba la pantalla del
+       teléfono: el botón de quitar (última columna) quedaba fuera de vista. */
+    @media (max-width: 767.98px) {
+        .cart-page { padding: 16px 0 40px; }
+        .cart-table, .cart-table tbody { display: block; background: transparent; box-shadow: none; border-radius: 0; overflow: visible; }
+        .cart-table thead { display: none; }
+        .cart-table tr { display: block; position: relative; background: #fff; border-radius: 10px; box-shadow: 0 1px 8px rgba(0,0,0,.07); padding: 12px 14px; margin-bottom: 12px; }
+        .cart-table tr:hover td { background: transparent; }
+        .cart-table td { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: none; }
+        .cart-table td[data-label]::before { content: attr(data-label); font-size: .75rem; color: #999; font-weight: 600; }
+        .cart-table td.cart-cell-product { display: block; padding: 0 40px 10px 0; margin-bottom: 4px; border-bottom: 1px solid #f0f0f0; }
+        .cart-table td.cart-cell-remove { position: absolute; top: 6px; right: 6px; padding: 0; }
+        .cart-product-img, .cart-product-img-placeholder { width: 56px; height: 56px; }
+        .btn-remove { width: 40px; height: 40px; font-size: 1.5rem; color: #aaa; display: flex; align-items: center; justify-content: center; }
+        .cart-summary { padding: 18px; }
+    }
 </style>
 @endsection
 
@@ -73,9 +91,9 @@
     <div class="container">
 
         <h1 style="font-size:1.15rem; font-weight:700; color:#222; margin-bottom:20px;">
-            Shopping Cart
+            {{ __('Carrito de compras') }}
             @if($cartItems->count() > 0)
-                <span style="color:#aaa; font-size:.85rem; font-weight:400;">({{ $cartItems->sum('quantity') }} items)</span>
+                <span style="color:#aaa; font-size:.85rem; font-weight:400;">({{ __(':count artículos', ['count' => $cartItems->sum('quantity')]) }})</span>
             @endif
         </h1>
 
@@ -87,11 +105,11 @@
                 <table class="cart-table">
                     <thead>
                         <tr>
-                            <th>Product</th>
-                            <th>Price</th>
-                            <th>Quantity</th>
-                            <th>Envío</th>
-                            <th>Subtotal</th>
+                            <th>{{ __('Producto') }}</th>
+                            <th>{{ __('Precio') }}</th>
+                            <th>{{ __('Cantidad') }}</th>
+                            <th>{{ __('Envío') }}</th>
+                            <th>{{ __('Subtotal') }}</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -99,10 +117,10 @@
                         @foreach($cartItems as $item)
                         <tr id="cart-row-{{ $item->id }}">
                             {{-- Producto --}}
-                            <td>
+                            <td class="cart-cell-product">
                                 <div class="cart-product">
                                     @if($item->product->thumbnail)
-                                        <img src="{{ asset('storage/' . $item->product->thumbnail) }}"
+                                        <img loading="lazy" src="{{ asset('storage/' . $item->product->thumbnail) }}"
                                              alt="{{ $item->product->name }}"
                                              class="cart-product-img">
                                     @else
@@ -116,18 +134,20 @@
                                                 {{ $item->product->name }}
                                             </a>
                                         </div>
-                                        @if($item->variation)
-                                            <div class="cart-product-variant">{{ $item->variation }}</div>
+                                        @if($item->hasVariant())
+                                            <div class="cart-product-variant">
+                                                @include('partials.variant-badge', ['parts' => $item->variant_parts])
+                                            </div>
                                         @endif
                                     </div>
                                 </div>
                             </td>
 
                             {{-- Precio unitario --}}
-                            <td>${{ number_format($item->price, 2) }}</td>
+                            <td data-label="{{ __('Precio') }}">${{ number_format($item->price, 2) }}</td>
 
                             {{-- Cantidad --}}
-                            <td>
+                            <td data-label="{{ __('Cantidad') }}">
                                 <div class="qty-control">
                                     <button class="qty-btn" onclick="changeQty({{ $item->id }}, -1)">−</button>
                                     <input type="number" class="qty-input" id="qty-{{ $item->id }}"
@@ -141,24 +161,24 @@
                             </td>
 
                             {{-- Envío del producto --}}
-                            <td>
+                            <td data-label="{{ __('Envío') }}">
                                 @if($item->shipping_cost > 0)
                                     ${{ number_format($item->shipping_cost, 2) }}
                                 @else
-                                    <span style="color:#aaa;">Gratis</span>
+                                    <span style="color:#aaa;">{{ __('Gratis') }}</span>
                                 @endif
                             </td>
 
                             {{-- Subtotal --}}
-                            <td>
+                            <td data-label="{{ __('Subtotal') }}">
                                 <strong id="subtotal-{{ $item->id }}" style="color:#679941;">
                                     ${{ number_format($item->price * $item->quantity, 2) }}
                                 </strong>
                             </td>
 
                             {{-- Eliminar --}}
-                            <td>
-                                <button class="btn-remove" onclick="removeItem({{ $item->id }})" title="Remove">
+                            <td class="cart-cell-remove">
+                                <button class="btn-remove" onclick="removeItem({{ $item->id }})" title="{{ __('Quitar') }}">
                                     <i class="las la-times-circle"></i>
                                 </button>
                             </td>
@@ -171,40 +191,40 @@
             {{-- ── RESUMEN DEL PEDIDO ── --}}
             <div class="col-lg-4">
                 <div class="cart-summary">
-                    <h3>Order Summary</h3>
+                    <h3>{{ __('Resumen del pedido') }}</h3>
 
                     <div class="summary-row">
-                        <span>Subtotal</span>
+                        <span>{{ __('Subtotal') }}</span>
                         <span class="val" id="summary-subtotal">${{ number_format($total, 2) }}</span>
                     </div>
                     <div class="summary-row">
-                        <span>Envío</span>
+                        <span>{{ __('Envío') }}</span>
                         <span class="val" id="summary-shipping">
-                            {{ $shippingTotal > 0 ? '$'.number_format($shippingTotal, 2) : 'Gratis' }}
+                            {{ $shippingTotal > 0 ? '$'.number_format($shippingTotal, 2) : __('Gratis') }}
                         </span>
                     </div>
                     <div class="summary-row">
-                        <span>Impuesto</span>
+                        <span>{{ __('Impuesto') }}</span>
                         <span class="val" id="summary-tax">${{ number_format($taxTotal, 2) }}</span>
                     </div>
                     <div class="summary-row total">
-                        <span>Total</span>
+                        <span>{{ __('Total') }}</span>
                         <span class="val" id="summary-total">${{ number_format($grandTotal, 2) }}</span>
                     </div>
 
                     <a href="{{ url('/checkout') }}" class="btn-checkout">
-                        <i class="las la-lock mr-1"></i> Proceed to Checkout
+                        <i class="las la-lock mr-1"></i> {{ __('Ir a pagar') }}
                     </a>
                     <a href="{{ url('/products') }}" class="btn-continue">
-                        ← Continue Shopping
+                        ← {{ __('Seguir comprando') }}
                     </a>
 
                     {{-- Cupón --}}
                     <div class="mt-4 pt-3 border-top">
-                        <p style="font-size:.8rem; color:#888; font-weight:600; margin-bottom:8px;">Have a coupon?</p>
+                        <p style="font-size:.8rem; color:#888; font-weight:600; margin-bottom:8px;">{{ __('¿Tienes un cupón?') }}</p>
                         <div class="coupon-form">
-                            <input type="text" id="couponCode" placeholder="Enter coupon code">
-                            <button type="button" onclick="applyCoupon()">Apply</button>
+                            <input type="text" id="couponCode" placeholder="{{ __('Escribe el código') }}">
+                            <button type="button" onclick="applyCoupon()">{{ __('Aplicar') }}</button>
                         </div>
                     </div>
                 </div>
@@ -216,10 +236,10 @@
         {{-- CARRITO VACÍO --}}
         <div class="cart-empty">
             <i class="las la-shopping-cart"></i>
-            <h4>Your cart is empty</h4>
-            <p>Looks like you haven't added anything to your cart yet.</p>
+            <h4>{{ __('Tu carrito está vacío') }}</h4>
+            <p>{{ __('Parece que aún no has añadido nada a tu carrito.') }}</p>
             <a href="{{ url('/products') }}" class="btn-checkout mt-4 d-inline-block" style="width:auto; padding: 12px 32px;">
-                Start Shopping
+                {{ __('Empezar a comprar') }}
             </a>
         </div>
         @endif
@@ -249,7 +269,7 @@ function changeQty(cartId, delta) {
 
     if (newVal < 1)   newVal = 1;
     if (newVal > max) {
-        showToast('Only ' + max + ' units available in stock', 'error');
+        showToast(@json(__('Solo hay :max unidades en stock')).replace(':max', max), 'error');
         newVal = max;
     }
 
@@ -278,7 +298,7 @@ function updateQty(cartId, qty) {
 }
 
 function removeItem(cartId) {
-    if (!confirm('Remove this item from cart?')) return;
+    if (!confirm(@json(__('¿Quitar este artículo del carrito?')))) return;
 
     fetch('{{ route("cart.remove") }}', {
         method: 'POST',
@@ -296,15 +316,15 @@ function removeItem(cartId) {
                 updateSummary(data);
                 if (data.cart_count === 0) location.reload();
             }, 300);
-            showToast('Item removed from cart');
+            showToast(@json(__('Artículo quitado del carrito')));
         }
     });
 }
 
 function applyCoupon() {
     const code = document.getElementById('couponCode').value.trim();
-    if (!code) { showToast('Enter a coupon code', 'error'); return; }
-    showToast('Coupon feature coming soon', 'error');
+    if (!code) { showToast(@json(__('Escribe un código de cupón')), 'error'); return; }
+    showToast(@json(__('Los cupones estarán disponibles pronto')), 'error');
 }
 
 // El envío es un costo fijo por producto, así que cambia al quitar líneas:
@@ -312,7 +332,7 @@ function applyCoupon() {
 function updateSummary(data) {
     document.getElementById('summary-subtotal').textContent = '$' + data.cart_total;
     document.getElementById('summary-shipping').textContent =
-        parseFloat(data.cart_shipping.replace(/,/g, '')) > 0 ? '$' + data.cart_shipping : 'Gratis';
+        parseFloat(data.cart_shipping.replace(/,/g, '')) > 0 ? '$' + data.cart_shipping : @json(__('Gratis'));
     document.getElementById('summary-tax').textContent = '$' + data.cart_tax;
     document.getElementById('summary-total').textContent = '$' + data.cart_grand;
     updateCartCount(data.cart_count);

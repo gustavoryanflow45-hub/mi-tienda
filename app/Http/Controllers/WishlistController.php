@@ -28,7 +28,7 @@ class WishlistController extends Controller
             'product_id' => $productId,
         ]);
 
-        return response()->json(['status' => 'success', 'message' => 'Añadido a favoritos.']);
+        return response()->json(['status' => 'success', 'message' => __('Añadido a favoritos.')]);
     }
 
     public function remove(Request $request)
@@ -40,6 +40,6 @@ class WishlistController extends Controller
             ->where('product_id', $productId)
             ->delete();
 
-        return response()->json(['status' => 'success', 'message' => 'Eliminado de favoritos.']);
+        return response()->json(['status' => 'success', 'message' => __('Eliminado de favoritos.')]);
     }
 }

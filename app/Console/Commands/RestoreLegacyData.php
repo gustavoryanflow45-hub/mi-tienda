@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Category;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -86,6 +87,7 @@ class RestoreLegacyData extends Command
         if (! $this->option('pretend')) {
             $this->repairDoubleEncodedJson();
             $this->repairImageExtensions();
+            $this->applyVariantTypes();
         }
 
         $this->reportMissingFiles();
@@ -261,6 +263,27 @@ class RestoreLegacyData extends Command
     // ── Reparaciones de datos heredados ──────────────────────────────────
 
     /**
+     * Reasigna el variant_type de las categorías.
+     *
+     * Las filas heredadas no traen la columna (es posterior a la base vieja),
+     * así que entran con el default 'none' y las categorías de ropa y calzado
+     * dejarían de ofrecer tallas después de cada restore.
+     */
+    private function applyVariantTypes(): void
+    {
+        if (! $this->hasTable('categories')
+            || ! in_array('variant_type', $this->columns('categories'), true)) {
+            return;
+        }
+
+        $changed = Category::applyConfiguredVariantTypes();
+
+        if ($changed > 0) {
+            $this->line("  categorías con tipo de talla reasignado: {$changed}");
+        }
+    }
+
+    /**
      * Algunas filas guardaron el JSON codificado dos veces ("\"[...]\""). Con
      * el cast 'array' del modelo eso devuelve un string en vez de un array y
      * la galería del producto no renderiza.
@@ -332,6 +355,42 @@ class RestoreLegacyData extends Command
                         $this->info("  {$table}.{$column} #{$row->id}: {$path} → {$match}");
                     }
                 }
+            }
+        }
+
+        $this->repairPhotoExtensions();
+    }
+
+    /**
+     * Lo mismo para la galería, que es un array JSON de rutas. Hace falta
+     * desde images:optimize: convierte k5Oe….jpg en k5Oe….webp y borra el
+     * original, así que una galería restaurada con la ruta vieja se quedaría
+     * sin fotos.
+     */
+    private function repairPhotoExtensions(): void
+    {
+        if (! $this->hasTable('products') || ! in_array('photos', $this->columns('products'), true)) {
+            return;
+        }
+
+        foreach (DB::table('products')->whereNotNull('photos')->select('id', 'photos')->get() as $row) {
+            $paths = json_decode($row->photos, true);
+
+            if (! is_array($paths)) {
+                continue;
+            }
+
+            $repaired = array_map(function ($path) {
+                if (! is_string($path) || $path === '' || $this->fileExists($path)) {
+                    return $path;
+                }
+
+                return $this->findByBasename($path) ?? $path;
+            }, $paths);
+
+            if ($repaired !== $paths) {
+                DB::table('products')->where('id', $row->id)->update(['photos' => json_encode($repaired)]);
+                $this->info("  products.photos #{$row->id}: rutas de la galería repuntadas");
             }
         }
     }

@@ -75,16 +75,6 @@
                                 </a>
                             </li>
                             <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2 opacity-60">
-                                    <i class="las la-download mr-2 fs-16"></i><span>{{ __('dashboard.nav.downloads') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
-                                <a href="#" class="aiz-side-nav-link d-flex align-items-center text-reset p-2 opacity-60">
-                                    <i class="las la-reply mr-2 fs-16"></i><span>{{ __('dashboard.nav.refund_sent') }}</span>
-                                </a>
-                            </li>
-                            <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ url('/wishlist') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2 opacity-60">
                                     <i class="las la-heart mr-2 fs-16"></i><span>{{ __('dashboard.nav.wishlist') }}</span>
                                 </a>
@@ -109,6 +99,7 @@
                 <h3 class="h4 fw-700 mb-4">{{ __('dashboard.greeting', ['name' => Auth::user()->name]) }}</h3>
 
                 @include('partials.shop-status-banner')
+                @include('partials.settlement-banner')
 
                 <div class="verify-alert d-flex align-items-start mb-4">
                     <i class="las la-exclamation-triangle verify-icon mr-3 mt-1"></i>
