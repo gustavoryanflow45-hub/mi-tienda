@@ -451,9 +451,10 @@
                                     {{ __('Elegir archivo') }}
                                 </label>
                                 <input type="file" name="payment_proof" id="payment_proof_input"
-                                       class="form-control" accept="image/*"
+                                       class="form-control" accept="image/*,application/pdf"
                                        style="border-radius:0 8px 8px 0;">
                             </div>
+                            <small style="color:#999;">{{ __('JPG, PNG o PDF · máximo :size MB', ['size' => round(config('images.max_upload_kb') / 1024, 1)]) }}</small>
                         </div>
                     </div>
 

@@ -275,6 +275,7 @@
                                     <div id="photos-preview" class="img-preview-row mt-2"></div>
                                 </div>
                             </div>
+                            <p class="mb-0" style="font-size:.78rem; color:#999;">{{ __('JPG, PNG o WebP · máximo :size MB por imagen', ['size' => round(config('images.max_upload_kb') / 1024, 1)]) }}</p>
                         </div>
                     </div>
 

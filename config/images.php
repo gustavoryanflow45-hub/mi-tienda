@@ -24,6 +24,12 @@ return [
     // Apagarlo guarda los archivos tal cual, como antes de existir el servicio.
     'enabled' => env('IMAGE_OPTIMIZE', true),
 
+    // Tamaño máximo por archivo que aceptan los formularios, en KB. Puede ser
+    // generoso porque lo que se guarda es la versión reducida. Ojo: PHP corta
+    // antes si upload_max_filesize es menor, y el formulario de producto
+    // (6 imágenes) necesita post_max_size >= 6 × este valor.
+    'max_upload_kb' => (int) env('IMAGE_MAX_UPLOAD_KB', 8192),
+
     // Formato de salida preferido: 'webp' o 'jpeg'. Si es 'webp' y GD no lo
     // soporta, un JPEG sale en JPEG y lo demás en PNG (por la transparencia).
     'format' => env('IMAGE_FORMAT', 'webp'),

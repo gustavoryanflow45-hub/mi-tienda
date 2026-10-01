@@ -321,6 +321,7 @@
                                            onchange="updateFileLabel(this, 'id_back_label')"
                                            required>
                                 </div>
+                                <small style="color:#999;">{{ __('JPG, PNG o WebP · máximo :size MB por imagen', ['size' => round(config('images.max_upload_kb') / 1024, 1)]) }}</small>
                             </div>
 
                             <div class="form-group">

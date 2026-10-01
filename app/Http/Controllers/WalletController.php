@@ -55,7 +55,7 @@ class WalletController extends Controller
             'amount'         => 'required|numeric|min:1',
             'network'        => 'required|in:BEP20,TRC20,ERC20',
             'transaction_id' => 'required|string|max:255',
-            'payment_proof'  => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:4096',
+            'payment_proof'  => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:'.config('images.max_upload_kb'),
         ]);
 
         $proofPath = null;

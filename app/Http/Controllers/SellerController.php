@@ -40,8 +40,8 @@ class SellerController extends Controller
             'address'               => ['required', 'string', 'max:500'],
 
             // Imágenes del ID
-            'id_front'              => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'id_back'               => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'id_front'              => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:'.config('images.max_upload_kb')],
+            'id_back'               => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:'.config('images.max_upload_kb')],
         ], [
             // Mensajes en español
             'name.required'         => 'El nombre es obligatorio.',

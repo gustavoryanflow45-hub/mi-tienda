@@ -71,7 +71,7 @@ class ImageOptimizer
 
         [$width, $height, $type] = $info;
 
-        if ($width * $height > self::MAX_PIXELS) {
+        if ($width * $height > self::MAX_PIXELS || ! $this->fitsInMemory($width, $height)) {
             return null;
         }
 
@@ -116,6 +116,45 @@ class ImageOptimizer
         }
 
         return ['bytes' => $bytes, 'extension' => $extension];
+    }
+
+    /**
+     * Agotar memory_limit es un error fatal que ningún try/catch atrapa: la
+     * subida moriría con un 500. Se comprueba antes de abrir la imagen y,
+     * si no cabe, se guarda el original.
+     *
+     * GD guarda 4 bytes por píxel; enderezar por EXIF crea una segunda copia
+     * entera, y el decodificador y el lienzo reducido añaden algo más. Con
+     * 9 bytes por píxel una foto de 12 MP pide ~108 MB y una de 48 MP ~430 MB.
+     */
+    private function fitsInMemory(int $width, int $height): bool
+    {
+        $limit = $this->memoryLimit();
+
+        if ($limit < 0) {
+            return true;
+        }
+
+        return memory_get_usage() + $width * $height * 9 < $limit;
+    }
+
+    /** memory_limit en bytes; -1 sin límite. */
+    private function memoryLimit(): int
+    {
+        $value = trim((string) ini_get('memory_limit'));
+
+        if ($value === '' || $value === '-1') {
+            return -1;
+        }
+
+        $bytes = (int) $value;
+
+        return match (strtolower(substr($value, -1))) {
+            'g' => $bytes * 1024 ** 3,
+            'm' => $bytes * 1024 ** 2,
+            'k' => $bytes * 1024,
+            default => $bytes,
+        };
     }
 
     private function resize(GdImage $image, int $width, int $height): GdImage

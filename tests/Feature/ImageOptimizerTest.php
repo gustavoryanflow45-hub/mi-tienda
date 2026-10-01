@@ -78,6 +78,58 @@ class ImageOptimizerTest extends TestCase
         $this->assertSame([800, 1600, 'image/webp'], $this->storedSize($product->photos[0]));
     }
 
+    /** Envía el formulario de producto con una miniatura de $kilobytes. */
+    protected function postProductWithThumbnailOf(int $kilobytes)
+    {
+        $seller = User::factory()->create(['user_type' => 'seller', 'email_verified_at' => now()]);
+        $this->makeShop($seller, 1);
+        $category = Category::firstOrCreate(['slug' => 'ropa'], ['name' => 'Ropa', 'status' => 1, 'variant_type' => 'none']);
+
+        return $this->actingAs($seller)->post(route('seller.products.store'), [
+            'name' => 'Camisa',
+            'category_id' => $category->id,
+            'unit_price' => 20,
+            'unit' => 'pc',
+            'thumbnail' => UploadedFile::fake()->create('foto-movil.jpg', $kilobytes, 'image/jpeg'),
+            'stocks' => [['price' => 20, 'qty' => 5]],
+        ]);
+    }
+
+    public function test_a_phone_photo_up_to_the_upload_limit_is_accepted(): void
+    {
+        // Antes el límite era 3 MB y una foto de móvil normal (4–6 MB) se rechazaba.
+        $this->assertSame(8192, config('images.max_upload_kb'));
+
+        $this->postProductWithThumbnailOf(6000)->assertSessionHasNoErrors();
+        $this->assertSame(1, Product::count());
+    }
+
+    public function test_a_file_over_the_upload_limit_is_rejected(): void
+    {
+        $this->postProductWithThumbnailOf(8193)->assertSessionHasErrors('thumbnail');
+        $this->assertSame(0, Product::count());
+    }
+
+    public function test_an_image_too_big_for_the_memory_limit_is_stored_as_is(): void
+    {
+        // Agotar memory_limit sería un fatal imposible de atrapar: el
+        // optimizador tiene que verlo venir y guardar el original.
+        $file = UploadedFile::fake()->image('enorme.jpg', 3000, 2000); // pide ~54 MB
+        $original = file_get_contents($file->getRealPath());
+        $previous = ini_get('memory_limit');
+
+        ini_set('memory_limit', (string) (memory_get_usage() + 20 * 1024 * 1024));
+
+        try {
+            $path = app(ImageOptimizer::class)->store($file, 'products/photos', 'product_photo');
+        } finally {
+            ini_set('memory_limit', $previous);
+        }
+
+        $this->assertStringEndsWith('.jpg', $path);
+        $this->assertSame($original, Storage::disk('public')->get($path));
+    }
+
     public function test_transparency_survives_the_conversion(): void
     {
         $image = imagecreatetruecolor(1000, 500);
