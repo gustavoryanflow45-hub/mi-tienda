@@ -27,7 +27,7 @@
                             </button>
                             <a href="{{ route('products.show', $item->product->slug) }}">
                                 @if($item->product->thumbnail)
-                                    <img src="{{ asset('storage/' . $item->product->thumbnail) }}"
+                                    <img loading="lazy" src="{{ asset('storage/' . $item->product->thumbnail) }}"
                                          alt="{{ $item->product->name }}"
                                          style="width:100%; aspect-ratio:1/1; object-fit:cover; display:block;">
                                 @else

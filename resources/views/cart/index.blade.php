@@ -120,7 +120,7 @@
                             <td class="cart-cell-product">
                                 <div class="cart-product">
                                     @if($item->product->thumbnail)
-                                        <img src="{{ asset('storage/' . $item->product->thumbnail) }}"
+                                        <img loading="lazy" src="{{ asset('storage/' . $item->product->thumbnail) }}"
                                              alt="{{ $item->product->name }}"
                                              class="cart-product-img">
                                     @else

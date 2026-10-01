@@ -465,7 +465,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center gap-2">
                                                     @if($product->thumbnail)
-                                                        <img src="{{ asset('storage/' . $product->thumbnail) }}"
+                                                        <img loading="lazy" src="{{ asset('storage/' . $product->thumbnail) }}"
                                                              alt="{{ $product->name }}"
                                                              style="width:36px;height:36px;object-fit:cover;border-radius:4px;">
                                                     @endif

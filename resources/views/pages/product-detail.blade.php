@@ -576,7 +576,7 @@
                 @foreach($related as $rel)
                     <a href="{{ url('/product/' . $rel->slug) }}" class="related-card">
                         @if($rel->thumbnail)
-                            <img src="{{ asset('storage/' . $rel->thumbnail) }}" alt="{{ $rel->name }}">
+                            <img loading="lazy" src="{{ asset('storage/' . $rel->thumbnail) }}" alt="{{ $rel->name }}">
                         @else
                             <div style="width:100%;aspect-ratio:1/1;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">
                                 <i class="las la-image" style="font-size:2rem;color:#ccc;"></i>

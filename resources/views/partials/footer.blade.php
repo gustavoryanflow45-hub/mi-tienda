@@ -55,10 +55,10 @@
                     </div>
                     <div class="w-300px mw-100 mx-auto mx-md-0">
                         <a href="#" target="_blank" class="d-inline-block mr-3 ml-0">
-                            <img src="{{ asset('assets/img/play.png') }}" class="mx-100 h-40px">
+                            <img loading="lazy" src="{{ asset('assets/img/play.png') }}" class="mx-100 h-40px">
                         </a>
                         <a href="#" target="_blank" class="d-inline-block">
-                            <img src="{{ asset('assets/img/app.png') }}" class="mx-100 h-40px">
+                            <img loading="lazy" src="{{ asset('assets/img/app.png') }}" class="mx-100 h-40px">
                         </a>
                     </div>
                 </div>
@@ -177,7 +177,7 @@
                 <div class="text-center text-md-right">
                     <ul class="list-inline mb-0">
                         <li class="list-inline-item">
-                            <img src="{{ asset('assets/img/payment-methods.png') }}" height="30" class="mw-100 h-auto" style="max-height: 30px">
+                            <img loading="lazy" src="{{ asset('assets/img/payment-methods.png') }}" height="30" class="mw-100 h-auto" style="max-height: 30px">
                         </li>
                     </ul>
                 </div>

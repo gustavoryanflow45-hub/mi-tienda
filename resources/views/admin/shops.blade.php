@@ -192,10 +192,10 @@
                             <td data-label="{{ __('Dirección') }}">{{ $shop->address }}</td>
                             <td data-label="{{ __('Documento') }}">
                                 <a href="{{ uploaded_asset($shop->id_front_image) }}" target="_blank" rel="noopener">
-                                    <img src="{{ uploaded_asset($shop->id_front_image) }}" alt="{{ __('Frente del documento') }}" class="id-thumb">
+                                    <img loading="lazy" src="{{ uploaded_asset($shop->id_front_image) }}" alt="{{ __('Frente del documento') }}" class="id-thumb">
                                 </a>
                                 <a href="{{ uploaded_asset($shop->id_back_image) }}" target="_blank" rel="noopener">
-                                    <img src="{{ uploaded_asset($shop->id_back_image) }}" alt="{{ __('Reverso del documento') }}" class="id-thumb">
+                                    <img loading="lazy" src="{{ uploaded_asset($shop->id_back_image) }}" alt="{{ __('Reverso del documento') }}" class="id-thumb">
                                 </a>
                             </td>
                             <td data-label="{{ __('Estado') }}">

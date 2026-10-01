@@ -10,7 +10,7 @@
         @foreach($subCategories as $sub)
         <div class="col-6 col-md-4 col-lg-3 mb-3">
             <a href="{{ route('category.show', $sub->slug) }}" class="d-block text-center text-reset">
-                <img
+                <img loading="lazy"
                     src="{{ uploaded_asset($sub->icon) }}"
                     alt="{{ $sub->name }}"
                     class="mb-1"

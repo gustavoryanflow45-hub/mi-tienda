@@ -9,7 +9,7 @@
             {{-- Imagen --}}
             <a href="{{ url('/product/' . $item->product->slug) }}" class="mr-3 flex-shrink-0">
                 @if($item->product->thumbnail)
-                    <img src="{{ asset('storage/' . $item->product->thumbnail) }}"
+                    <img loading="lazy" src="{{ asset('storage/' . $item->product->thumbnail) }}"
                          class="rounded" width="50" height="50" style="object-fit:cover;">
                 @else
                     <div class="rounded bg-light d-flex align-items-center justify-content-center"

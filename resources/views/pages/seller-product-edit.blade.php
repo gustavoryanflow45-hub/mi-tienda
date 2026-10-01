@@ -213,7 +213,7 @@
                                     <div id="thumb-preview" class="img-preview-row mt-2">
                                         @if($product->thumbnail)
                                             <div class="img-preview-item">
-                                                <img src="{{ asset('storage/' . $product->thumbnail) }}" alt="{{ $product->name }}">
+                                                <img loading="lazy" src="{{ asset('storage/' . $product->thumbnail) }}" alt="{{ $product->name }}">
                                             </div>
                                         @endif
                                     </div>
@@ -231,7 +231,7 @@
                                         @if(!empty($product->photos))
                                             @foreach($product->photos as $photo)
                                                 <div class="img-preview-item">
-                                                    <img src="{{ asset('storage/' . $photo) }}" alt="foto">
+                                                    <img loading="lazy" src="{{ asset('storage/' . $photo) }}" alt="foto">
                                                 </div>
                                             @endforeach
                                         @endif

@@ -23,7 +23,7 @@
                        onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.12)'"
                        onmouseout="this.style.boxShadow='0 1px 6px rgba(0,0,0,.07)'">
                         @if($brand->logo)
-                            <img src="{{ asset('storage/' . $brand->logo) }}" alt="{{ $brand->name }}"
+                            <img loading="lazy" src="{{ asset('storage/' . $brand->logo) }}" alt="{{ $brand->name }}"
                                  style="max-height:60px; max-width:120px; object-fit:contain; margin-bottom:10px;">
                         @else
                             <div style="height:60px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;">

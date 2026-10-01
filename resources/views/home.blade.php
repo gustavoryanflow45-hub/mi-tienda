@@ -192,7 +192,7 @@
 
                             {{-- Imagen --}}
                             @if($product->thumbnail)
-                                <img src="{{ asset('storage/' . $product->thumbnail) }}"
+                                <img loading="lazy" src="{{ asset('storage/' . $product->thumbnail) }}"
                                      alt="{{ $product->name }}"
                                      class="manage-card-img">
                             @else

@@ -160,7 +160,7 @@
                     @foreach($cartItems as $item)
                         <div class="co-item">
                             @if($item->product->thumbnail)
-                                <img src="{{ asset('storage/' . $item->product->thumbnail) }}"
+                                <img loading="lazy" src="{{ asset('storage/' . $item->product->thumbnail) }}"
                                      alt="{{ $item->product->name }}" class="co-item-img">
                             @else
                                 <div class="co-item-img-ph"><i class="las la-image"></i></div>

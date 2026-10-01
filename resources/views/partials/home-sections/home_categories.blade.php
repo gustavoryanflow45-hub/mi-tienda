@@ -12,7 +12,7 @@
                 <div class="col-6 col-md-4 col-lg-2">
                     <a href="{{ route('category.show', $category->slug) }}"
                        class="d-block text-center p-3 bg-soft-primary rounded mb-3 text-reset">
-                        <img src="{{ asset('storage/' . $category->banner) }}"
+                        <img loading="lazy" src="{{ asset('storage/' . $category->banner) }}"
                              alt="{{ $category->name }}"
                              class="img-fluid mb-2"
                              style="height:60px; object-fit:contain;"

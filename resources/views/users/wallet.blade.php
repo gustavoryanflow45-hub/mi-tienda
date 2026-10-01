@@ -374,7 +374,7 @@
                             <label class="network-card d-block" style="cursor:pointer;margin:0;">
                                 <input type="radio" name="network" value="BEP20" class="d-none network-radio">
                                 <div class="network-card-inner text-center py-3 px-2">
-                                    <img src="{{ asset('assets/images/binance-coin-bnb-logo.png') }}"
+                                    <img loading="lazy" src="{{ asset('assets/images/binance-coin-bnb-logo.png') }}"
                                          alt="BEP20"
                                          style="width:68px;height:68px;object-fit:contain;border-radius:50%;background:#1a1a1a;padding:6px;">
                                     <div class="mt-2" style="font-size:.88rem;font-weight:600;color:#222;">BEP20-USDT</div>
@@ -387,7 +387,7 @@
                             <label class="network-card d-block" style="cursor:pointer;margin:0;">
                                 <input type="radio" name="network" value="TRC20" class="d-none network-radio">
                                 <div class="network-card-inner text-center py-3 px-2">
-                                    <img src="{{ asset('assets/images/tron-trx-logo.png') }}"
+                                    <img loading="lazy" src="{{ asset('assets/images/tron-trx-logo.png') }}"
                                          alt="TRC20"
                                          style="width:68px;height:68px;object-fit:contain;border-radius:50%;background:#1a1a1a;padding:6px;">
                                     <div class="mt-2" style="font-size:.88rem;font-weight:600;color:#222;">TRC20-USDT</div>
@@ -400,7 +400,7 @@
                             <label class="network-card d-block" style="cursor:pointer;margin:0;">
                                 <input type="radio" name="network" value="ERC20" class="d-none network-radio">
                                 <div class="network-card-inner text-center py-3 px-2">
-                                    <img src="{{ asset('assets/images/ethereum-eth-logo.png') }}"
+                                    <img loading="lazy" src="{{ asset('assets/images/ethereum-eth-logo.png') }}"
                                          alt="ERC20"
                                          style="width:68px;height:68px;object-fit:contain;border-radius:50%;background:#1a1a1a;padding:6px;">
                                     <div class="mt-2" style="font-size:.88rem;font-weight:600;color:#222;">ERC20-USDT</div>

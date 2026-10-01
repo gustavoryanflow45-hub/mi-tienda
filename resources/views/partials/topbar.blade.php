@@ -22,7 +22,7 @@
                                 <li>
                                     <a href="javascript:void(0)" data-flag="{{ $code }}"
                                        class="dropdown-item {{ app()->getLocale() === $code ? 'active' : '' }}">
-                                        <img src="https://flagcdn.com/160x120/{{ $lang['flag'] }}.png" class="mr-1" alt="{{ $lang['name'] }}" height="11">
+                                        <img loading="lazy" src="https://flagcdn.com/160x120/{{ $lang['flag'] }}.png" class="mr-1" alt="{{ $lang['name'] }}" height="11">
                                         <span class="language">{{ $lang['name'] }}</span>
                                     </a>
                                 </li>
