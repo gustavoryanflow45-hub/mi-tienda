@@ -357,6 +357,42 @@ class RestoreLegacyData extends Command
                 }
             }
         }
+
+        $this->repairPhotoExtensions();
+    }
+
+    /**
+     * Lo mismo para la galería, que es un array JSON de rutas. Hace falta
+     * desde images:optimize: convierte k5Oe….jpg en k5Oe….webp y borra el
+     * original, así que una galería restaurada con la ruta vieja se quedaría
+     * sin fotos.
+     */
+    private function repairPhotoExtensions(): void
+    {
+        if (! $this->hasTable('products') || ! in_array('photos', $this->columns('products'), true)) {
+            return;
+        }
+
+        foreach (DB::table('products')->whereNotNull('photos')->select('id', 'photos')->get() as $row) {
+            $paths = json_decode($row->photos, true);
+
+            if (! is_array($paths)) {
+                continue;
+            }
+
+            $repaired = array_map(function ($path) {
+                if (! is_string($path) || $path === '' || $this->fileExists($path)) {
+                    return $path;
+                }
+
+                return $this->findByBasename($path) ?? $path;
+            }, $paths);
+
+            if ($repaired !== $paths) {
+                DB::table('products')->where('id', $row->id)->update(['photos' => json_encode($repaired)]);
+                $this->info("  products.photos #{$row->id}: rutas de la galería repuntadas");
+            }
+        }
     }
 
     private function findByBasename(string $path): ?string

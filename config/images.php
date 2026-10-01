@@ -45,6 +45,18 @@ return [
         // Comprobante de recarga: mismo criterio que el documento de identidad.
         // Los PDF pasan sin tocar.
         'payment_proof' => ['max' => 2000, 'quality' => 85],
+
+        // Los tres siguientes no tienen formulario de subida: solo los usa
+        // `php artisan images:optimize` sobre el contenido ya cargado.
+
+        // Slider del inicio y banners promocionales, a todo el ancho.
+        'banner' => ['max' => 1600, 'quality' => 80],
+
+        // Icono del menú (16px) y tarjeta de categoría (~80px de alto).
+        'category' => ['max' => 800,  'quality' => 80],
+
+        // Logo de marca, pintado a 60px de alto.
+        'brand_logo' => ['max' => 400,  'quality' => 85],
     ],
 
 ];
