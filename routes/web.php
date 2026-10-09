@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\MyProductsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\WishlistController;
@@ -160,6 +161,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
     Route::post('/orders/{id}/send-to-warehouse', [OrderController::class, 'sendToWarehouse'])->name('orders.send-to-warehouse');
+
+    // Mis productos: lo que el usuario fue agregando al carrito
+    Route::get('/my-products', [MyProductsController::class, 'index'])->name('my-products.index');
 
     // Wishlist
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');

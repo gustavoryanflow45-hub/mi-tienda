@@ -109,6 +109,16 @@ The seller and warehouse tables list the order's lines through `partials/order-i
 
 `SellerProductController::validateVariants()` enforces this server-side by resolving through a throwaway `Product` carrying the submitted `variant_type` plus the category, so the rule cannot drift from the sizes the form just rendered. The seller picks the type in `partials/variant-builder.blade.php` (shared by create and edit), which also builds the size × color stock matrix; the bulk CSV import accepts a `variant_type` column.
 
+### Categories
+
+The root categories are a fixed catalog in `config/categories.php` (35 Spanish categories, in menu order). `Category::syncCatalog()` applies it: a category whose old slug is listed under `legacy` is **renamed in place** (same id, image and products — the 10 original English categories became e.g. `womens-fashion` → `ropa-de-mujer`, `electronics` → `tecnologia`), missing ones are created, roots not in the catalog are kept but pushed to the end, and it finishes with `applyConfiguredVariantTypes()` (the slugs' size types are in `config/variants.php`). It is idempotent and runs from migration `2026_10_09_120000_sync_category_catalog.php`, from `legacy:restore` and from `DatabaseSeeder`. The migration deliberately does nothing on an empty table: creating the catalog there would make `legacy:restore` skip `categories` and leave the restored products pointing at the wrong ids.
+
+`/categories` (`CategoryController@index`, `pages/categories.blade.php`) is an app-style browser: a left menu of root categories and, on the right, a grid of round tiles — the category's subcategories, then up to `PANEL_PRODUCTS` (11) of its products, then "Ver todos". All panels are rendered at once and switched client-side; `?c=<slug>` picks the open one. "Destacados" is the first tab but **not** a category row (sellers must not file products under it): it shows `featured` products, falling back to best sellers. Covered by `tests/Feature/CategoryIndexTest.php`.
+
+### My Products
+
+The header's "Mis productos" link (it replaced "Productos"; the full catalog `/products` is still reached from the home page, `/categories` and the "Ver todos" links) goes to `GET /my-products` (`MyProductsController`, `auth`, view `pages/my-products.blade.php`): the products in the user's own cart, one card per product with the size/color combinations chosen (variant badge), units and subtotal. It reads `carts`, so it empties when the order is paid, like the cart. Covered by `tests/Feature/MyProductsTest.php`.
+
 ### Key Models and Relationships
 
 - `Order` → hasMany `OrderDetail` (each carries `seller_id`, denormalized `product_name`/`price`) → belongsTo `Product` / `User` (seller)

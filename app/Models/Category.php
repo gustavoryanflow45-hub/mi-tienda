@@ -85,6 +85,71 @@ class Category extends Model
     }
 
     /**
+     * Lleva las categorías raíz al catálogo de config('categories.catalog').
+     * Devuelve ['created' => n, 'updated' => n].
+     *
+     * Una categoría vieja listada en `legacy` se renombra en su sitio (mismo
+     * id, misma imagen, mismos productos) en lugar de crearse otra al lado.
+     * Las que no figuran en el catálogo no se borran, porque pueden tener
+     * productos: solo pasan al final del orden.
+     *
+     * Es idempotente, y por eso la llaman tanto la migración como
+     * legacy:restore, que vuelve a traer las categorías viejas en cada
+     * repoblado. Termina reaplicando los tipos de talla, que dependen del slug.
+     */
+    public static function syncCatalog(): array
+    {
+        $created = 0;
+        $updated = 0;
+        $order = 0;
+        $catalogIds = [];
+
+        foreach (config('categories.catalog', []) as $slug => $entry) {
+            $order++;
+
+            $category = static::where('slug', $slug)->first()
+                ?? static::whereIn('slug', $entry['legacy'] ?? [])->orderBy('id')->first()
+                ?? new static(['variant_type' => 'none']);
+
+            $category->fill([
+                'name' => $entry['name'],
+                'slug' => $slug,
+                'parent_id' => null,
+                'order' => $order,
+                'status' => 1,
+            ]);
+
+            if (! $category->exists) {
+                $category->save();
+                $created++;
+            } elseif ($category->isDirty()) {
+                $category->save();
+                $updated++;
+            }
+
+            $catalogIds[] = $category->id;
+        }
+
+        // Las raíces fuera del catálogo van detrás, sin desaparecer.
+        static::whereNull('parent_id')
+            ->whereNotIn('id', $catalogIds)
+            ->orderBy('order')
+            ->get()
+            ->each(function (Category $category) use (&$order, &$updated) {
+                $category->order = ++$order;
+
+                if ($category->isDirty()) {
+                    $category->save();
+                    $updated++;
+                }
+            });
+
+        static::applyConfiguredVariantTypes();
+
+        return ['created' => $created, 'updated' => $updated];
+    }
+
+    /**
      * IDs de esta categoría más los de sus subcategorías activas, para
      * listar productos que cuelguen de cualquiera de ellas.
      *

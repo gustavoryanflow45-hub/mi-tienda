@@ -54,6 +54,9 @@ class DatabaseSeeder extends Seeder
             ]));
         }
 
+        // Renombra las de arriba al catálogo actual y crea el resto.
+        Category::syncCatalog();
+
         // ── MARCAS ─────────────────────────────────────────────
         $brandsData = [
             ['name' => 'Acer',    'slug' => 'acer',    'logo' => 'brand-acer.jpg'],

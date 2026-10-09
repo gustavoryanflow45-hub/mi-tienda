@@ -103,6 +103,17 @@
             .aiz-card-box .aiz-p-hov-icon a { transform: none; -webkit-transform: none; }
         }
 
+        /* Menú de la cabecera (Inicio, Mis productos, Pedidos, Billetera). El
+           tema le pone overflow-x en pantallas estrechas y, como no cabía,
+           el teléfono mostraba una barra de desplazamiento debajo. Ahí se
+           reparten el ancho con menos relleno, y la barra no se pinta nunca. */
+        .mobile-hor-swipe { scrollbar-width: none; -ms-overflow-style: none; }
+        .mobile-hor-swipe::-webkit-scrollbar { display: none; }
+        @media (max-width: 575.98px) {
+            .mobile-hor-swipe { display: flex; justify-content: space-evenly; }
+            .mobile-hor-swipe > li > a { padding-left: .4rem !important; padding-right: .4rem !important; font-size: 13px !important; }
+        }
+
         /* Red de seguridad: ninguna imagen de contenido más ancha que su caja. */
         img { max-width: 100%; }
     </style>

@@ -108,8 +108,8 @@
                     </a>
                 </li>
                 <li class="list-inline-item mr-0">
-                    <a href="{{ route('products.index') }}" class="opacity-60 fs-14 px-3 py-2 d-inline-block fw-600 hov-opacity-100 text-reset {{ request()->routeIs('products.*') ? 'text-primary opacity-100' : '' }}">
-                        {{ __('Productos') }}
+                    <a href="{{ route('my-products.index') }}" class="opacity-60 fs-14 px-3 py-2 d-inline-block fw-600 hov-opacity-100 text-reset {{ request()->routeIs('my-products.*') ? 'text-primary opacity-100' : '' }}">
+                        {{ __('Mis productos') }}
                     </a>
                 </li>
                 <li class="list-inline-item mr-0">
@@ -139,8 +139,8 @@
         </div>
         <div class="col">
             <a href="{{ route('categories.index') }}" class="text-reset d-block text-center pb-2 pt-3">
-                <i class="las la-list-ul fs-20 opacity-60"></i>
-                <span class="d-block fs-10 fw-600 opacity-60">{{ __('Categorías') }}</span>
+                <i class="las la-list-ul fs-20 {{ request()->routeIs('categories.index') ? 'text-primary opacity-100' : 'opacity-60' }}"></i>
+                <span class="d-block fs-10 fw-600 {{ request()->routeIs('categories.index') ? 'text-primary opacity-100' : 'opacity-60' }}">{{ __('Categorías') }}</span>
             </a>
         </div>
         <div class="col-auto">
