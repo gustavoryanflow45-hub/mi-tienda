@@ -39,6 +39,19 @@ return [
     |
     */
     'category_types' => [
+        // Catálogo actual (config/categories.php).
+        'ropa-de-mujer'                     => 'apparel',
+        'lenceria-y-pijamas-de-mujer'       => 'apparel',
+        'ropa-de-hombre'                    => 'apparel',
+        'hombre-de-talla-grande'            => 'apparel',
+        'ropa-interior-y-pijamas-de-hombre' => 'apparel',
+        'moda-infantil'                     => 'apparel',
+        'ropa-de-playa'                     => 'apparel',
+        'calzado-de-mujer'                  => 'footwear',
+        'calzado-de-hombre'                 => 'footwear',
+        'calzado-de-ninos'                  => 'footwear',
+
+        // Slugs anteriores, por si una base vieja aún no pasó por syncCatalog().
         'womens-fashion' => 'apparel',
         'mens-fashion'   => 'apparel',
         'zapatos'        => 'footwear',

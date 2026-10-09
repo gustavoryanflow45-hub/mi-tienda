@@ -263,11 +263,13 @@ class RestoreLegacyData extends Command
     // ── Reparaciones de datos heredados ──────────────────────────────────
 
     /**
-     * Reasigna el variant_type de las categorías.
+     * Lleva las categorías al catálogo actual y reasigna su variant_type.
      *
-     * Las filas heredadas no traen la columna (es posterior a la base vieja),
-     * así que entran con el default 'none' y las categorías de ropa y calzado
-     * dejarían de ofrecer tallas después de cada restore.
+     * La base vieja trae las 10 categorías originales en inglés; syncCatalog()
+     * las renombra en su sitio (mismo id, así los productos siguen colgando
+     * de ellas) y crea las que faltan. Las filas heredadas tampoco traen
+     * variant_type (es posterior a la base vieja), así que entran con 'none'
+     * y la ropa y el calzado dejarían de ofrecer tallas después de cada restore.
      */
     private function applyVariantTypes(): void
     {
@@ -276,10 +278,10 @@ class RestoreLegacyData extends Command
             return;
         }
 
-        $changed = Category::applyConfiguredVariantTypes();
+        $result = Category::syncCatalog();
 
-        if ($changed > 0) {
-            $this->line("  categorías con tipo de talla reasignado: {$changed}");
+        if ($result['created'] + $result['updated'] > 0) {
+            $this->line("  categorías llevadas al catálogo: {$result['created']} creada(s), {$result['updated']} actualizada(s)");
         }
     }
 

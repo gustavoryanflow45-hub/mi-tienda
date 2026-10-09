@@ -134,6 +134,12 @@
 .toast-notify.show { transform: translateY(0); opacity: 1; }
 .toast-notify.success { border-left: 4px solid #679941; }
 .toast-notify.error   { border-left: 4px solid #e74c3c; }
+
+/* El menú lateral de categorías pasa de 10 a 35 entradas: sin tope se
+   estiraba muy por debajo del slider. Se queda a su altura y hace scroll. */
+@media (min-width: 992px) {
+    .aiz-category-menu .categories { max-height: 440px; overflow-y: auto; }
+}
 </style>
 @endsection
 

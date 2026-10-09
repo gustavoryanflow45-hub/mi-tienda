@@ -8,15 +8,34 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
+    /** Productos que se ven en el panel de cada categoría antes de "Ver todos". */
+    public const PANEL_PRODUCTS = 11;
+
+    /** Pestaña virtual con los productos destacados, primera del menú. */
+    public const FEATURED_TAB = 'destacados';
+
     /**
-     * Índice de todas las categorías raíz con sus subcategorías.
-     * GET /categories
+     * Página de categorías: menú lateral con las raíces y, a la derecha, la
+     * cuadrícula de subcategorías y productos de la elegida.
+     * GET /categories?c={slug}
+     *
+     * Se pintan todos los paneles de una vez y el cambio de pestaña es local,
+     * sin round trip; ?c= solo decide cuál abre, así que cada pestaña es
+     * también un enlace que funciona sin JavaScript.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $panelProducts = fn ($query) => $query->where('published', 1)
+            ->latest()
+            ->limit(self::PANEL_PRODUCTS);
+
         $categories = Category::active()
             ->whereNull('parent_id')
-            ->with(['children' => fn ($q) => $q->where('status', 1)->orderBy('order')])
+            ->with([
+                'children' => fn ($q) => $q->where('status', 1)->orderBy('order'),
+                'products' => $panelProducts,
+                'children.products' => $panelProducts,
+            ])
             ->orderBy('order')
             ->get();
 
@@ -32,9 +51,32 @@ class CategoryController extends Controller
                 ->pluck('id')
                 ->prepend($category->id)
                 ->sum(fn ($id) => $counts[$id] ?? 0);
+
+            $category->panel_products = $category->products
+                ->concat($category->children->flatMap->products)
+                ->sortByDesc('created_at')
+                ->take(self::PANEL_PRODUCTS)
+                ->values();
         });
 
-        return view('pages.categories', compact('categories'));
+        // Destacados: los marcados como tales; si no hay ninguno, los más
+        // vendidos, para que la primera pestaña nunca abra vacía.
+        $featured = Product::where('published', 1)->featured()
+            ->orderByDesc('num_of_sale')->latest()
+            ->limit(self::PANEL_PRODUCTS)->get();
+
+        if ($featured->isEmpty()) {
+            $featured = Product::where('published', 1)
+                ->orderByDesc('num_of_sale')->latest()
+                ->limit(self::PANEL_PRODUCTS)->get();
+        }
+
+        $featuredTab = self::FEATURED_TAB;
+        $selected = $categories->contains('slug', $request->query('c'))
+            ? $request->query('c')
+            : $featuredTab;
+
+        return view('pages.categories', compact('categories', 'featured', 'featuredTab', 'selected'));
     }
 
     /**
