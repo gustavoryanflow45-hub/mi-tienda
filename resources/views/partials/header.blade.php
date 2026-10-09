@@ -108,8 +108,8 @@
                     </a>
                 </li>
                 <li class="list-inline-item mr-0">
-                    <a href="{{ route('products.index') }}" class="opacity-60 fs-14 px-3 py-2 d-inline-block fw-600 hov-opacity-100 text-reset {{ request()->routeIs('products.*') ? 'text-primary opacity-100' : '' }}">
-                        {{ __('Productos') }}
+                    <a href="{{ route('my-products.index') }}" class="opacity-60 fs-14 px-3 py-2 d-inline-block fw-600 hov-opacity-100 text-reset {{ request()->routeIs('my-products.*') ? 'text-primary opacity-100' : '' }}">
+                        {{ __('Mis productos') }}
                     </a>
                 </li>
                 <li class="list-inline-item mr-0">

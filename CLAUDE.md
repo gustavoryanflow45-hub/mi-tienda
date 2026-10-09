@@ -115,6 +115,10 @@ The root categories are a fixed catalog in `config/categories.php` (35 Spanish c
 
 `/categories` (`CategoryController@index`, `pages/categories.blade.php`) is an app-style browser: a left menu of root categories and, on the right, a grid of round tiles — the category's subcategories, then up to `PANEL_PRODUCTS` (11) of its products, then "Ver todos". All panels are rendered at once and switched client-side; `?c=<slug>` picks the open one. "Destacados" is the first tab but **not** a category row (sellers must not file products under it): it shows `featured` products, falling back to best sellers. Covered by `tests/Feature/CategoryIndexTest.php`.
 
+### My Products
+
+The header's "Mis productos" link (it replaced "Productos"; the full catalog `/products` is still reached from the home page, `/categories` and the "Ver todos" links) goes to `GET /my-products` (`MyProductsController`, `auth`, view `pages/my-products.blade.php`): the products in the user's own cart, one card per product with the size/color combinations chosen (variant badge), units and subtotal. It reads `carts`, so it empties when the order is paid, like the cart. Covered by `tests/Feature/MyProductsTest.php`.
+
 ### Key Models and Relationships
 
 - `Order` → hasMany `OrderDetail` (each carries `seller_id`, denormalized `product_name`/`price`) → belongsTo `Product` / `User` (seller)
