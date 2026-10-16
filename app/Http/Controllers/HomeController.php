@@ -16,9 +16,8 @@ class HomeController extends Controller
         $categories      = Category::active()->orderBy('order')->get();
         $top_categories  = Category::active()->orderBy('order')->take(10)->get();
         $top_brands      = Brand::active()->orderBy('order')->take(10)->get();
-        $banners         = Banner::active()->orderBy('order')->get();
+        $banners         = Banner::active()->where('type', 'slider')->orderBy('order')->get();
         $new_products    = Product::active()->latest()->take(12)->get();
-        $promo_banners_1 = Banner::active()->where('type', 'promo_1')->get();
 
         // Productos destacados para la sección del home
         $featured_products = Product::active()
@@ -38,30 +37,17 @@ class HomeController extends Controller
         $featured_categories = Category::active()->featured()->orderBy('order')->get()
             ->map(fn ($category) => [$category, $this->productsForCategory($category)]);
 
-        // Si el usuario es admin o seller, cargar sus productos para gestión
-        $my_products = null;
-        if (Auth::check() && in_array(Auth::user()->user_type, ['admin', 'seller'])) {
-            $my_products = Product::with(['category'])
-                ->where('added_by', Auth::id())
-                ->where('published', 1)
-                ->latest()
-                ->take(20)
-                ->get();
-        }
-
         return view('home', compact(
             'categories',
             'top_categories',
             'top_brands',
             'banners',
             'new_products',
-            'promo_banners_1',
             'featured_products',
             'best_selling_products',
             'home_categories',
             'best_seller_products',
-            'featured_categories',
-            'my_products'
+            'featured_categories'
         ));
     }
 
@@ -107,29 +93,6 @@ class HomeController extends Controller
             ->latest()
             ->take(12)
             ->get();
-    }
-
-    // ── POST /seller/products/{id}/toggle-featured ───────────────
-    // Admin y seller pueden destacar/quitar destaque de sus productos
-    public function toggleFeatured(Request $request, int $id)
-    {
-        $user    = Auth::user();
-        $product = Product::findOrFail($id);
-
-        // Solo el dueño del producto o un admin puede modificarlo
-        if ($user->user_type !== 'admin' && $product->added_by !== $user->id) {
-            return response()->json(['error' => 'No autorizado'], 403);
-        }
-
-        $product->featured = $product->featured ? 0 : 1;
-        $product->save();
-
-        return response()->json([
-            'featured' => $product->featured,
-            'message'  => $product->featured
-                ? 'Producto destacado en el home'
-                : 'Producto quitado del home',
-        ]);
     }
 
     // ── POST /seller/products/{id}/toggle-published ──────────────

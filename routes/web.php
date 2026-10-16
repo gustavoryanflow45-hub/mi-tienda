@@ -209,7 +209,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/seller/products/bulk', [SellerProductController::class, 'bulk'])->name('seller.products.bulk');
         Route::get('/seller/products/bulk/template', [SellerProductController::class, 'bulkTemplate'])->name('seller.products.bulk.template');
         Route::post('/seller/products/bulk', [SellerProductController::class, 'bulkStore'])->name('seller.products.bulk.store');
-        Route::post('/seller/products/{id}/toggle-featured', [HomeController::class, 'toggleFeatured'])->name('seller.products.toggle-featured');
         Route::post('/seller/products/{id}/toggle-published', [HomeController::class, 'togglePublished'])->name('seller.products.toggle-published');
         Route::get('/seller/products/{id}/edit', [SellerProductController::class, 'edit'])->name('seller.products.edit');
         Route::put('/seller/products/{id}', [SellerProductController::class, 'update'])->name('seller.products.update');
