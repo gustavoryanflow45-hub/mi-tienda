@@ -13,7 +13,11 @@ class HomeController extends Controller
 {
     public function index()
     {
-        $categories      = Category::active()->orderBy('order')->get();
+        // Solo raíces: sus subcategorías salen en el desplegable de cada una,
+        // que el panel lateral monta únicamente cuando la cuenta es > 0.
+        $categories      = Category::active()->whereNull('parent_id')->orderBy('order')
+            ->withCount(['children as active_children_count' => fn ($q) => $q->where('status', 1)])
+            ->get();
         $top_categories  = Category::active()->orderBy('order')->take(10)->get();
         $top_brands      = Brand::active()->orderBy('order')->take(10)->get();
         $banners         = Banner::active()->where('type', 'slider')->orderBy('order')->get();

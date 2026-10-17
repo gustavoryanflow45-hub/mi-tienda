@@ -2,7 +2,7 @@
 <div class="p-3">
     <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
         <h4 class="fs-16 fw-700 mb-0">{{ $category->name }}</h4>
-        <a href="{{ route('category.show', $category->slug) }}" class="fs-12 text-primary">Ver todo ></a>
+        <a href="{{ route('category.show', $category->slug) }}" class="fs-12 text-primary">{{ __('Ver todo') }} ></a>
     </div>
 
     @if($subCategories->count() > 0)
