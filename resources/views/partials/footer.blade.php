@@ -42,7 +42,7 @@
                     <a href="{{ route('home') }}" class="d-block">
                         <img class="lazyload" src="{{ asset('assets/img/placeholder-rect.jpg') }}"
                              data-src="{{ asset('assets/img/logo-footer.png') }}"
-                             alt="Woot" height="44">
+                             alt="guStore" height="44">
                     </a>
                     <div class="d-inline-block d-md-block mb-4 mt-3">
                         <form class="form-inline" method="POST" action="{{ route('subscribers.store') }}">

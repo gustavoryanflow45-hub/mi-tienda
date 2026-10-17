@@ -59,7 +59,7 @@
                             <img
                                 class="d-block mw-100 img-fit rounded shadow-sm overflow-hidden"
                                 src="{{ uploaded_asset($banner->image) }}"
-                                alt="Woot promo"
+                                alt="guStore"
                                 height="315"
                                 onerror="this.onerror=null;this.src='{{ asset('assets/img/placeholder.jpg') }}';"
                             >

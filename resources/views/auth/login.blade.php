@@ -13,7 +13,7 @@
                         <div class="text-center mb-4">
                             <a href="{{ route('home') }}">
                                 <img src="{{ asset('assets/img/logo.png') }}"
-                                     alt="Woot" height="40" class="mb-3">
+                                     alt="guStore" height="40" class="mb-3">
                             </a>
                             <h4 class="fw-700">{{ __('¡Bienvenido de nuevo!') }}</h4>
                             <p class="text-muted fs-14">{{ __('Inicia sesión en tu cuenta') }}</p>

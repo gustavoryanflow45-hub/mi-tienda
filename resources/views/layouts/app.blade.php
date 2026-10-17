@@ -9,7 +9,7 @@
     <meta name="app-url" content="{{ url('/') }}">
     <meta name="file-base-url" content="{{ url('/') }}/public/">
 
-    <title>@yield('title', 'Woot') | {{ config('app.name', 'Woot') }}</title>
+    <title>@yield('title', 'guStore') | {{ config('app.name', 'guStore') }}</title>
 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
