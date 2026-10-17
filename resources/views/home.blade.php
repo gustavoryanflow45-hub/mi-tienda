@@ -10,6 +10,22 @@
 @media (min-width: 992px) {
     .aiz-category-menu .categories { max-height: 440px; overflow-y: auto; }
 }
+
+/* El desplegable del tema ocupaba toda la columna derecha y tapaba el
+   slider y las categorías rápidas, aunque la categoría no tuviera
+   subcategorías. Ahora solo existe en las que tienen (.has-sub) y mide
+   lo que su contenido. */
+.aiz-category-menu .sub-cat-menu {
+    width: 420px;
+    height: auto;
+    max-height: calc(100% + 20px);
+    border-radius: 0 .25rem .25rem 0;
+    box-shadow: 4px 4px 16px rgba(0, 0, 0, .12);
+}
+.aiz-category-menu .category-nav-element:not(.has-sub):hover > a {
+    background: #f4f6f2;
+    box-shadow: none;
+}
 </style>
 @endsection
 
@@ -31,7 +47,7 @@
                     </div>
                     <ul class="list-unstyled categories no-scrollbar py-2 mb-0 text-left">
                         @foreach($categories as $category)
-                        <li class="category-nav-element" data-id="{{ $category->id }}">
+                        <li class="category-nav-element {{ $category->active_children_count ? 'has-sub' : '' }}" data-id="{{ $category->id }}">
                             <a href="{{ route('category.show', $category->slug) }}" class="text-truncate text-reset py-2 px-3 d-block">
                                 <img
                                     class="cat-image lazyload mr-2 opacity-60"
@@ -43,7 +59,9 @@
                                 >
                                 <span class="cat-name">{{ $category->name }}</span>
                             </a>
-                            <div class="sub-cat-menu"></div>
+                            @if($category->active_children_count)
+                                <div class="sub-cat-menu"></div>
+                            @endif
                         </li>
                         @endforeach
                     </ul>
@@ -241,7 +259,7 @@
 <script>
 $(document).ready(function () {
     // Subcategorías en hover
-    $('.category-nav-element').each(function (i, el) {
+    $('.category-nav-element.has-sub').each(function (i, el) {
         $(el).on('mouseover', function () {
             if (!$(el).find('.sub-cat-menu').hasClass('loaded')) {
                 $.post('{{ route("categories.nav-element") }}', {

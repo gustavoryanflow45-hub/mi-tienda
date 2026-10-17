@@ -630,5 +630,8 @@
     ":count producto|:count productos": ":count product|:count products",
     "Ir al carrito": "Go to cart",
     ":count unidad|:count unidades": ":count unit|:count units",
-    "Todavía no agregaste productos. Lo que añadas al carrito aparecerá aquí.": "You haven't added any products yet. Whatever you add to your cart will show up here."
+    "Todavía no agregaste productos. Lo que añadas al carrito aparecerá aquí.": "You haven't added any products yet. Whatever you add to your cart will show up here.",
+    "Imprimir": "Print",
+    "Hoja de despacho": "Dispatch sheet",
+    "Impreso el :date": "Printed on :date"
 }
