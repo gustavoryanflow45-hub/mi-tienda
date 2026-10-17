@@ -602,10 +602,13 @@
                     </div>
                     <div class="info-card-body">
                         @php
-                            $subtotal      = $order->orderDetails->sum(fn($d) => $d->price * $d->quantity);
-                            $shippingTotal = $order->orderDetails->sum('shipping_cost');
-                            $taxTotal      = $order->orderDetails->sum('tax');
-                            $coupon        = $order->coupon_discount ?? 0;
+                            // Lo que se cobró, guardado en el pedido al pagar. No se suma
+                            // desde las líneas: en los pedidos anteriores a 2026-09-11 las
+                            // líneas llevan un envío que el checkout no llegó a cobrar.
+                            $subtotal      = $order->subtotal;
+                            $shippingTotal = $order->shipping_total;
+                            $taxTotal      = $order->tax_amount;
+                            $coupon        = $order->discount_amount;
                         @endphp
                         <div class="totals-box">
                             <div class="totals-row">
