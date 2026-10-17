@@ -71,16 +71,16 @@
                     <ul class="list-unstyled">
                         <li class="mb-2">
                             <span class="d-block opacity-30">{{ __('Dirección:') }}</span>
-                            <span class="d-block opacity-70">Woot LLC 4121 International Parkway Carrollton, TX 75007</span>
+                            <span class="d-block opacity-70">guStore LLC 30 N Gould St Ste N, Sheridan, WY</span>
                         </li>
                         <li class="mb-2">
                             <span class="d-block opacity-30">{{ __('Teléfono:') }}</span>
-                            <span class="d-block opacity-70">214-445-2819</span>
+                            <span class="d-block opacity-70"><a href="tel:4193278" class="text-reset">4193278</a></span>
                         </li>
                         <li class="mb-2">
                             <span class="d-block opacity-30">{{ __('Correo:') }}</span>
                             <span class="d-block opacity-70">
-                                <a href="mailto:copyright@woot.com" class="text-reset">copyright@woot.com</a>
+                                <a href="mailto:info@gustoresite.com" class="text-reset">info@gustoresite.com</a>
                             </span>
                         </li>
                     </ul>
@@ -93,13 +93,13 @@
                     <h4 class="fs-13 text-uppercase fw-600 border-bottom border-gray-900 pb-2 mb-4">{{ __('Atención al cliente') }}</h4>
                     <ul class="list-unstyled">
                         <li class="mb-2">
-                            <a href="https://t.me/Woot_Hanna" class="opacity-50 hov-opacity-100 text-reset">
-                                {{ __('Telegram · Atención al cliente 1') }}
+                            <a href="https://t.me/ryangus10" class="opacity-50 hov-opacity-100 text-reset">
+                                guStore.Io
                             </a>
                         </li>
                         <li class="mb-2">
-                            <a href="https://t.me/Hanna_Woot" class="opacity-50 hov-opacity-100 text-reset">
-                                {{ __('Telegram · Atención al cliente 2') }}
+                            <a href="https://t.me/ryangus10" class="opacity-50 hov-opacity-100 text-reset">
+                                guStore.Open
                             </a>
                         </li>
                     </ul>
