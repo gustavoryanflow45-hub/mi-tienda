@@ -151,7 +151,10 @@
     }
 
     /* ── Badges ── */
-    .badge-status { border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; display:inline-block; }
+    /* aiz-core.css ya define .badge-status (punto de estado del avatar) con
+       position:absolute y un ::before: sin anularlos la etiqueta se va de su celda. */
+    .badge-status { border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; display:inline-block; position:static; }
+    .badge-status::before { content:none; }
     .badge-pending    { background:#fff3cd; color:#856404; }
     .badge-confirmed  { background:#cce5ff; color:#004085; }
     .badge-warehouse  { background:#e8d5f5; color:#5a1e82; }
@@ -249,6 +252,73 @@
         transition: background .2s;
     }
     .btn-back:hover { background: #f5f5f5; color: #333; text-decoration: none; }
+
+    /* ── Imprimir (hoja de despacho) ── */
+    .info-card-header.with-action {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+    .btn-print {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #679941;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: .8rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background .2s;
+    }
+    .btn-print:hover { background: #4e7a2e; }
+    .btn-print i { font-size: 1rem; }
+
+    .print-only { display: none; }
+
+    @media print {
+        @page { margin: 12mm; }
+
+        /* Solo el bloque del pedido: fuera cabecera, pie, franja, tracker… */
+        body, .aiz-main-wrapper, .order-detail-page { background: #fff !important; }
+        body > *:not(.aiz-main-wrapper),
+        .aiz-main-wrapper > *:not(.order-detail-page),
+        .order-detail-page .no-print,
+        .order-detail-page > .container > *:not(#order-print-area) { display: none !important; }
+
+        .order-detail-page { padding: 0; }
+        .order-detail-page .container { max-width: none; width: 100%; padding: 0; }
+        .print-only { display: block; }
+
+        .print-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #222;
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+        }
+        .print-header img { height: 40px; }
+        .print-header .print-title { text-align: right; }
+        .print-header .print-title strong { display: block; font-size: 1.1rem; }
+        .print-header .print-title span { font-size: .8rem; color: #555; }
+
+        /* Las tarjetas pasan a bloques con borde, a todo el ancho */
+        .info-card { box-shadow: none; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 14px; break-inside: avoid; }
+        .info-card-header { background: #f4f4f4; }
+        #order-print-area .row { display: block; margin: 0; }
+        #order-print-area .row > [class*="col-"] { max-width: 100%; width: 100%; padding: 0; margin-bottom: 0 !important; }
+        .summary-grid { grid-template-columns: 1fr 1fr; }
+        .table-responsive { overflow: visible; }
+        .details-table thead th { white-space: normal; }
+        .product-link { color: #222; text-decoration: none !important; }  /* Bootstrap subraya todo enlace al imprimir */
+
+        /* Que los colores de los estados salgan en papel */
+        .badge-status, .info-card-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
 </style>
 @endsection
 
@@ -366,9 +436,23 @@
             $buyerPhone = $addressData['phone'] ?? null;
         @endphp
 
+        {{-- Lo que se imprime: resumen, detalles e importe (hoja de despacho) --}}
+        <div id="order-print-area">
+
+        <div class="print-only print-header">
+            <img src="{{ asset('assets/img/logo-footer.png') }}" alt="guStore">
+            <div class="print-title">
+                <strong>{{ __('Hoja de despacho') }}</strong>
+                <span>{{ __('Pedido') }} {{ $order->code }} · {{ __('Impreso el :date', ['date' => now()->format('d-m-Y H:i')]) }}</span>
+            </div>
+        </div>
+
         <div class="info-card">
-            <div class="info-card-header">
-                <i class="las la-receipt mr-2" style="color:#679941;"></i> {{ __('Resumen del pedido') }}
+            <div class="info-card-header with-action">
+                <span><i class="las la-receipt mr-2" style="color:#679941;"></i> {{ __('Resumen del pedido') }}</span>
+                <button type="button" class="btn-print no-print" onclick="window.print()">
+                    <i class="las la-print"></i> {{ __('Imprimir') }}
+                </button>
             </div>
             <div class="info-card-body">
                 <div class="summary-grid">
@@ -550,6 +634,8 @@
             </div>
 
         </div>
+
+        </div><!-- /#order-print-area -->
 
     </div>
 </div>

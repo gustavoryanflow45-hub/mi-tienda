@@ -267,4 +267,26 @@ class VariantVisibilityTest extends TestCase
             ->assertSee('Negro')
             ->assertDontSee('9-negro');
     }
+
+    public function test_the_order_detail_prints_summary_details_and_amount_as_a_dispatch_sheet(): void
+    {
+        $customer = $this->makeCustomer();
+        $order = $this->makeWarehouseOrder($customer, $this->makeSeller());
+
+        $content = $this->actingAs($customer)->get(route('orders.show', $order->id))
+            ->assertOk()
+            ->assertSee('onclick="window.print()"', false)
+            ->getContent();
+
+        // Las tres secciones, y la talla de la línea, dentro del bloque que se imprime
+        $area = substr($content, strpos($content, 'id="order-print-area"'));
+        $area = substr($area, 0, strpos($area, '/#order-print-area'));
+
+        $this->assertStringContainsString('Hoja de despacho', $area);
+        $this->assertStringContainsString('Resumen del pedido', $area);
+        $this->assertStringContainsString('Detalles del pedido', $area);
+        $this->assertStringContainsString('Importe del pedido', $area);
+        $this->assertStringContainsString('Talla US', $area);
+        $this->assertStringContainsString($order->code, $area);
+    }
 }

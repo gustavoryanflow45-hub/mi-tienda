@@ -66,7 +66,10 @@
     .nothing-found i { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
     .nothing-found span { font-size: 0.9rem; }
 
-    .badge-status { border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; display:inline-block; }
+    /* aiz-core.css ya define .badge-status (punto de estado del avatar) con
+       position:absolute y un ::before: sin anularlos la etiqueta se va de su celda. */
+    .badge-status { border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; display:inline-block; position:static; }
+    .badge-status::before { content:none; }
     .badge-pending    { background:#fff3cd; color:#856404; }
     .badge-confirmed  { background:#cce5ff; color:#004085; }
     .badge-warehouse  { background:#e8d5f5; color:#5a1e82; }
