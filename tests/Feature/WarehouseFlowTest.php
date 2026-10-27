@@ -8,11 +8,13 @@ use App\Notifications\OrderArrivedWarehouseNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\BuildsCheckoutData;
+use Tests\Concerns\PassesAdminTwoFactor;
 use Tests\TestCase;
 
 class WarehouseFlowTest extends TestCase
 {
     use BuildsCheckoutData;
+    use PassesAdminTwoFactor;
     use RefreshDatabase;
 
     protected function makeAdmin(): User
@@ -32,7 +34,7 @@ class WarehouseFlowTest extends TestCase
     public function test_customer_cannot_access_warehouse_panel(): void
     {
         $this->actingAs($this->makeCustomer())
-            ->get('/warehouse')
+            ->get('/admin/warehouse')
             ->assertForbidden();
     }
 
@@ -44,7 +46,7 @@ class WarehouseFlowTest extends TestCase
     public function test_seller_cannot_access_warehouse_panel(): void
     {
         $this->actingAs($this->makeSeller())
-            ->get('/warehouse')
+            ->get('/admin/warehouse')
             ->assertForbidden();
     }
 
@@ -58,14 +60,14 @@ class WarehouseFlowTest extends TestCase
         $order->update(['delivery_status' => 'warehouse', 'warehouse_at' => now()]);
 
         $this->actingAs($intruder)
-            ->post("/warehouse/orders/{$order->id}/dispatch")
+            ->post("/admin/warehouse/orders/{$order->id}/dispatch")
             ->assertForbidden();
 
         $this->assertSame('warehouse', $order->fresh()->delivery_status);
 
         // Tampoco el vendedor dueño del pedido: despachar es tarea del almacén.
         $this->actingAs($owner)
-            ->post("/warehouse/orders/{$order->id}/deliver")
+            ->post("/admin/warehouse/orders/{$order->id}/deliver")
             ->assertForbidden();
 
         $this->assertSame('warehouse', $order->fresh()->delivery_status);
@@ -102,8 +104,8 @@ class WarehouseFlowTest extends TestCase
         );
 
         // 3. Panel de almacén muestra el pedido y la llegada nueva
-        $this->actingAs($admin)
-            ->get('/warehouse')
+        $this->actingAsAdmin($admin)
+            ->get('/admin/warehouse')
             ->assertOk()
             ->assertSee($order->code);
 
@@ -114,8 +116,8 @@ class WarehouseFlowTest extends TestCase
         );
 
         // 4. Almacén despacha → en camino
-        $this->actingAs($admin)
-            ->post("/warehouse/orders/{$order->id}/dispatch")
+        $this->actingAsAdmin($admin)
+            ->post("/admin/warehouse/orders/{$order->id}/dispatch")
             ->assertSessionHas('warehouse_success');
 
         $order->refresh();
@@ -125,8 +127,8 @@ class WarehouseFlowTest extends TestCase
         $this->assertSame('on_the_way', $order->orderDetails()->first()->delivery_status);
 
         // 5. Almacén marca entregado
-        $this->actingAs($admin)
-            ->post("/warehouse/orders/{$order->id}/deliver")
+        $this->actingAsAdmin($admin)
+            ->post("/admin/warehouse/orders/{$order->id}/deliver")
             ->assertSessionHas('warehouse_success');
 
         $order->refresh();
@@ -158,8 +160,8 @@ class WarehouseFlowTest extends TestCase
         $admin = $this->makeAdmin();
 
         // Aún está "pending": no se puede despachar
-        $this->actingAs($admin)
-            ->post("/warehouse/orders/{$order->id}/dispatch")
+        $this->actingAsAdmin($admin)
+            ->post("/admin/warehouse/orders/{$order->id}/dispatch")
             ->assertSessionHas('warehouse_error');
 
         $this->assertSame('pending', $order->fresh()->delivery_status);
@@ -171,8 +173,8 @@ class WarehouseFlowTest extends TestCase
         $order->update(['delivery_status' => 'warehouse', 'warehouse_at' => now()]);
         $admin = $this->makeAdmin();
 
-        $this->actingAs($admin)
-            ->post("/warehouse/orders/{$order->id}/deliver")
+        $this->actingAsAdmin($admin)
+            ->post("/admin/warehouse/orders/{$order->id}/deliver")
             ->assertSessionHas('warehouse_error');
 
         $this->assertSame('warehouse', $order->fresh()->delivery_status);
@@ -231,8 +233,8 @@ class WarehouseFlowTest extends TestCase
         $order = $this->makePaidOrder($customer, $this->makeSeller());
         $order->update(['delivery_status' => 'warehouse', 'warehouse_at' => now()]);
 
-        $this->actingAs($this->makeAdmin())
-            ->get('/warehouse')
+        $this->actingAsAdmin($this->makeAdmin())
+            ->get('/admin/warehouse')
             ->assertOk()
             ->assertSee('Av. Siempre Viva 742')
             ->assertSee('0999999999')

@@ -274,6 +274,8 @@
 <div class="admin-wallet-wrapper">
 <div class="container">
 
+    @include('partials.admin-nav')
+
     {{-- Header --}}
     <div class="aw-header">
         <h1>{!! __('Gestión de <span>billetera</span>') !!}</h1>

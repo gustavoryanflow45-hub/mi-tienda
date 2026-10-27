@@ -6,6 +6,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductStock;
+use App\Services\AuditLog;
 use App\Services\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -154,9 +155,9 @@ class SellerProductController extends Controller
         $resolver = new Product(['variant_type' => $request->input('variant_type')]);
         $resolver->setRelation('category', $category);
 
-        $allowedSizes  = $resolver->sizeOptions();
+        $allowedSizes = $resolver->sizeOptions();
         $allowedColors = array_keys(config('variants.colors', []));
-        $rules         = [];
+        $rules = [];
 
         foreach (array_keys($request->stocks ?? []) as $i) {
             $rules["stocks.$i.color"] = ['nullable', Rule::in($allowedColors)];
@@ -168,8 +169,8 @@ class SellerProductController extends Controller
 
         $request->validate($rules, [
             'stocks.*.size.prohibited' => "Este producto no maneja tallas. La categoría \"{$category->name}\" no las trae por defecto: elige un tipo de talla para ofrecerlas, o deja solo el color.",
-            'stocks.*.size.in'         => 'Talla no válida para el tipo de talla elegido.',
-            'stocks.*.color.in'        => 'Color no válido.',
+            'stocks.*.size.in' => 'Talla no válida para el tipo de talla elegido.',
+            'stocks.*.color.in' => 'Color no válido.',
         ]);
 
         // Dos filas con la misma combinación dejarían el stock ambiguo: al
@@ -195,11 +196,11 @@ class SellerProductController extends Controller
         foreach ($stocks as $stockData) {
             ProductStock::create([
                 'product_id' => $product->id,
-                'size'       => filled($stockData['size'] ?? null) ? $stockData['size'] : null,
-                'color'      => filled($stockData['color'] ?? null) ? $stockData['color'] : null,
-                'price'      => $stockData['price'],
-                'qty'        => $stockData['qty'],
-                'sku'        => $stockData['sku'] ?? null,
+                'size' => filled($stockData['size'] ?? null) ? $stockData['size'] : null,
+                'color' => filled($stockData['color'] ?? null) ? $stockData['color'] : null,
+                'price' => $stockData['price'],
+                'qty' => $stockData['qty'],
+                'sku' => $stockData['sku'] ?? null,
             ]);
         }
 
@@ -215,10 +216,8 @@ class SellerProductController extends Controller
     {
         $product = Product::with('stocks')->findOrFail($id);
 
-        // Solo el dueño (o un admin) puede editar
-        if ($product->added_by !== Auth::id() && Auth::user()->user_type !== 'admin') {
-            abort(403, __('No autorizado.'));
-        }
+        // Solo el dueño (o un admin): ProductPolicy
+        $this->authorize('update', $product);
 
         $categories = Category::where('status', 1)->orderBy('name')->get();
         $brands = Brand::where('status', 1)->orderBy('name')->get();
@@ -231,9 +230,7 @@ class SellerProductController extends Controller
     {
         $product = Product::with('stocks')->findOrFail($id);
 
-        if ($product->added_by !== Auth::id() && Auth::user()->user_type !== 'admin') {
-            abort(403, __('No autorizado.'));
-        }
+        $this->authorize('update', $product);
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -333,7 +330,7 @@ class SellerProductController extends Controller
     }
 
     // ── POST /seller/products/bulk ───────────────────────────────
-    public function bulkStore(Request $request)
+    public function bulkStore(Request $request, AuditLog $audit)
     {
         $request->validate([
             'csv_file' => 'required|file|mimes:csv,txt|max:5120',
@@ -395,7 +392,7 @@ class SellerProductController extends Controller
                     'featured' => isset($d['featured']) ? (int) $d['featured'] : 0,
                 ]);
 
-                $size  = filled($d['size'] ?? null) ? trim($d['size']) : null;
+                $size = filled($d['size'] ?? null) ? trim($d['size']) : null;
                 $color = filled($d['color'] ?? null) ? Str::lower(trim($d['color'])) : null;
 
                 // Mismas reglas que el formulario: la talla se valida contra
@@ -426,6 +423,9 @@ class SellerProductController extends Controller
         }
 
         fclose($handle);
+
+        // Solo recuentos: ni el archivo ni sus filas.
+        $audit->record('products.csv_imported', null, ['created' => $created, 'errors' => count($errors)]);
 
         return redirect()->route('seller.products.index')
             ->with('bulk_success', __('Se importaron :count producto(s) exitosamente.', ['count' => $created]))

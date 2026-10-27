@@ -108,6 +108,12 @@ class User extends Authenticatable
         return $this->hasMany(Product::class, 'added_by');
     }
 
+    /** Segundo factor (TOTP) del admin; ver TwoFactorService. */
+    public function twoFactor()
+    {
+        return $this->hasOne(AdminTwoFactor::class);
+    }
+
     /** Tienda del seller */
     public function shop()
     {

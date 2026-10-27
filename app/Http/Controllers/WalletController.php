@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SellerSettlement;
+use App\Models\User;
+use App\Models\WalletRecharge;
+use App\Models\WalletWithdrawal;
+use App\Services\AuditLog;
+use App\Services\ImageOptimizer;
+use App\Services\SettlementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Models\SellerSettlement;
-use App\Models\WalletRecharge;
-use App\Models\WalletWithdrawal;
-use App\Models\User;
-use App\Services\ImageOptimizer;
-use App\Services\SettlementService;
 
 class WalletController extends Controller
 {
@@ -25,12 +26,13 @@ class WalletController extends Controller
 
     public function index(SettlementService $settlementService)
     {
-        $recharges   = WalletRecharge::where('user_id', Auth::id())->latest()->get();
+        $recharges = WalletRecharge::where('user_id', Auth::id())->latest()->get();
         $withdrawals = WalletWithdrawal::where('user_id', Auth::id())->latest()->get();
         // Liquidaciones de ventas acreditadas por el admin (solo vendedores las tienen).
         $settlements = SellerSettlement::where('seller_id', Auth::id())->latest('settled_at')->get();
         // Parte del saldo que se retira sin aprobación: ya la aprobó el admin al liquidar.
         $withdrawable = $settlementService->withdrawableFor(Auth::user());
+
         return view('users.wallet', compact('recharges', 'withdrawals', 'settlements', 'withdrawable'));
     }
 
@@ -40,8 +42,9 @@ class WalletController extends Controller
 
     public function adminIndex()
     {
-        $recharges   = WalletRecharge::with('user')->latest()->get();
+        $recharges = WalletRecharge::with('user')->latest()->get();
         $withdrawals = WalletWithdrawal::with('user')->latest()->get();
+
         return view('admin.wallet', compact('recharges', 'withdrawals'));
     }
 
@@ -52,10 +55,10 @@ class WalletController extends Controller
     public function recharge(Request $request, ImageOptimizer $images)
     {
         $request->validate([
-            'amount'         => 'required|numeric|min:1',
-            'network'        => 'required|in:BEP20,TRC20,ERC20',
+            'amount' => 'required|numeric|min:1',
+            'network' => 'required|in:BEP20,TRC20,ERC20',
             'transaction_id' => 'required|string|max:255',
-            'payment_proof'  => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:'.config('images.max_upload_kb'),
+            'payment_proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:'.config('images.max_upload_kb'),
         ]);
 
         $proofPath = null;
@@ -65,18 +68,18 @@ class WalletController extends Controller
         }
 
         WalletRecharge::create([
-            'user_id'        => Auth::id(),
-            'amount'         => $request->amount,
-            'network'        => $request->network,
+            'user_id' => Auth::id(),
+            'amount' => $request->amount,
+            'network' => $request->network,
             'transaction_id' => $request->transaction_id,
-            'payment_proof'  => $proofPath,
-            'approval'       => 0,
+            'payment_proof' => $proofPath,
+            'approval' => 0,
         ]);
 
         return back()->with('success', __('Solicitud de recarga enviada. Está pendiente de aprobación.'));
     }
 
-    public function approve($id)
+    public function approve($id, AuditLog $audit)
     {
         $recharge = WalletRecharge::findOrFail($id);
 
@@ -90,10 +93,12 @@ class WalletController extends Controller
                 ->increment('balance', $recharge->amount);
         });
 
+        $audit->record('wallet.recharge.approved', $recharge, ['user_id' => $recharge->user_id, 'amount' => (float) $recharge->amount]);
+
         return back()->with('success', __('Recarga #:id aprobada. Se sumaron $:amount al saldo del usuario.', ['id' => $recharge->id, 'amount' => $recharge->amount]));
     }
 
-    public function reject($id)
+    public function reject($id, AuditLog $audit)
     {
         $recharge = WalletRecharge::findOrFail($id);
 
@@ -102,6 +107,7 @@ class WalletController extends Controller
         }
 
         $recharge->update(['approval' => -1]);
+        $audit->record('wallet.recharge.rejected', $recharge, ['user_id' => $recharge->user_id, 'amount' => (float) $recharge->amount]);
 
         return back()->with('error', __('Recarga #:id rechazada.', ['id' => $recharge->id]));
     }
@@ -113,9 +119,9 @@ class WalletController extends Controller
     public function withdraw(Request $request, SettlementService $settlementService)
     {
         $request->validate([
-            'amount'         => 'required|numeric|min:1',
-            'full_name'      => 'required|string|max:255',
-            'bank_name'      => 'required|string|max:255',
+            'amount' => 'required|numeric|min:1',
+            'full_name' => 'required|string|max:255',
+            'bank_name' => 'required|string|max:255',
             'account_number' => 'required|string|max:255',
         ]);
 
@@ -132,12 +138,12 @@ class WalletController extends Controller
 
         DB::transaction(function () use ($request, $fromSettlement) {
             WalletWithdrawal::create([
-                'user_id'         => Auth::id(),
-                'amount'          => $request->amount,
-                'full_name'       => $request->full_name,
-                'bank_name'       => $request->bank_name,
-                'account_number'  => $request->account_number,
-                'status'          => $fromSettlement ? 'approved' : 'pending',
+                'user_id' => Auth::id(),
+                'amount' => $request->amount,
+                'full_name' => $request->full_name,
+                'bank_name' => $request->bank_name,
+                'account_number' => $request->account_number,
+                'status' => $fromSettlement ? 'approved' : 'pending',
                 'from_settlement' => $fromSettlement,
             ]);
 
@@ -151,7 +157,7 @@ class WalletController extends Controller
             : __('Solicitud de retiro enviada. Está pendiente de aprobación.'));
     }
 
-    public function approveWithdrawal($id)
+    public function approveWithdrawal($id, AuditLog $audit)
     {
         $withdrawal = WalletWithdrawal::findOrFail($id);
 
@@ -161,11 +167,12 @@ class WalletController extends Controller
 
         // Solo marcar como aprobado — el saldo ya se descontó al crear la solicitud
         $withdrawal->update(['status' => 'approved']);
+        $audit->record('wallet.withdrawal.approved', $withdrawal, ['user_id' => $withdrawal->user_id, 'amount' => (float) $withdrawal->amount]);
 
         return back()->with('success', __('Retiro #:id aprobado por $:amount.', ['id' => $withdrawal->id, 'amount' => $withdrawal->amount]));
     }
 
-    public function rejectWithdrawal($id)
+    public function rejectWithdrawal($id, AuditLog $audit)
     {
         $withdrawal = WalletWithdrawal::findOrFail($id);
 
@@ -180,6 +187,8 @@ class WalletController extends Controller
             User::where('id', $withdrawal->user_id)
                 ->increment('balance', $withdrawal->amount);
         });
+
+        $audit->record('wallet.withdrawal.rejected', $withdrawal, ['user_id' => $withdrawal->user_id, 'amount' => (float) $withdrawal->amount]);
 
         return back()->with('success', __('Retiro #:id rechazado. Saldo devuelto al usuario.', ['id' => $withdrawal->id]));
     }

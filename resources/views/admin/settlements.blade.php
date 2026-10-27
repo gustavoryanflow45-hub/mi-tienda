@@ -108,6 +108,8 @@
 <div class="admin-settle-wrapper">
 <div class="container">
 
+    @include('partials.admin-nav')
+
     <div class="as-header">
         <h1>{!! __('Liquidación de <span>ventas</span>') !!}</h1>
         <span style="font-size:.82rem;color:var(--muted);">{{ __('Panel de administración') }} · {{ __('comisión del :rate%', ['rate' => round($commissionRate * 100)]) }}</span>

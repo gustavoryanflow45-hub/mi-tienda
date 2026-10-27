@@ -101,6 +101,8 @@
 <div class="admin-shops-wrapper">
 <div class="container">
 
+    @include('partials.admin-nav')
+
     <div class="as-header">
         <h1>{!! __('Aprobación de <span>tiendas</span>') !!}</h1>
         <span style="font-size:.82rem;color:var(--muted);">{{ __('Panel de administración') }}</span>

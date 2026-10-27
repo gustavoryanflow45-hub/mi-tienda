@@ -6,11 +6,13 @@ use App\Models\Shop;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\BuildsCheckoutData;
+use Tests\Concerns\PassesAdminTwoFactor;
 use Tests\TestCase;
 
 class SellerShopApprovalTest extends TestCase
 {
     use BuildsCheckoutData;
+    use PassesAdminTwoFactor;
     use RefreshDatabase;
 
     public function test_pending_shop_cannot_reach_seller_panel(): void
@@ -82,7 +84,7 @@ class SellerShopApprovalTest extends TestCase
     {
         $admin = User::factory()->create(['user_type' => 'admin']);
 
-        $this->actingAs($admin)
+        $this->actingAsAdmin($admin)
             ->get('/seller/products')
             ->assertOk();
     }

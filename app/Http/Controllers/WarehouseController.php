@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Notifications\OrderArrivedWarehouseNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
+use App\Services\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -69,7 +70,7 @@ class WarehouseController extends Controller
     }
 
     // ── POST /warehouse/orders/{id}/dispatch ─────────────────────
-    public function dispatchOrder(int $id)
+    public function dispatchOrder(int $id, AuditLog $audit)
     {
         $order = Order::findOrFail($id);
 
@@ -83,6 +84,7 @@ class WarehouseController extends Controller
             'dispatched_by' => Auth::id(),
         ]);
         $order->orderDetails()->update(['delivery_status' => 'on_the_way']);
+        $audit->record('order.dispatched', $order);
 
         $order->user?->notify(new OrderStatusUpdatedNotification($order, 'on_the_way'));
 
@@ -90,7 +92,7 @@ class WarehouseController extends Controller
     }
 
     // ── POST /warehouse/orders/{id}/deliver ──────────────────────
-    public function deliver(int $id)
+    public function deliver(int $id, AuditLog $audit)
     {
         $order = Order::findOrFail($id);
 
@@ -103,6 +105,8 @@ class WarehouseController extends Controller
             'delivered_at' => now(),
         ]);
         $order->orderDetails()->update(['delivery_status' => 'delivered']);
+        // Entregado = liquidable (OrderDetail::scopeSettleable).
+        $audit->record('order.delivered', $order);
 
         $order->user?->notify(new OrderStatusUpdatedNotification($order, 'delivered'));
 

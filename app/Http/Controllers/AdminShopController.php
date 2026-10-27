@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Shop;
 use App\Notifications\ShopStatusUpdatedNotification;
+use App\Services\AuditLog;
 use Illuminate\Http\Request;
 
 class AdminShopController extends Controller
@@ -63,15 +64,17 @@ class AdminShopController extends Controller
     }
 
     // ── POST /admin/shops/{id}/approve ───────────────────────────
-    public function approve(int $id)
+    public function approve(int $id, AuditLog $audit)
     {
         $shop = Shop::with('user')->findOrFail($id);
+        $this->authorize('approve', $shop);
 
         if ((int) $shop->status === self::APPROVED) {
             return back()->with('warning', __('La tienda «:name» ya estaba aprobada.', ['name' => $shop->name]));
         }
 
         $shop->update(['status' => self::APPROVED]);
+        $audit->record('shop.approved', $shop, ['seller_id' => $shop->user_id]);
 
         $shop->user?->notify(new ShopStatusUpdatedNotification($shop, self::APPROVED));
 
@@ -79,15 +82,17 @@ class AdminShopController extends Controller
     }
 
     // ── POST /admin/shops/{id}/reject ────────────────────────────
-    public function reject(int $id)
+    public function reject(int $id, AuditLog $audit)
     {
         $shop = Shop::with('user')->findOrFail($id);
+        $this->authorize('reject', $shop);
 
         if ((int) $shop->status === self::REJECTED) {
             return back()->with('warning', __('La tienda «:name» ya estaba rechazada.', ['name' => $shop->name]));
         }
 
         $shop->update(['status' => self::REJECTED]);
+        $audit->record('shop.rejected', $shop, ['seller_id' => $shop->user_id]);
 
         $shop->user?->notify(new ShopStatusUpdatedNotification($shop, self::REJECTED));
 

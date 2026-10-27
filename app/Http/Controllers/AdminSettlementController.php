@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SellerSettlement;
 use App\Models\User;
+use App\Services\AuditLog;
 use App\Services\SettlementService;
 use Illuminate\Http\Request;
 
@@ -91,7 +92,7 @@ class AdminSettlementController extends Controller
     }
 
     // ── POST /admin/settlements/{seller} ─────────────────────────
-    public function settle(Request $request, int $seller)
+    public function settle(Request $request, int $seller, AuditLog $audit)
     {
         $seller = User::where('user_type', 'seller')->with('shop')->findOrFail($seller);
         $label = $seller->shop?->name ?? $seller->name;
@@ -101,6 +102,14 @@ class AdminSettlementController extends Controller
         if (! $settlement) {
             return back()->with('warning', __('«:label» no tiene ventas pendientes de liquidar.', ['label' => $label]));
         }
+
+        $audit->record('seller.settled', $settlement, [
+            'seller_id' => $seller->id,
+            'total_sales' => (float) $settlement->total_sales,
+            'commission' => (float) $settlement->commission,
+            'net_amount' => (float) $settlement->net_amount,
+            'lines_count' => (int) $settlement->lines_count,
+        ]);
 
         return back()->with('success', __('Liquidación de «:label» registrada: $:sales vendidos, $:commission de comisión (:rate%), $:net acreditados en la billetera del vendedor. Su panel vuelve a cero y se le notificó.', [
             'label' => $label,

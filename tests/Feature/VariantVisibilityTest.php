@@ -9,6 +9,7 @@ use App\Models\ProductStock;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\BuildsCheckoutData;
+use Tests\Concerns\PassesAdminTwoFactor;
 use Tests\TestCase;
 
 /**
@@ -20,6 +21,7 @@ use Tests\TestCase;
 class VariantVisibilityTest extends TestCase
 {
     use BuildsCheckoutData;
+    use PassesAdminTwoFactor;
     use RefreshDatabase;
 
     protected function makeAdmin(): User
@@ -169,7 +171,7 @@ class VariantVisibilityTest extends TestCase
     {
         $order = $this->makeWarehouseOrder($this->makeCustomer(), $this->makeSeller());
 
-        $this->actingAs($this->makeAdmin())->get(route('warehouse.index'))
+        $this->actingAsAdmin($this->makeAdmin())->get(route('warehouse.index'))
             ->assertOk()
             ->assertSee('Zapatilla de prueba')
             ->assertSee('Talla US')
