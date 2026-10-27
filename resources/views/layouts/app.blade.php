@@ -266,6 +266,13 @@
                             $('#search-content').html(data);
                         }
                         $('.search-preloader').addClass('d-none');
+                    }).fail(function (xhr) {
+                        $('.search-preloader').addClass('d-none');
+                        if (xhr.status === 429) {
+                            $('#search-content').html(null);
+                            $('.typed-search-box .search-nothing').removeClass('d-none')
+                                .text((xhr.responseJSON && xhr.responseJSON.message) || '');
+                        }
                     });
                 }, 250);
             });
@@ -277,6 +284,7 @@
     fetch('{{ route("cart.mini") }}')
         .then(r => r.json())
         .then(data => {
+            if (data.status === 'error') return;
             document.querySelectorAll('.cart-count').forEach(el => el.textContent = data.count);
             document.getElementById('nav-cart-dropdown').innerHTML = data.html;
         });
@@ -299,6 +307,8 @@
     .then(data => {
         if (data.status === 'success') {
             updateNavCart(data.cart_count);
+        } else if (data.message) {
+            AIZ.plugins.notify('warning', data.message);
         }
     });
 }
@@ -369,9 +379,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 $('.c-preloader').hide();
                 $('#addToCart-modal-body').html(html);
                 quickAddRefresh();
-            }).fail(function () {
+            }).fail(function (xhr) {
                 $('.c-preloader').hide();
-                AIZ.plugins.notify('danger', @json(__('No se pudo cargar el producto')));
+                AIZ.plugins.notify('danger', (xhr.responseJSON && xhr.responseJSON.message) || @json(__('No se pudo cargar el producto')));
             });
         }
 
@@ -521,8 +531,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     AIZ.plugins.notify('warning', res.message || @json(__('No se pudo añadir al carrito')));
                 }
-            }).fail(function () {
-                AIZ.plugins.notify('danger', @json(__('Error de red, inténtalo de nuevo')));
+            }).fail(function (xhr) {
+                AIZ.plugins.notify('danger', (xhr.responseJSON && xhr.responseJSON.message) || @json(__('Error de red, inténtalo de nuevo')));
             }).always(function () {
                 btn.disabled = false;
                 btn.innerHTML = original;

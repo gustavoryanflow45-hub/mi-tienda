@@ -293,6 +293,8 @@ function updateQty(cartId, qty) {
         if (data.status === 'success') {
             document.getElementById('subtotal-' + cartId).textContent = '$' + data.subtotal;
             updateSummary(data);
+        } else if (data.message) {
+            showToast(data.message, 'error');
         }
     });
 }
@@ -317,6 +319,8 @@ function removeItem(cartId) {
                 if (data.cart_count === 0) location.reload();
             }, 300);
             showToast(@json(__('Artículo quitado del carrito')));
+        } else if (data.message) {
+            showToast(data.message, 'error');
         }
     });
 }

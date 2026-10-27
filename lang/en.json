@@ -663,5 +663,9 @@
     "Ya los guardé, ir al panel": "I've saved them, go to the panel",
     "Demasiados intentos. Espera :seconds segundos y vuelve a probar.": "Too many attempts. Wait :seconds seconds and try again.",
     "Demasiados códigos incorrectos. Por seguridad se cerró la sesión; espera 15 minutos antes de volver a intentarlo.": "Too many incorrect codes. You have been signed out for security; wait 15 minutes before trying again.",
-    "Demasiados intentos de pago. Espera :seconds segundos y vuelve a probar.": "Too many payment attempts. Wait :seconds seconds and try again."
+    "Demasiados intentos de pago. Espera :seconds segundos y vuelve a probar.": "Too many payment attempts. Wait :seconds seconds and try again.",
+    "Demasiadas peticiones. Espera :seconds segundos y vuelve a probar.": "Too many requests. Wait :seconds seconds and try again.",
+    "Demasiadas peticiones": "Too many requests",
+    "Espera un momento y vuelve a intentarlo.": "Wait a moment and try again.",
+    "Reintentar": "Try again"
 }
