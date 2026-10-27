@@ -45,7 +45,7 @@ class AdminWalletAccessTest extends TestCase
 
     public function test_guest_is_redirected_to_login(): void
     {
-        $this->get('/admin/wallet')->assertRedirect('/login');
+        $this->get('/admin/wallet')->assertRedirect('/admin/login');
     }
 
     public function test_customer_cannot_open_admin_wallet(): void

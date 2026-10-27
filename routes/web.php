@@ -31,6 +31,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\Payments\StripeController;
 use App\Http\Controllers\Payments\KushkiController;
+use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 
 
 /*
@@ -175,27 +176,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/wallet/recharge', [WalletController::class, 'recharge'])->name('wallet.recharge');
     Route::post('/wallet/withdraw', [WalletController::class, 'withdraw'])->name('wallet.withdraw');
 
-    // ── Wallet (admin) ───────────────────────────────────────────
-    // Aprobar una recarga acredita saldo real: solo para user_type = 'admin'.
-    Route::middleware('admin')->group(function () {
-        // ── Aprobación de tiendas ────────────────────────────────
-        Route::get('/admin/shops', [AdminShopController::class, 'index'])->name('admin.shops');
-        Route::post('/admin/shops/{id}/approve', [AdminShopController::class, 'approve'])->name('admin.shops.approve');
-        Route::post('/admin/shops/{id}/reject', [AdminShopController::class, 'reject'])->name('admin.shops.reject');
-
-        // ── Liquidación de ventas a vendedores ───────────────────
-        // Liquidar cierra las ventas cobradas del vendedor y deja su panel
-        // en cero: solo el admin paga.
-        Route::get('/admin/settlements', [AdminSettlementController::class, 'index'])->name('admin.settlements');
-        Route::post('/admin/settlements/{seller}', [AdminSettlementController::class, 'settle'])->name('admin.settlements.settle');
-
-        Route::get('/admin/wallet', [WalletController::class, 'adminIndex'])->name('admin.wallet');
-        Route::post('/admin/wallet/approve/{id}', [WalletController::class, 'approve'])->name('wallet.approve');
-        Route::post('/admin/wallet/reject/{id}', [WalletController::class, 'reject'])->name('wallet.reject');
-        Route::post('/admin/wallet/withdrawal/approve/{id}', [WalletController::class, 'approveWithdrawal'])->name('wallet.withdrawal.approve');
-        Route::post('/admin/wallet/withdrawal/reject/{id}', [WalletController::class, 'rejectWithdrawal'])->name('wallet.withdrawal.reject');
-    });
-
     // ── Seller — productos ───────────────────────────────────────
     // ⚠️ Las rutas específicas (bulk, template, create) van ANTES
     //    que cualquier ruta con parámetro dinámico {id}
@@ -217,14 +197,63 @@ Route::middleware('auth')->group(function () {
         Route::get('/seller/orders', [SellerOrderController::class, 'index'])->name('seller.orders.index');
         Route::post('/seller/orders/{id}/confirm', [SellerOrderController::class, 'confirm'])->name('seller.orders.confirm');
     });
+});
 
-    // ── Almacén — panel de despacho ───────────────────────────────
-    // El panel muestra los pedidos de TODOS los vendedores junto con los
-    // datos de contacto del comprador: es solo para el personal de despacho.
-    // Los vendedores gestionan lo suyo desde /seller/orders.
-    Route::middleware('admin')->group(function () {
-        Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse.index');
-        Route::post('/warehouse/orders/{id}/dispatch', [WarehouseController::class, 'dispatchOrder'])->name('warehouse.dispatch');
-        Route::post('/warehouse/orders/{id}/deliver', [WarehouseController::class, 'deliver'])->name('warehouse.deliver');
+/*
+|--------------------------------------------------------------------------
+| Panel de administración
+|--------------------------------------------------------------------------
+| Tiendas, liquidaciones, billetera admin y almacén. Con ADMIN_DOMAIN las
+| rutas solo existen en ese host (admin.dominio/admin/...) y en la tienda dan
+| 404; sin él (XAMPP) cuelgan de /admin en el mismo host. El prefijo /admin
+| se mantiene en ambos modos. Ver config/admin.php.
+|
+| El almacén va aquí porque lista los pedidos de TODOS los vendedores junto
+| con los datos de contacto del comprador: los vendedores gestionan lo suyo
+| desde /seller/orders.
+*/
+$adminRoutes = Route::prefix('admin');
+
+if (config('admin.domain')) {
+    $adminRoutes->domain(config('admin.domain'));
+}
+
+$adminRoutes->group(function () {
+    // Login propio: en modo dominio la cookie de la tienda no llega aquí.
+    Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('admin.login');
+    Route::post('/login', [AdminLoginController::class, 'login'])->name('admin.login.attempt');
+
+    Route::middleware('auth')->group(function () {
+        Route::post('/logout', [AdminLoginController::class, 'logout'])->name('admin.logout');
+
+        // 'admin' va siempre después de 'auth': los invitados acaban en el
+        // login, no en un 403.
+        Route::middleware('admin')->group(function () {
+            Route::get('/', fn () => redirect()->route('admin.shops'))->name('admin.home');
+
+            // ── Aprobación de tiendas ────────────────────────────
+            Route::get('/shops', [AdminShopController::class, 'index'])->name('admin.shops');
+            Route::post('/shops/{id}/approve', [AdminShopController::class, 'approve'])->name('admin.shops.approve');
+            Route::post('/shops/{id}/reject', [AdminShopController::class, 'reject'])->name('admin.shops.reject');
+
+            // ── Liquidación de ventas a vendedores ───────────────
+            // Liquidar cierra las ventas cobradas del vendedor y deja su
+            // panel en cero: solo el admin paga.
+            Route::get('/settlements', [AdminSettlementController::class, 'index'])->name('admin.settlements');
+            Route::post('/settlements/{seller}', [AdminSettlementController::class, 'settle'])->name('admin.settlements.settle');
+
+            // ── Billetera ────────────────────────────────────────
+            // Aprobar una recarga acredita saldo real.
+            Route::get('/wallet', [WalletController::class, 'adminIndex'])->name('admin.wallet');
+            Route::post('/wallet/approve/{id}', [WalletController::class, 'approve'])->name('wallet.approve');
+            Route::post('/wallet/reject/{id}', [WalletController::class, 'reject'])->name('wallet.reject');
+            Route::post('/wallet/withdrawal/approve/{id}', [WalletController::class, 'approveWithdrawal'])->name('wallet.withdrawal.approve');
+            Route::post('/wallet/withdrawal/reject/{id}', [WalletController::class, 'rejectWithdrawal'])->name('wallet.withdrawal.reject');
+
+            // ── Almacén — panel de despacho ──────────────────────
+            Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse.index');
+            Route::post('/warehouse/orders/{id}/dispatch', [WarehouseController::class, 'dispatchOrder'])->name('warehouse.dispatch');
+            Route::post('/warehouse/orders/{id}/deliver', [WarehouseController::class, 'deliver'])->name('warehouse.deliver');
+        });
     });
 });

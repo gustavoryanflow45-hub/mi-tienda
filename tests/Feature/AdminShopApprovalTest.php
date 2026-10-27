@@ -22,7 +22,7 @@ class AdminShopApprovalTest extends TestCase
 
     public function test_guest_is_redirected_to_login(): void
     {
-        $this->get('/admin/shops')->assertRedirect('/login');
+        $this->get('/admin/shops')->assertRedirect('/admin/login');
     }
 
     public function test_customer_cannot_open_the_screen(): void

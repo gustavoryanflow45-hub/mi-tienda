@@ -633,5 +633,10 @@
     "Todavía no agregaste productos. Lo que añadas al carrito aparecerá aquí.": "You haven't added any products yet. Whatever you add to your cart will show up here.",
     "Imprimir": "Print",
     "Hoja de despacho": "Dispatch sheet",
-    "Impreso el :date": "Printed on :date"
+    "Impreso el :date": "Printed on :date",
+    "Acceso al panel de administración": "Admin panel sign-in",
+    "Acceso restringido al personal autorizado.": "Restricted to authorized staff.",
+    "Liquidaciones": "Settlements",
+    "Almacén": "Warehouse",
+    "Cerrar sesión del panel": "Sign out of the panel"
 }

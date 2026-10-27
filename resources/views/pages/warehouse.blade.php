@@ -137,6 +137,8 @@
 <section class="py-5">
     <div class="container">
 
+        @include('partials.admin-nav')
+
         {{-- ── Header ── --}}
         <div class="warehouse-header">
             <div>

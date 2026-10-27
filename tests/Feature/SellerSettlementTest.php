@@ -86,7 +86,7 @@ class SellerSettlementTest extends TestCase
         $seller = $this->makeVerifiedSeller();
 
         // Invitado primero: actingAs deja al usuario logueado el resto del test.
-        $this->get('/admin/settlements')->assertRedirect('/login');
+        $this->get('/admin/settlements')->assertRedirect('/admin/login');
 
         $this->actingAs($this->makeCustomer())->get('/admin/settlements')->assertForbidden();
         $this->actingAs($seller)->get('/admin/settlements')->assertForbidden();
