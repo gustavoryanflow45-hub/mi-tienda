@@ -8,6 +8,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class HomeController extends Controller
 {
@@ -102,11 +103,11 @@ class HomeController extends Controller
     // ── POST /seller/products/{id}/toggle-published ──────────────
     public function togglePublished(Request $request, int $id)
     {
-        $user    = Auth::user();
         $product = Product::findOrFail($id);
 
-        if ($user->user_type !== 'admin' && $product->added_by !== $user->id) {
-            return response()->json(['error' => 'No autorizado'], 403);
+        // ProductPolicy; responde JSON porque lo llama el listado por AJAX.
+        if (Gate::denies('togglePublished', $product)) {
+            return response()->json(['error' => __('No autorizado.')], 403);
         }
 
         $product->published = $product->published ? 0 : 1;

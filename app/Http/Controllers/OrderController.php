@@ -71,20 +71,11 @@ class OrderController extends Controller
         $user = Auth::user();
         $canSell = in_array($user->user_type, ['seller', 'admin']);
 
-        $query = Order::with(['orderDetails.product', 'orderDetails.product.category']);
+        $order = Order::with(['orderDetails.product', 'orderDetails.product.category'])->findOrFail($id);
 
-        if ($user->user_type === 'admin') {
-            // El admin (personal de almacén) puede ver cualquier pedido
-        } elseif ($canSell) {
-            $query->where(function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                    ->orWhereHas('orderDetails', fn ($qq) => $qq->where('seller_id', $user->id));
-            });
-        } else {
-            $query->where('user_id', $user->id);
-        }
-
-        $order = $query->findOrFail($id);
+        // Comprador, vendedor con líneas en el pedido o admin (OrderPolicy;
+        // a cualquier otro le responde 404).
+        $this->authorize('view', $order);
 
         $isSeller = $canSell && $order->orderDetails->contains(fn ($d) => $d->seller_id === $user->id);
 
@@ -100,8 +91,8 @@ class OrderController extends Controller
             abort(403, __('Solo los vendedores pueden enviar pedidos al almacén.'));
         }
 
-        $order = Order::whereHas('orderDetails', fn ($q) => $q->where('seller_id', $user->id))
-            ->findOrFail($id);
+        $order = Order::findOrFail($id);
+        $this->authorize('sendToWarehouse', $order);
 
         if ($order->delivery_status !== 'confirmed') {
             return back()->with('warehouse_error', __('El pedido debe estar en estado "Confirmado" para enviarlo al almacén.'));

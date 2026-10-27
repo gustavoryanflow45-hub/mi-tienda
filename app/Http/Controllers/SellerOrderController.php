@@ -53,8 +53,9 @@ class SellerOrderController extends Controller
     {
         $sellerId = Auth::id();
 
-        $order = Order::whereHas('orderDetails', fn ($q) => $q->where('seller_id', $sellerId))
-            ->findOrFail($id);
+        $order = Order::findOrFail($id);
+        // Solo un vendedor con líneas en el pedido (OrderPolicy; si no, 404).
+        $this->authorize('confirm', $order);
 
         if ($order->payment_status !== 'paid') {
             return back()->with('warehouse_error', __('El pedido aún no tiene el pago confirmado.'));

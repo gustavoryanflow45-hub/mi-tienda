@@ -66,6 +66,7 @@ class AdminShopController extends Controller
     public function approve(int $id)
     {
         $shop = Shop::with('user')->findOrFail($id);
+        $this->authorize('approve', $shop);
 
         if ((int) $shop->status === self::APPROVED) {
             return back()->with('warning', __('La tienda «:name» ya estaba aprobada.', ['name' => $shop->name]));
@@ -82,6 +83,7 @@ class AdminShopController extends Controller
     public function reject(int $id)
     {
         $shop = Shop::with('user')->findOrFail($id);
+        $this->authorize('reject', $shop);
 
         if ((int) $shop->status === self::REJECTED) {
             return back()->with('warning', __('La tienda «:name» ya estaba rechazada.', ['name' => $shop->name]));

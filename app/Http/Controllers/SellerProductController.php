@@ -215,10 +215,8 @@ class SellerProductController extends Controller
     {
         $product = Product::with('stocks')->findOrFail($id);
 
-        // Solo el dueño (o un admin) puede editar
-        if ($product->added_by !== Auth::id() && Auth::user()->user_type !== 'admin') {
-            abort(403, __('No autorizado.'));
-        }
+        // Solo el dueño (o un admin): ProductPolicy
+        $this->authorize('update', $product);
 
         $categories = Category::where('status', 1)->orderBy('name')->get();
         $brands = Brand::where('status', 1)->orderBy('name')->get();
@@ -231,9 +229,7 @@ class SellerProductController extends Controller
     {
         $product = Product::with('stocks')->findOrFail($id);
 
-        if ($product->added_by !== Auth::id() && Auth::user()->user_type !== 'admin') {
-            abort(403, __('No autorizado.'));
-        }
+        $this->authorize('update', $product);
 
         $request->validate([
             'name' => 'required|string|max:255',
