@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureAdminTwoFactor;
+use App\Services\AuditLog;
 use App\Services\TwoFactorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,7 +32,10 @@ class TwoFactorController extends Controller
 
     public const LOCKOUT_SECONDS = 900;
 
-    public function __construct(private TwoFactorService $twoFactor) {}
+    public function __construct(
+        private TwoFactorService $twoFactor,
+        private AuditLog $audit,
+    ) {}
 
     // ── GET /admin/two-factor ────────────────────────────────────
     public function challenge(Request $request)
@@ -73,6 +77,7 @@ class TwoFactorController extends Controller
         }
 
         if (! $valid) {
+            $this->audit->record('admin.2fa.failed', null, ['method' => empty($data['code']) ? 'recovery_code' : 'totp']);
             RateLimiter::hit($this->failuresKey($user->id), self::LOCKOUT_SECONDS);
 
             if (RateLimiter::tooManyAttempts($this->failuresKey($user->id), self::MAX_FAILURES)) {
@@ -84,6 +89,8 @@ class TwoFactorController extends Controller
 
         RateLimiter::clear($this->failuresKey($user->id));
         $this->markPassed($request);
+        $this->audit->record($usedRecovery ? 'admin.2fa.recovery_used' : 'admin.2fa.passed', null,
+            $usedRecovery ? ['remaining' => $record->remainingRecoveryCodes()] : []);
 
         if ($usedRecovery) {
             $request->session()->flash('warning', __('Entraste con un código de recuperación. Te quedan :count; pide un nuevo enlace de alta si se acaban.', [
@@ -142,6 +149,7 @@ class TwoFactorController extends Controller
 
         $request->session()->forget(self::SETUP_SESSION_KEY);
         $this->markPassed($request);
+        $this->audit->record('admin.2fa.enrolled');
 
         // Se muestran aquí y no se guardan en claro en ningún sitio.
         return response()->view('admin.two-factor.recovery-codes', compact('codes'))
@@ -156,6 +164,8 @@ class TwoFactorController extends Controller
     /** Demasiados códigos fallidos: fuera de la sesión, sin más intentos. */
     protected function lockOut(Request $request)
     {
+        $this->audit->record('admin.2fa.locked_out');
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

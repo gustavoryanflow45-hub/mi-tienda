@@ -6,6 +6,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductStock;
+use App\Services\AuditLog;
 use App\Services\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -329,7 +330,7 @@ class SellerProductController extends Controller
     }
 
     // ── POST /seller/products/bulk ───────────────────────────────
-    public function bulkStore(Request $request)
+    public function bulkStore(Request $request, AuditLog $audit)
     {
         $request->validate([
             'csv_file' => 'required|file|mimes:csv,txt|max:5120',
@@ -422,6 +423,9 @@ class SellerProductController extends Controller
         }
 
         fclose($handle);
+
+        // Solo recuentos: ni el archivo ni sus filas.
+        $audit->record('products.csv_imported', null, ['created' => $created, 'errors' => count($errors)]);
 
         return redirect()->route('seller.products.index')
             ->with('bulk_success', __('Se importaron :count producto(s) exitosamente.', ['count' => $created]))

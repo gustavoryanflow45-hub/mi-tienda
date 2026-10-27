@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Services\AuditLog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\URL;
 
@@ -22,7 +23,7 @@ class InviteAdminTwoFactor extends Command
 
     protected $description = 'Genera el enlace firmado para inscribir el 2FA de un admin';
 
-    public function handle(): int
+    public function handle(AuditLog $audit): int
     {
         $user = User::where('email', $this->argument('email'))->where('user_type', 'admin')->first();
 
@@ -42,6 +43,7 @@ class InviteAdminTwoFactor extends Command
 
         if ($current) {
             $current->delete();
+            $audit->record('admin.2fa.reset', $user, ['via' => 'console']);
             $this->warn('Inscripción anterior eliminada.');
         }
 
@@ -52,6 +54,8 @@ class InviteAdminTwoFactor extends Command
             now()->addMinutes($minutes),
             ['user' => $user->id],
         );
+
+        $audit->record('admin.2fa.invited', $user, ['via' => 'console', 'minutes' => $minutes]);
 
         $this->info("Enlace de alta para {$user->email} (válido {$minutes} min):");
         $this->line($url);

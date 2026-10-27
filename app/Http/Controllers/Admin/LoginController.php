@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 /**
  * Login del panel admin (/admin/login).
@@ -25,7 +27,7 @@ class LoginController extends Controller
         return view('admin.auth.login');
     }
 
-    public function login(Request $request)
+    public function login(Request $request, AuditLog $audit)
     {
         $credentials = $request->validate([
             'email' => 'required|email',
@@ -33,12 +35,17 @@ class LoginController extends Controller
         ]);
 
         if (! Auth::attemptWhen($credentials, fn ($user) => $user->isAdmin())) {
+            // Sin actor: no hay sesión. El correo intentado sirve para ver
+            // ataques dirigidos a una cuenta.
+            $audit->record('admin.login_failed', null, ['email' => Str::lower($credentials['email'])]);
+
             return back()
                 ->withInput($request->only('email'))
                 ->withErrors(['email' => __('Correo o contraseña incorrectos.')]);
         }
 
         $request->session()->regenerate();
+        $audit->record('admin.login');
 
         return redirect()->intended(route('admin.home'));
     }
