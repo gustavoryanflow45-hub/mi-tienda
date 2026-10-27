@@ -222,7 +222,8 @@ if (config('admin.domain')) {
 $adminRoutes->group(function () {
     // Login propio: en modo dominio la cookie de la tienda no llega aquí.
     Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('admin.login');
-    Route::post('/login', [AdminLoginController::class, 'login'])->name('admin.login.attempt');
+    Route::post('/login', [AdminLoginController::class, 'login'])
+        ->middleware('throttle:admin-login')->name('admin.login.attempt');
 
     Route::middleware('auth')->group(function () {
         Route::post('/logout', [AdminLoginController::class, 'logout'])->name('admin.logout');
@@ -234,9 +235,11 @@ $adminRoutes->group(function () {
             // Después del login y antes de cualquier otra ruta del panel.
             // El alta solo con el enlace firmado de `admin:2fa-invite`.
             Route::get('/two-factor', [TwoFactorController::class, 'challenge'])->name('admin.two-factor.challenge');
-            Route::post('/two-factor', [TwoFactorController::class, 'verify'])->name('admin.two-factor.verify');
+            Route::post('/two-factor', [TwoFactorController::class, 'verify'])
+                ->middleware('throttle:admin-2fa')->name('admin.two-factor.verify');
             Route::get('/two-factor/setup', [TwoFactorController::class, 'setup'])->middleware('signed')->name('admin.two-factor.setup');
-            Route::post('/two-factor/setup', [TwoFactorController::class, 'confirm'])->middleware('signed')->name('admin.two-factor.confirm');
+            Route::post('/two-factor/setup', [TwoFactorController::class, 'confirm'])
+                ->middleware(['signed', 'throttle:admin-2fa'])->name('admin.two-factor.confirm');
         });
 
         Route::middleware(['admin', 'admin.2fa'])->group(function () {

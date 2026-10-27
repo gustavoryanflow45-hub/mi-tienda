@@ -660,5 +660,7 @@
     "Códigos de recuperación": "Recovery codes",
     "Verificación en dos pasos activada": "Two-factor authentication enabled",
     "Guarda estos códigos en un lugar seguro. Cada uno sirve una sola vez para entrar si pierdes el móvil. No se volverán a mostrar.": "Store these codes somewhere safe. Each one can be used once to sign in if you lose your phone. They will not be shown again.",
-    "Ya los guardé, ir al panel": "I've saved them, go to the panel"
+    "Ya los guardé, ir al panel": "I've saved them, go to the panel",
+    "Demasiados intentos. Espera :seconds segundos y vuelve a probar.": "Too many attempts. Wait :seconds seconds and try again.",
+    "Demasiados códigos incorrectos. Por seguridad se cerró la sesión; espera 15 minutos antes de volver a intentarlo.": "Too many incorrect codes. You have been signed out for security; wait 15 minutes before trying again."
 }

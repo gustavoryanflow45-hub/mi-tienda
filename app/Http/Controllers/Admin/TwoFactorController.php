@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureAdminTwoFactor;
 use App\Services\TwoFactorService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * Segundo factor del panel admin.
@@ -19,6 +21,15 @@ class TwoFactorController extends Controller
 {
     /** Secreto en curso de inscripción; no toca la BD hasta confirmarlo. */
     public const SETUP_SESSION_KEY = 'admin_two_factor_setup_secret';
+
+    /**
+     * Fallos de código que cierran la sesión. Se cuentan por admin, no por
+     * sesión, así que volver a iniciar sesión no reinicia la cuenta: hasta
+     * que pasen LOCKOUT_SECONDS no hay más intentos.
+     */
+    public const MAX_FAILURES = 10;
+
+    public const LOCKOUT_SECONDS = 900;
 
     public function __construct(private TwoFactorService $twoFactor) {}
 
@@ -49,6 +60,10 @@ class TwoFactorController extends Controller
             return redirect()->route('admin.two-factor.challenge');
         }
 
+        if (RateLimiter::tooManyAttempts($this->failuresKey($user->id), self::MAX_FAILURES)) {
+            return $this->lockOut($request);
+        }
+
         $usedRecovery = false;
 
         if (! empty($data['code'])) {
@@ -58,9 +73,16 @@ class TwoFactorController extends Controller
         }
 
         if (! $valid) {
+            RateLimiter::hit($this->failuresKey($user->id), self::LOCKOUT_SECONDS);
+
+            if (RateLimiter::tooManyAttempts($this->failuresKey($user->id), self::MAX_FAILURES)) {
+                return $this->lockOut($request);
+            }
+
             return back()->withErrors(['code' => __('El código no es válido o ya fue usado.')]);
         }
 
+        RateLimiter::clear($this->failuresKey($user->id));
         $this->markPassed($request);
 
         if ($usedRecovery) {
@@ -124,6 +146,23 @@ class TwoFactorController extends Controller
         // Se muestran aquí y no se guardan en claro en ningún sitio.
         return response()->view('admin.two-factor.recovery-codes', compact('codes'))
             ->header('Cache-Control', 'no-store');
+    }
+
+    protected function failuresKey(int $userId): string
+    {
+        return 'admin-2fa-failures:'.$userId;
+    }
+
+    /** Demasiados códigos fallidos: fuera de la sesión, sin más intentos. */
+    protected function lockOut(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('admin.login')->withErrors([
+            'email' => __('Demasiados códigos incorrectos. Por seguridad se cerró la sesión; espera 15 minutos antes de volver a intentarlo.'),
+        ]);
     }
 
     protected function passed(Request $request): bool
