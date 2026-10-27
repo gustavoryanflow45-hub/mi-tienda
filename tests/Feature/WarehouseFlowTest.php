@@ -14,8 +14,8 @@ use Tests\TestCase;
 class WarehouseFlowTest extends TestCase
 {
     use BuildsCheckoutData;
-    use RefreshDatabase;
     use PassesAdminTwoFactor;
+    use RefreshDatabase;
 
     protected function makeAdmin(): User
     {

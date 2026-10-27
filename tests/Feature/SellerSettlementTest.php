@@ -21,8 +21,8 @@ use Tests\TestCase;
 class SellerSettlementTest extends TestCase
 {
     use BuildsCheckoutData;
-    use RefreshDatabase;
     use PassesAdminTwoFactor;
+    use RefreshDatabase;
 
     protected function setUp(): void
     {

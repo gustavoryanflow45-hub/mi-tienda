@@ -21,8 +21,8 @@ use Tests\TestCase;
 class VariantVisibilityTest extends TestCase
 {
     use BuildsCheckoutData;
-    use RefreshDatabase;
     use PassesAdminTwoFactor;
+    use RefreshDatabase;
 
     protected function makeAdmin(): User
     {

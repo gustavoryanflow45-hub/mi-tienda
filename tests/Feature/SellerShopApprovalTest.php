@@ -12,8 +12,8 @@ use Tests\TestCase;
 class SellerShopApprovalTest extends TestCase
 {
     use BuildsCheckoutData;
-    use RefreshDatabase;
     use PassesAdminTwoFactor;
+    use RefreshDatabase;
 
     public function test_pending_shop_cannot_reach_seller_panel(): void
     {

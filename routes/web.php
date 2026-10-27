@@ -1,39 +1,38 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\MyProductsController;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\BrandController;
-use App\Http\Controllers\WishlistController;
-use App\Http\Controllers\CompareController;
-use App\Http\Controllers\SearchController;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\Auth\PasswordResetController;
-use App\Http\Controllers\Auth\VerificationController;
-use App\Http\Controllers\PageController;
-use App\Http\Controllers\AdminSettlementController;
-use App\Http\Controllers\LanguageController;
-use App\Http\Controllers\CurrencyController;
-use App\Http\Controllers\SubscriberController;
-use App\Http\Controllers\AdminShopController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\SellerController;
-use App\Http\Controllers\SellerProductController;
-use App\Http\Controllers\SellerOrderController;
-use App\Http\Controllers\WalletController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\WarehouseController;
-use App\Http\Controllers\Payments\StripeController;
-use App\Http\Controllers\Payments\KushkiController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\TwoFactorController;
-
+use App\Http\Controllers\AdminSettlementController;
+use App\Http\Controllers\AdminShopController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\VerificationController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\CompareController;
+use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\MyProductsController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PageController;
+use App\Http\Controllers\Payments\KushkiController;
+use App\Http\Controllers\Payments\StripeController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SellerController;
+use App\Http\Controllers\SellerOrderController;
+use App\Http\Controllers\SellerProductController;
+use App\Http\Controllers\SubscriberController;
+use App\Http\Controllers\WalletController;
+use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\WishlistController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,8 +47,7 @@ Route::post('/home/section/{section}', [HomeController::class, 'section'])->name
 // Búsqueda
 Route::get('/search', [SearchController::class, 'index'])->name('search');
 Route::post('/ajax-search', [SearchController::class, 'ajax'])->name('search.ajax');
-//Route::post('/search/ajax', [SearchController::class, 'ajax'])->name('search.ajax');
-
+// Route::post('/search/ajax', [SearchController::class, 'ajax'])->name('search.ajax');
 
 // Categorías
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
@@ -72,14 +70,14 @@ Route::post('/cart/removeFromCart', [CartController::class, 'remove'])->name('ca
 Route::post('/cart/show-cart-modal', [CartController::class, 'modal'])->name('cart.modal');
 Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.update');
 
-//Chekout
+// Chekout
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
 Route::post('/checkout/shipping', [CheckoutController::class, 'saveShipping'])->name('checkout.shipping');
 
 // El pedido se crea aquí, al iniciar el cobro, a partir del carrito del
 // usuario autenticado: por eso ambos exigen sesión.
 Route::post('/payments/stripe/intent', [StripeController::class, 'createIntent'])->middleware('auth')->name('payments.stripe.intent');
-Route::post('/payments/kushki/charge',  [KushkiController::class, 'charge'])->middleware('auth')->name('payments.kushki.charge');
+Route::post('/payments/kushki/charge', [KushkiController::class, 'charge'])->middleware('auth')->name('payments.kushki.charge');
 Route::post('/webhooks/stripe', [StripeController::class, 'webhook']);
 Route::post('/webhooks/kushki', [KushkiController::class, 'webhook']);
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');

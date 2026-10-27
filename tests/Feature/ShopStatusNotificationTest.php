@@ -13,8 +13,8 @@ use Tests\TestCase;
 class ShopStatusNotificationTest extends TestCase
 {
     use BuildsCheckoutData;
-    use RefreshDatabase;
     use PassesAdminTwoFactor;
+    use RefreshDatabase;
 
     protected function makeAdmin(): User
     {

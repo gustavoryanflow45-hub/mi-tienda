@@ -12,8 +12,8 @@ use Tests\TestCase;
 class AdminShopApprovalTest extends TestCase
 {
     use BuildsCheckoutData;
-    use RefreshDatabase;
     use PassesAdminTwoFactor;
+    use RefreshDatabase;
 
     protected function makeAdmin(): User
     {

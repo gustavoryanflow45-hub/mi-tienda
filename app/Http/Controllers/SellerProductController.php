@@ -155,9 +155,9 @@ class SellerProductController extends Controller
         $resolver = new Product(['variant_type' => $request->input('variant_type')]);
         $resolver->setRelation('category', $category);
 
-        $allowedSizes  = $resolver->sizeOptions();
+        $allowedSizes = $resolver->sizeOptions();
         $allowedColors = array_keys(config('variants.colors', []));
-        $rules         = [];
+        $rules = [];
 
         foreach (array_keys($request->stocks ?? []) as $i) {
             $rules["stocks.$i.color"] = ['nullable', Rule::in($allowedColors)];
@@ -169,8 +169,8 @@ class SellerProductController extends Controller
 
         $request->validate($rules, [
             'stocks.*.size.prohibited' => "Este producto no maneja tallas. La categoría \"{$category->name}\" no las trae por defecto: elige un tipo de talla para ofrecerlas, o deja solo el color.",
-            'stocks.*.size.in'         => 'Talla no válida para el tipo de talla elegido.',
-            'stocks.*.color.in'        => 'Color no válido.',
+            'stocks.*.size.in' => 'Talla no válida para el tipo de talla elegido.',
+            'stocks.*.color.in' => 'Color no válido.',
         ]);
 
         // Dos filas con la misma combinación dejarían el stock ambiguo: al
@@ -196,11 +196,11 @@ class SellerProductController extends Controller
         foreach ($stocks as $stockData) {
             ProductStock::create([
                 'product_id' => $product->id,
-                'size'       => filled($stockData['size'] ?? null) ? $stockData['size'] : null,
-                'color'      => filled($stockData['color'] ?? null) ? $stockData['color'] : null,
-                'price'      => $stockData['price'],
-                'qty'        => $stockData['qty'],
-                'sku'        => $stockData['sku'] ?? null,
+                'size' => filled($stockData['size'] ?? null) ? $stockData['size'] : null,
+                'color' => filled($stockData['color'] ?? null) ? $stockData['color'] : null,
+                'price' => $stockData['price'],
+                'qty' => $stockData['qty'],
+                'sku' => $stockData['sku'] ?? null,
             ]);
         }
 
@@ -392,7 +392,7 @@ class SellerProductController extends Controller
                     'featured' => isset($d['featured']) ? (int) $d['featured'] : 0,
                 ]);
 
-                $size  = filled($d['size'] ?? null) ? trim($d['size']) : null;
+                $size = filled($d['size'] ?? null) ? trim($d['size']) : null;
                 $color = filled($d['color'] ?? null) ? Str::lower(trim($d['color'])) : null;
 
                 // Mismas reglas que el formulario: la talla se valida contra

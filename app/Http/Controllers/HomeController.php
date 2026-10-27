@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Banner;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class HomeController extends Controller
@@ -16,13 +15,13 @@ class HomeController extends Controller
     {
         // Solo raíces: sus subcategorías salen en el desplegable de cada una,
         // que el panel lateral monta únicamente cuando la cuenta es > 0.
-        $categories      = Category::active()->whereNull('parent_id')->orderBy('order')
+        $categories = Category::active()->whereNull('parent_id')->orderBy('order')
             ->withCount(['children as active_children_count' => fn ($q) => $q->where('status', 1)])
             ->get();
-        $top_categories  = Category::active()->orderBy('order')->take(10)->get();
-        $top_brands      = Brand::active()->orderBy('order')->take(10)->get();
-        $banners         = Banner::active()->where('type', 'slider')->orderBy('order')->get();
-        $new_products    = Product::active()->latest()->take(12)->get();
+        $top_categories = Category::active()->orderBy('order')->take(10)->get();
+        $top_brands = Brand::active()->orderBy('order')->take(10)->get();
+        $banners = Banner::active()->where('type', 'slider')->orderBy('order')->get();
+        $new_products = Product::active()->latest()->take(12)->get();
 
         // Productos destacados para la sección del home
         $featured_products = Product::active()
@@ -35,8 +34,8 @@ class HomeController extends Controller
         // se traen aquí para que las imágenes vengan en el HTML inicial
         // y no haya que esperar a un round-trip extra para verlas.
         $best_selling_products = Product::active()->orderBy('num_of_sale', 'desc')->take(12)->get();
-        $home_categories       = Category::active()->whereNull('parent_id')->take(6)->get();
-        $best_seller_products  = Product::active()->orderBy('rating', 'desc')->take(12)->get();
+        $home_categories = Category::active()->whereNull('parent_id')->take(6)->get();
+        $best_seller_products = Product::active()->orderBy('rating', 'desc')->take(12)->get();
 
         // Una sección por cada categoría marcada como destacada
         $featured_categories = Category::active()->featured()->orderBy('order')->get()
@@ -61,15 +60,19 @@ class HomeController extends Controller
         switch ($section) {
             case 'featured':
                 $products = Product::active()->where('featured', 1)->take(12)->get();
+
                 return view('partials.home-sections.featured', compact('products'));
             case 'best_selling':
                 $products = Product::active()->orderBy('num_of_sale', 'desc')->take(12)->get();
+
                 return view('partials.home-sections.best_selling', compact('products'));
             case 'home_categories':
                 $categories = Category::active()->whereNull('parent_id')->take(6)->get();
+
                 return view('partials.home-sections.home_categories', compact('categories'));
             case 'best_sellers':
                 $products = Product::active()->orderBy('rating', 'desc')->take(12)->get();
+
                 return view('partials.home-sections.best_sellers', compact('products'));
             default:
                 // Cualquier otro valor se interpreta como el slug de una
@@ -115,7 +118,7 @@ class HomeController extends Controller
 
         return response()->json([
             'published' => $product->published,
-            'message'   => $product->published ? 'Producto publicado' : 'Producto despublicado',
+            'message' => $product->published ? 'Producto publicado' : 'Producto despublicado',
         ]);
     }
 }

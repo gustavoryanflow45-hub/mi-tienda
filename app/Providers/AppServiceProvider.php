@@ -16,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(GeolocationService::class);
 
-        $this->app->singleton(StripeService::class, fn() => new StripeService(
+        $this->app->singleton(StripeService::class, fn () => new StripeService(
             secret: config('services.stripe.secret'),
         ));
     }

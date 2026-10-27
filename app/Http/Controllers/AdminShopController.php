@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Shop;
-use App\Services\AuditLog;
 use App\Notifications\ShopStatusUpdatedNotification;
+use App\Services\AuditLog;
 use Illuminate\Http\Request;
 
 class AdminShopController extends Controller

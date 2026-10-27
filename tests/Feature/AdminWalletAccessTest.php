@@ -13,8 +13,8 @@ use Tests\TestCase;
 class AdminWalletAccessTest extends TestCase
 {
     use BuildsCheckoutData;
-    use RefreshDatabase;
     use PassesAdminTwoFactor;
+    use RefreshDatabase;
 
     protected function makeAdmin(): User
     {
