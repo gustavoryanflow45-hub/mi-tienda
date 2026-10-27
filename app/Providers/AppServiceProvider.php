@@ -26,6 +26,57 @@ class AppServiceProvider extends ServiceProvider
         $this->configureAdminRateLimiting();
         $this->configurePaymentRateLimiting();
         $this->configureStorefrontRateLimiting();
+        $this->configureAccountRateLimiting();
+    }
+
+    /**
+     * Formularios públicos de la tienda: login, registro, alta de tienda y
+     * boletín. Son formularios clásicos, así que al pasarse vuelven atrás
+     * con lo escrito (sin contraseñas ni archivos) y el aviso como error del
+     * campo de correo; el boletín vive en el pie, que no pinta errores, y usa
+     * el flash 'error' global. Los límites por hora frenan las altas masivas
+     * sin estorbar a varias personas detrás de la misma IP.
+     */
+    protected function configureAccountRateLimiting(): void
+    {
+        $tooMany = fn (?string $field) => function (Request $request, array $headers) use ($field) {
+            $message = __('Demasiados intentos. Espera :seconds segundos y vuelve a probar.', [
+                'seconds' => $headers['Retry-After'] ?? 60,
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['status' => 'error', 'message' => $message], 429, $headers);
+            }
+
+            $back = back()->withInput($request->except(['password', 'password_confirmation']));
+
+            return $field ? $back->withErrors([$field => $message]) : $back->with('error', $message);
+        };
+
+        // Igual que el login del panel: adivinar la contraseña de una cuenta
+        // y probar muchos correos desde la misma máquina.
+        RateLimiter::for('login', fn (Request $request) => [
+            Limit::perMinute(5)
+                ->by('email:'.Str::lower((string) $request->input('email')).'|'.$request->ip())
+                ->response($tooMany('email')),
+            Limit::perMinute(20)->by('ip:'.$request->ip())->response($tooMany('email')),
+        ]);
+
+        RateLimiter::for('register', fn (Request $request) => [
+            Limit::perMinute(5)->by('min:'.$request->ip())->response($tooMany('email')),
+            Limit::perHour(20)->by('hour:'.$request->ip())->response($tooMany('email')),
+        ]);
+
+        // Crea un usuario y sube documentos de identidad en cada envío.
+        RateLimiter::for('shop-register', fn (Request $request) => [
+            Limit::perMinute(3)->by('min:'.$request->ip())->response($tooMany('email')),
+            Limit::perHour(10)->by('hour:'.$request->ip())->response($tooMany('email')),
+        ]);
+
+        RateLimiter::for('subscribe', fn (Request $request) => [
+            Limit::perMinute(5)->by('min:'.$request->ip())->response($tooMany(null)),
+            Limit::perHour(30)->by('hour:'.$request->ip())->response($tooMany(null)),
+        ]);
     }
 
     /**

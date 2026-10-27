@@ -100,7 +100,7 @@ Route::get('/track-your-order', [PageController::class, 'trackOrder'])->name('tr
 Route::get('/affiliate', [PageController::class, 'affiliate'])->name('affiliate');
 
 // Newsletter
-Route::post('/subscribers', [SubscriberController::class, 'store'])->name('subscribers.store');
+Route::post('/subscribers', [SubscriberController::class, 'store'])->middleware('throttle:subscribe')->name('subscribers.store');
 
 // Idioma / Moneda
 Route::post('/language', [LanguageController::class, 'change'])->name('language.change');
@@ -108,7 +108,7 @@ Route::post('/currency', [CurrencyController::class, 'change'])->name('currency.
 
 // Registro de tienda (público — el usuario aún no está logueado)
 Route::get('/shops/create', [SellerController::class, 'create'])->name('shops.create');
-Route::post('/shops/create', [SellerController::class, 'register'])->name('seller.register');
+Route::post('/shops/create', [SellerController::class, 'register'])->middleware('throttle:shop-register')->name('seller.register');
 
 /*
 |--------------------------------------------------------------------------
@@ -117,9 +117,9 @@ Route::post('/shops/create', [SellerController::class, 'register'])->name('selle
 */
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login']);
+    Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:login');
     Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-    Route::post('/register', [RegisterController::class, 'register']);
+    Route::post('/register', [RegisterController::class, 'register'])->middleware('throttle:register');
     // Recuperación de contraseña (broker de Laravel, token en password_reset_tokens).
     Route::get('/password/reset', [PasswordResetController::class, 'request'])->name('password.request');
     Route::post('/password/email', [PasswordResetController::class, 'email'])
