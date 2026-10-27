@@ -25,6 +25,43 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureAdminRateLimiting();
         $this->configurePaymentRateLimiting();
+        $this->configureStorefrontRateLimiting();
+    }
+
+    /**
+     * Búsqueda (pública, LIKE sobre products), carrito y checkout (escriben
+     * en la BD en cada llamada). Los límites dejan de sobra el uso normal:
+     * el autocompletado ya espera 250 ms entre pulsaciones y el mini-carrito
+     * se recarga en cada página.
+     *
+     * Casi todo lo llaman por AJAX (jQuery o fetch sin cabeceras AJAX), así
+     * que la respuesta es JSON con 'status' y 'message', salvo las dos
+     * páginas completas, /cart y /checkout, que muestran errors/429.
+     */
+    protected function configureStorefrontRateLimiting(): void
+    {
+        $tooMany = function (Request $request, array $headers) {
+            $message = __('Demasiadas peticiones. Espera :seconds segundos y vuelve a probar.', [
+                'seconds' => $headers['Retry-After'] ?? 60,
+            ]);
+
+            if ($request->isMethod('GET') && $request->routeIs('cart.index', 'checkout')) {
+                return response()->view('errors.429', ['message' => $message], 429, $headers);
+            }
+
+            return response()->json(['status' => 'error', 'message' => $message], 429, $headers);
+        };
+
+        $byUser = fn (Request $request) => 'user:'.($request->user()?->id ?? $request->ip());
+
+        RateLimiter::for('search', fn (Request $request) => Limit::perMinute(60)
+            ->by('ip:'.$request->ip())->response($tooMany));
+
+        RateLimiter::for('cart', fn (Request $request) => Limit::perMinute(120)
+            ->by($byUser($request))->response($tooMany));
+
+        RateLimiter::for('checkout', fn (Request $request) => Limit::perMinute(30)
+            ->by($byUser($request))->response($tooMany));
     }
 
     /**

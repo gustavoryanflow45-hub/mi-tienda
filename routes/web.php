@@ -46,7 +46,7 @@ Route::post('/home/section/{section}', [HomeController::class, 'section'])->name
 
 // Búsqueda
 Route::get('/search', [SearchController::class, 'index'])->name('search');
-Route::post('/ajax-search', [SearchController::class, 'ajax'])->name('search.ajax');
+Route::post('/ajax-search', [SearchController::class, 'ajax'])->middleware('throttle:search')->name('search.ajax');
 // Route::post('/search/ajax', [SearchController::class, 'ajax'])->name('search.ajax');
 
 // Categorías
@@ -62,17 +62,22 @@ Route::get('/product/{slug}', [ProductController::class, 'show'])->name('product
 Route::get('/brands', [BrandController::class, 'index'])->name('brands.index');
 Route::get('/brand/{slug}', [BrandController::class, 'show'])->name('brands.show');
 
-// Carrito
-Route::get('/cart/mini', [CartController::class, 'mini'])->name('cart.mini');
-Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-Route::post('/cart/addtocart', [CartController::class, 'add'])->name('cart.add');
-Route::post('/cart/removeFromCart', [CartController::class, 'remove'])->name('cart.remove');
-Route::post('/cart/show-cart-modal', [CartController::class, 'modal'])->name('cart.modal');
-Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.update');
+// Carrito — límites en AppServiceProvider::configureStorefrontRateLimiting()
+Route::middleware('throttle:cart')->group(function () {
+    Route::get('/cart/mini', [CartController::class, 'mini'])->name('cart.mini');
+    Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+    Route::post('/cart/addtocart', [CartController::class, 'add'])->name('cart.add');
+    Route::post('/cart/removeFromCart', [CartController::class, 'remove'])->name('cart.remove');
+    Route::post('/cart/show-cart-modal', [CartController::class, 'modal'])->name('cart.modal');
+    Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.update');
+});
 
 // Chekout
-Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
-Route::post('/checkout/shipping', [CheckoutController::class, 'saveShipping'])->name('checkout.shipping');
+// Cada visita crea o sincroniza el pedido pendiente: throttle:checkout.
+Route::middleware('throttle:checkout')->group(function () {
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
+    Route::post('/checkout/shipping', [CheckoutController::class, 'saveShipping'])->name('checkout.shipping');
+});
 
 // El pedido se crea aquí, al iniciar el cobro, a partir del carrito del
 // usuario autenticado: por eso ambos exigen sesión. 'throttle:payments'
