@@ -7,8 +7,6 @@ use App\Models\Order;
 use App\Services\CheckoutService;
 use App\Services\Payments\StripeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\Client\Request as HttpRequest;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Stripe\PaymentIntent;
 use Tests\Concerns\BuildsCheckoutData;
@@ -18,95 +16,6 @@ class PaymentGatewaysTest extends TestCase
 {
     use BuildsCheckoutData;
     use RefreshDatabase;
-
-    // ── Kushki ───────────────────────────────────────────────────
-
-    private function kushkiPayload(): array
-    {
-        return [
-            'token' => 'tok_test',
-            'document_type' => 'CC',
-            'document_number' => '0102030405',
-            'email' => 'cliente@example.com',
-            'first_name' => 'Ana',
-            'last_name' => 'Pérez',
-        ];
-    }
-
-    public function test_kushki_charge_marks_order_paid_with_correct_iva_split(): void
-    {
-        Notification::fake();
-        Http::fake([
-            'api-uat.kushkipagos.com/*' => Http::response(['ticketNumber' => 'TK-123'], 200),
-        ]);
-
-        $customer = $this->makeCustomer();
-        $seller = $this->makeSeller();
-        $order = $this->makePendingOrder($customer, $seller, 115.00);
-
-        $this->actingAs($customer)
-            ->withSession([CheckoutService::ORDER_SESSION_KEY => $order->id])
-            ->postJson('/payments/kushki/charge', $this->kushkiPayload())
-            ->assertOk()
-            ->assertJson(['status' => 'success', 'ticket' => 'TK-123']);
-
-        // With ec_iva_rate = 0.15, a 115.00 total splits into 100.00 base + 15.00 IVA
-        Http::assertSent(function (HttpRequest $request) {
-            return str_contains($request->url(), '/card/v1/charges')
-                && $request['amount']['subtotalIva'] === 100.00
-                && $request['amount']['iva'] === 15.00
-                && $request['amount']['currency'] === 'USD';
-        });
-
-        $order->refresh();
-        $this->assertTrue($order->isPaid());
-        $this->assertSame('kushki', $order->payment_gateway);
-        $this->assertSame('TK-123', $order->payment_reference);
-        $this->assertSame(0, Cart::where('user_id', $customer->id)->count());
-    }
-
-    public function test_kushki_rejected_charge_returns_422_and_keeps_order_unpaid(): void
-    {
-        Http::fake([
-            'api-uat.kushkipagos.com/*' => Http::response(['message' => 'Tarjeta rechazada'], 402),
-        ]);
-
-        $customer = $this->makeCustomer();
-        $order = $this->makePendingOrder($customer, $this->makeSeller());
-
-        $this->actingAs($customer)
-            ->withSession([CheckoutService::ORDER_SESSION_KEY => $order->id])
-            ->postJson('/payments/kushki/charge', $this->kushkiPayload())
-            ->assertStatus(422)
-            ->assertJson(['status' => 'error', 'message' => 'Tarjeta rechazada']);
-
-        $this->assertFalse($order->refresh()->isPaid());
-    }
-
-    public function test_kushki_charge_with_an_empty_cart_is_rejected(): void
-    {
-        Http::fake();
-
-        $this->actingAs($this->makeCustomer())
-            ->postJson('/payments/kushki/charge', $this->kushkiPayload())
-            ->assertStatus(422);
-
-        Http::assertNothingSent();
-    }
-
-    public function test_kushki_webhook_marks_order_paid(): void
-    {
-        $order = $this->makePendingOrder($this->makeCustomer(), $this->makeSeller());
-
-        $this->postJson('/webhooks/kushki', [
-            'ticketNumber' => 'TK-777',
-            'metadata' => ['order_id' => $order->id],
-        ])->assertOk();
-
-        $order->refresh();
-        $this->assertTrue($order->isPaid());
-        $this->assertSame('TK-777', $order->payment_reference);
-    }
 
     // ── Stripe ───────────────────────────────────────────────────
 
@@ -405,7 +314,7 @@ class PaymentGatewaysTest extends TestCase
         $detail->update(['quantity' => 5]);
         $detail->product->stocks()->create(['variant' => null, 'qty' => 2, 'price' => 100]);
 
-        $order->markPaid('kushki', 'TK-stock');
+        $order->markPaid('payphone', 'PP-stock');
 
         $this->assertSame(0, $detail->product->stocks()->first()->qty);
     }

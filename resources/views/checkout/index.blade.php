@@ -38,6 +38,10 @@
     #payment-error { margin-top: 12px; font-size: .82rem; color: #e74c3c; min-height: 18px; }
 
     .secure-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 14px; font-size: .75rem; color: #aaa; }
+    .btn-pay-alt { background: #fff; color: #679941; border: 2px solid #679941; margin-top: 10px; }
+    .btn-pay-alt:hover { background: #f3f8ee; }
+    .payphone-intro { font-size: .85rem; color: #666; margin-bottom: 0; }
+    .gateway-switch { display: block; text-align: center; margin-top: 12px; font-size: .78rem; color: #888; }
     .test-badge { display: inline-block; margin-bottom: 14px; font-size: .72rem; font-weight: 700; color: #8a6d00; background: #fff7dc; border: 1px solid #f0e2a8; padding: 3px 10px; border-radius: 99px; }
 
     /* Datos de envío */
@@ -129,26 +133,50 @@
                 <div class="checkout-card">
                     <h3>{{ __('Datos de pago') }}</h3>
 
-                    @if(str_starts_with($stripeKey ?? '', 'pk_test_'))
-                        <span class="test-badge">{{ __('Modo prueba — tarjeta 4242 4242 4242 4242, fecha futura, CVC 123') }}</span>
-                    @endif
+                    @if($gateway === 'payphone')
+                        {{-- PayPhone: el pago ocurre en su página; PayPhoneController
+                             prepara el cobro y lo confirma a la vuelta. --}}
+                        <p class="payphone-intro">{{ __('Pagarás en la página segura de PayPhone con tarjeta de crédito o débito, o con el saldo de tu app PayPhone. Al terminar volverás aquí.') }}</p>
 
-                    <div id="payment-element">
-                        <div class="stripe-loading">
-                            <div class="spinner"></div> {{ __('Cargando formulario de pago seguro…') }}
+                        <button id="pay-button" class="btn-pay" type="button" data-payphone-method="card">
+                            {{ __('Pagar :amount con tarjeta', ['amount' => '$'.number_format($total, 2)]) }}
+                        </button>
+                        <button class="btn-pay btn-pay-alt" type="button" data-payphone-method="app">
+                            {{ __('Pagar con la app PayPhone') }}
+                        </button>
+
+                        <p id="payment-error" role="alert" aria-live="polite"></p>
+
+                        <div class="secure-note">
+                            <i class="las la-shield-alt"></i>
+                            {{ __('Procesado por PayPhone — tu tarjeta nunca pasa por nuestros servidores') }}
                         </div>
-                    </div>
 
-                    <button id="pay-button" class="btn-pay" type="button" disabled>
-                        {{ __('Pagar') }} ${{ number_format($total, 2) }}
-                    </button>
+                        <a class="gateway-switch" href="{{ route('checkout', ['gateway' => 'stripe']) }}">{{ __('¿Pagas desde fuera de Ecuador? Paga con Stripe') }}</a>
+                    @else
+                        @if(str_starts_with($stripeKey ?? '', 'pk_test_'))
+                            <span class="test-badge">{{ __('Modo prueba — tarjeta 4242 4242 4242 4242, fecha futura, CVC 123') }}</span>
+                        @endif
 
-                    <p id="payment-error" role="alert" aria-live="polite"></p>
+                        <div id="payment-element">
+                            <div class="stripe-loading">
+                                <div class="spinner"></div> {{ __('Cargando formulario de pago seguro…') }}
+                            </div>
+                        </div>
 
-                    <div class="secure-note">
-                        <i class="las la-shield-alt"></i>
-                        {{ __('Procesado por Stripe — tu tarjeta nunca pasa por nuestros servidores') }}
-                    </div>
+                        <button id="pay-button" class="btn-pay" type="button" disabled>
+                            {{ __('Pagar') }} ${{ number_format($total, 2) }}
+                        </button>
+
+                        <p id="payment-error" role="alert" aria-live="polite"></p>
+
+                        <div class="secure-note">
+                            <i class="las la-shield-alt"></i>
+                            {{ __('Procesado por Stripe — tu tarjeta nunca pasa por nuestros servidores') }}
+                        </div>
+
+                        <a class="gateway-switch" href="{{ route('checkout', ['gateway' => 'payphone']) }}">{{ __('¿Estás en Ecuador? Paga con PayPhone') }}</a>
+                    @endif
                 </div>
             </div>
 
@@ -212,47 +240,15 @@
 @endsection
 
 @section('extra_js')
+@if($gateway !== 'payphone')
 <script src="https://js.stripe.com/v3/"></script>
+@endif
 <script>
 (async function () {
     const CSRF      = document.querySelector('meta[name="csrf-token"]').content;
-    const stripeKey = @json($stripeKey);
-    const amount    = @json((int) round($total * 100));
-    const payLabel  = @json(__('Pagar')) + ' ${{ number_format($total, 2) }}';
+    const gateway   = @json($gateway);
     const errorBox  = document.getElementById('payment-error');
     const payBtn    = document.getElementById('pay-button');
-
-    if (!stripeKey) {
-        // Si esto aparece: falta STRIPE_KEY en .env → php artisan config:clear
-        errorBox.textContent = @json(__('Configuración de pagos incompleta. Contacta al administrador.'));
-        console.error('STRIPE_KEY es null: revisa .env y ejecuta php artisan config:clear');
-        document.querySelector('.stripe-loading')?.remove();
-        return;
-    }
-
-    const stripe = Stripe(stripeKey);
-
-    // Elements en modo diferido: el formulario se monta solo con el monto, sin
-    // PaymentIntent. El intent —y con él el pedido— nacen al pulsar "Pagar",
-    // así que abrir el checkout y volver atrás no registra nada.
-    const elements = stripe.elements({
-        mode: 'payment',
-        amount: amount,
-        currency: 'usd',
-        appearance: {
-            theme: 'stripe',
-            variables: {
-                colorPrimary: '#679941',
-                colorDanger: '#e74c3c',
-                borderRadius: '6px',
-                fontSizeBase: '14px',
-            },
-        },
-    });
-
-    const paymentElement = elements.create('payment');
-    paymentElement.mount('#payment-element');
-    paymentElement.on('ready', () => { payBtn.disabled = false; });
 
     // ── Datos de envío: se validan y guardan antes de pagar ──
     const shipForm     = document.getElementById('shipping-form');
@@ -300,6 +296,82 @@
             throw new Error(data.message || @json(__('No se pudieron guardar los datos de envío.')));
         }
     }
+
+    // ── PayPhone: se prepara el cobro y se va a su página de pago ──
+    if (gateway === 'payphone') {
+        const buttons = document.querySelectorAll('[data-payphone-method]');
+
+        buttons.forEach(btn => {
+            const label = btn.textContent;
+
+            btn.addEventListener('click', async () => {
+                buttons.forEach(b => b.disabled = true);
+                btn.textContent = @json(__('Procesando…'));
+                errorBox.textContent = '';
+
+                try {
+                    await saveShipping();
+
+                    const res  = await fetch(@json(route('payments.payphone.prepare')), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                        body: JSON.stringify({ method: btn.dataset.payphoneMethod }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.redirectUrl) {
+                        throw new Error(data.message || @json(__('No se pudo iniciar el pago.')));
+                    }
+
+                    // Página de PayPhone, nunca en iframe: lo prohíben sus condiciones.
+                    window.location.href = data.redirectUrl;
+                } catch (e) {
+                    errorBox.textContent = e.message;
+                    buttons.forEach(b => b.disabled = false);
+                    btn.textContent = label;
+                    shipForm.querySelector('input.invalid')?.focus();
+                }
+            });
+        });
+
+        return;
+    }
+
+    // ── Stripe ──
+    const stripeKey = @json($stripeKey);
+    const amount    = @json((int) round($total * 100));
+    const payLabel  = @json(__('Pagar')) + ' ${{ number_format($total, 2) }}';
+
+    if (!stripeKey) {
+        // Si esto aparece: falta STRIPE_KEY en .env → php artisan config:clear
+        errorBox.textContent = @json(__('Configuración de pagos incompleta. Contacta al administrador.'));
+        console.error('STRIPE_KEY es null: revisa .env y ejecuta php artisan config:clear');
+        document.querySelector('.stripe-loading')?.remove();
+        return;
+    }
+
+    const stripe = Stripe(stripeKey);
+
+    // Elements en modo diferido: el formulario se monta solo con el monto, sin
+    // PaymentIntent. El intent —y con él el pedido— nacen al pulsar "Pagar",
+    // así que abrir el checkout y volver atrás no registra nada.
+    const elements = stripe.elements({
+        mode: 'payment',
+        amount: amount,
+        currency: 'usd',
+        appearance: {
+            theme: 'stripe',
+            variables: {
+                colorPrimary: '#679941',
+                colorDanger: '#e74c3c',
+                borderRadius: '6px',
+                fontSizeBase: '14px',
+            },
+        },
+    });
+
+    const paymentElement = elements.create('payment');
+    paymentElement.mount('#payment-element');
+    paymentElement.on('ready', () => { payBtn.disabled = false; });
 
     /** Crea el pedido a partir del carrito y devuelve el secret del intent. */
     async function startPayment() {

@@ -36,7 +36,7 @@ class CheckoutController extends Controller
         $totals = $this->checkout->totals($cartItems);
         $shipping = $this->checkout->shippingSnapshot($user);
 
-        $gateway = in_array($request->query('gateway'), ['stripe', 'kushki'])
+        $gateway = in_array($request->query('gateway'), ['stripe', 'payphone'])
             ? $request->query('gateway')
             : $this->geo->gatewayFor($request);
 
@@ -49,8 +49,6 @@ class CheckoutController extends Controller
             'total' => $totals['grand_total'],
             'gateway' => $gateway,
             'stripeKey' => config('services.stripe.key'),
-            'kushkiPublicId' => config('services.kushki.public_id'),
-            'kushkiInTest' => config('services.kushki.env') !== 'production',
             'detectedCountry' => $this->geo->countryCode($request),
         ]);
     }

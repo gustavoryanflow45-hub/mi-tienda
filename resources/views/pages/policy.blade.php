@@ -66,7 +66,7 @@
 
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">7. Precios, pagos y facturación</h3>
                 <p>Los precios se expresan en dólares de los Estados Unidos de América e incluyen el IVA vigente en Ecuador cuando corresponde. Antes de pagar se muestra el desglose del pedido: subtotal, costo de envío e impuestos.</p>
-                <p>Los pagos se procesan a través de pasarelas autorizadas —Kushki para Ecuador y Stripe para el resto de países—, que operan bajo sus propias condiciones y estándares de seguridad. guStore no almacena números de tarjeta. El pedido se confirma únicamente cuando la pasarela aprueba la transacción; un pago rechazado o pendiente no genera obligación de entrega.</p>
+                <p>Los pagos se procesan a través de pasarelas autorizadas —PayPhone para Ecuador y Stripe para el resto de países—, que operan bajo sus propias condiciones y estándares de seguridad. guStore no almacena números de tarjeta. El pedido se confirma únicamente cuando la pasarela aprueba la transacción; un pago rechazado o pendiente no genera obligación de entrega.</p>
                 <p>guStore puede descontar de cada venta la comisión y los costos de procesamiento acordados con el vendedor. Los saldos a favor se acreditan en la billetera de la tienda y pueden retirarse conforme al procedimiento publicado en el panel de vendedor.</p>
 
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">8. Envíos y entregas</h3>
@@ -133,7 +133,7 @@
                 <p>Si la devolución responde a un cambio de opinión, el costo del envío de retorno corre por tu cuenta y el envío original no se reembolsa.</p>
 
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">7. Reembolsos</h3>
-                <p>Una vez que la tienda reciba el producto y verifique su estado, el reembolso se emite dentro de los 10 días hábiles siguientes por el mismo medio de pago que usaste, a través de Kushki o Stripe según corresponda. El tiempo que tarde en reflejarse en tu estado de cuenta depende de tu banco o del emisor de la tarjeta.</p>
+                <p>Una vez que la tienda reciba el producto y verifique su estado, el reembolso se emite dentro de los 10 días hábiles siguientes por el mismo medio de pago que usaste, a través de PayPhone o Stripe según corresponda. El tiempo que tarde en reflejarse en tu estado de cuenta depende de tu banco o del emisor de la tarjeta.</p>
                 <p>Si la devolución es parcial, se reembolsa el valor de los productos devueltos y los impuestos correspondientes.</p>
 
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">8. Cambios</h3>
@@ -198,7 +198,7 @@
                 <p><strong>De tu cuenta:</strong> nombre, correo electrónico, teléfono, foto de perfil y contraseña, que se almacena cifrada y que nadie —tampoco nosotros— puede leer.</p>
                 <p><strong>De tus compras:</strong> los productos que pides, la dirección y los datos de contacto para la entrega, el estado del pedido y el historial de compras.</p>
                 <p><strong>Si registras una tienda:</strong> el nombre, correo y dirección del negocio, y las imágenes del documento de identidad que nos envías para verificar quién eres. Estas imágenes se usan únicamente para aprobar o rechazar la tienda, y solo el personal autorizado de guStore puede consultarlas.</p>
-                <p><strong>De los pagos:</strong> el monto, la fecha, el estado y la referencia que devuelve la pasarela. <strong>No almacenamos números de tarjeta ni códigos de seguridad</strong>: esos datos viajan directamente a Kushki o Stripe. Si usas la billetera, tratamos además los datos de la cuenta de destino y los comprobantes que adjuntes.</p>
+                <p><strong>De los pagos:</strong> el monto, la fecha, el estado y la referencia que devuelve la pasarela. <strong>No almacenamos números de tarjeta ni códigos de seguridad</strong>: esos datos viajan directamente a PayPhone o Stripe. Si usas la billetera, tratamos además los datos de la cuenta de destino y los comprobantes que adjuntes.</p>
                 <p><strong>Técnicos:</strong> dirección IP, navegador, país aproximado deducido de la IP —que usamos para elegir la pasarela de pago— y las cookies necesarias para mantener tu sesión y tu idioma.</p>
 
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">3. Para qué los usamos</h3>
@@ -214,7 +214,7 @@
 
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">4. Con quién los compartimos</h3>
                 <p>Cuando compras, entregamos a la tienda vendedora los datos que necesita para prepararte y enviarte el pedido: tu nombre, teléfono, correo y dirección de entrega. El vendedor solo puede usarlos para esa venta y su posterior servicio postventa.</p>
-                <p>También los compartimos con las pasarelas de pago Kushki y Stripe, con nuestro proveedor de correo electrónico, con las empresas de transporte encargadas de la entrega, y con autoridades competentes cuando la ley lo exija. No vendemos datos personales ni los cedemos con fines publicitarios de terceros.</p>
+                <p>También los compartimos con las pasarelas de pago PayPhone y Stripe, con nuestro proveedor de correo electrónico, con las empresas de transporte encargadas de la entrega, y con autoridades competentes cuando la ley lo exija. No vendemos datos personales ni los cedemos con fines publicitarios de terceros.</p>
 
                 <h3 style="font-size:1rem; font-weight:700; margin:20px 0 8px;">5. Transferencias internacionales</h3>
                 <p>Algunos de estos proveedores están fuera del Ecuador, de modo que ciertos datos pueden tratarse en el exterior. En esos casos exigimos que apliquen niveles de protección equivalentes a los que establece la ley ecuatoriana.</p>

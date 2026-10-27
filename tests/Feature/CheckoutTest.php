@@ -259,15 +259,15 @@ class CheckoutTest extends TestCase
         $this->assertFalse($order->refresh()->isPaid());
     }
 
-    public function test_gateway_defaults_to_kushki_on_localhost_and_accepts_override(): void
+    public function test_gateway_defaults_to_payphone_on_localhost_and_accepts_override(): void
     {
         $customer = $this->makeCustomer();
         $this->addToCart($customer, $this->makeProduct($this->makeSeller()));
 
-        // In non-production, localhost resolves to EC → Kushki
+        // In non-production, localhost resolves to EC → PayPhone
         $this->actingAs($customer)
             ->get('/checkout')
-            ->assertViewHas('gateway', 'kushki')
+            ->assertViewHas('gateway', 'payphone')
             ->assertViewHas('detectedCountry', 'EC');
 
         $this->actingAs($customer)
