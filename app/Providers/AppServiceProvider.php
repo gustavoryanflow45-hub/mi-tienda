@@ -24,6 +24,30 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureAdminRateLimiting();
+        $this->configurePaymentRateLimiting();
+    }
+
+    /**
+     * Iniciar un cobro (PaymentIntent de Stripe, cargo de Kushki) llama a la
+     * pasarela: sin límite, esas rutas sirven para probar tarjetas robadas en
+     * masa. 10 por minuto por usuario de sobra para quien reintenta un pago,
+     * y 30 por IP para quien rota cuentas desde la misma máquina. Responde
+     * JSON con 'message' (lo que muestra el checkout) y 'status' (formato de
+     * Kushki). Los webhooks no llevan límite: los llama la pasarela.
+     */
+    protected function configurePaymentRateLimiting(): void
+    {
+        $tooMany = fn (Request $request, array $headers) => response()->json([
+            'status' => 'error',
+            'message' => __('Demasiados intentos de pago. Espera :seconds segundos y vuelve a probar.', [
+                'seconds' => $headers['Retry-After'] ?? 60,
+            ]),
+        ], 429, $headers);
+
+        RateLimiter::for('payments', fn (Request $request) => [
+            Limit::perMinute(10)->by('user:'.($request->user()?->id ?? $request->ip()))->response($tooMany),
+            Limit::perMinute(30)->by('ip:'.$request->ip())->response($tooMany),
+        ]);
     }
 
     /**
