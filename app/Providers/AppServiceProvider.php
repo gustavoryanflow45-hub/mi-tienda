@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\GeolocationService;
+use App\Services\Payments\PayPhoneService;
 use App\Services\Payments\StripeService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -18,6 +19,11 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(StripeService::class, fn () => new StripeService(
             secret: config('services.stripe.secret'),
+        ));
+
+        $this->app->singleton(PayPhoneService::class, fn () => new PayPhoneService(
+            token: config('services.payphone.token'),
+            storeId: config('services.payphone.store_id'),
         ));
     }
 
@@ -116,12 +122,13 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Iniciar un cobro (PaymentIntent de Stripe, cargo de Kushki) llama a la
+     * Iniciar un cobro (PaymentIntent de Stripe, pago de PayPhone) llama a la
      * pasarela: sin límite, esas rutas sirven para probar tarjetas robadas en
      * masa. 10 por minuto por usuario de sobra para quien reintenta un pago,
      * y 30 por IP para quien rota cuentas desde la misma máquina. Responde
-     * JSON con 'message' (lo que muestra el checkout) y 'status' (formato de
-     * Kushki). Los webhooks no llevan límite: los llama la pasarela.
+     * JSON con 'message' (lo que muestra el checkout) y 'status'. El webhook
+     * de Stripe y la vuelta de PayPhone no llevan límite: confirmar un pago
+     * ya hecho no debe bloquearse nunca.
      */
     protected function configurePaymentRateLimiting(): void
     {

@@ -17,11 +17,19 @@ class PaymentThrottleTest extends TestCase
     use BuildsCheckoutData;
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Con credenciales, el carrito vacío responde 422 sin tocar la red.
+        config(['services.payphone.token' => 't', 'services.payphone.store_id' => 's']);
+    }
+
     public static function paymentRoutes(): array
     {
         return [
             'stripe' => ['/payments/stripe/intent'],
-            'kushki' => ['/payments/kushki/charge'],
+            'payphone' => ['/payments/payphone/prepare'],
         ];
     }
 
@@ -54,16 +62,17 @@ class PaymentThrottleTest extends TestCase
 
         for ($i = 0; $i < 5; $i++) {
             $this->actingAs($customer)->postJson('/payments/stripe/intent');
-            $this->actingAs($customer)->postJson('/payments/kushki/charge');
+            $this->actingAs($customer)->postJson('/payments/payphone/prepare');
         }
 
         $this->actingAs($customer)->postJson('/payments/stripe/intent')->assertStatus(429);
     }
 
-    public function test_webhooks_are_not_throttled(): void
+    public function test_payment_confirmations_are_not_throttled(): void
     {
-        foreach (['/webhooks/stripe', '/webhooks/kushki'] as $uri) {
-            $route = $this->app['router']->getRoutes()->match(request()->create($uri, 'POST'));
+        foreach (['POST /webhooks/stripe', 'GET /payments/payphone/return'] as $endpoint) {
+            [$method, $uri] = explode(' ', $endpoint);
+            $route = $this->app['router']->getRoutes()->match(request()->create($uri, $method));
 
             $this->assertEmpty(
                 array_filter($route->gatherMiddleware(), fn ($m) => str_starts_with($m, 'throttle')),

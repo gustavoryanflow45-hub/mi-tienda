@@ -24,7 +24,7 @@ class GeolocationService
 
     public function gatewayFor(Request $request): string
     {
-        return $this->countryCode($request) === 'EC' ? 'kushki' : 'stripe';
+        return $this->countryCode($request) === 'EC' ? 'payphone' : 'stripe';
     }
 
     private function clientIp(Request $request): string

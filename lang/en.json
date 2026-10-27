@@ -667,5 +667,19 @@
     "Demasiadas peticiones. Espera :seconds segundos y vuelve a probar.": "Too many requests. Wait :seconds seconds and try again.",
     "Demasiadas peticiones": "Too many requests",
     "Espera un momento y vuelve a intentarlo.": "Wait a moment and try again.",
-    "Reintentar": "Try again"
+    "Reintentar": "Try again",
+    "Pagarás en la página segura de PayPhone con tarjeta de crédito o débito, o con el saldo de tu app PayPhone. Al terminar volverás aquí.": "You'll pay on PayPhone's secure page with a credit or debit card, or with your PayPhone app balance. You'll come back here when you're done.",
+    "Pagar :amount con tarjeta": "Pay :amount by card",
+    "Pagar con la app PayPhone": "Pay with the PayPhone app",
+    "Procesado por PayPhone — tu tarjeta nunca pasa por nuestros servidores": "Processed by PayPhone — your card never touches our servers",
+    "¿Pagas desde fuera de Ecuador? Paga con Stripe": "Paying from outside Ecuador? Pay with Stripe",
+    "¿Estás en Ecuador? Paga con PayPhone": "In Ecuador? Pay with PayPhone",
+    "Pedido :code": "Order :code",
+    "No pudimos identificar el pago. Si se te cobró, contacta a soporte.": "We couldn't identify the payment. If you were charged, contact support.",
+    "No pudimos confirmar el pago con PayPhone. Si se te cobró, se revertirá automáticamente; vuelve a intentarlo.": "We couldn't confirm the payment with PayPhone. If you were charged, it will be reversed automatically; please try again.",
+    "El pago fue cancelado o rechazado. No se realizó ningún cobro.": "The payment was cancelled or declined. You were not charged.",
+    "El monto cobrado no coincide con tu pedido. Contacta a soporte con la referencia :ref.": "The amount charged does not match your order. Contact support with reference :ref.",
+    "Pago confirmado. Inicia sesión para ver tu pedido.": "Payment confirmed. Sign in to see your order.",
+    "Pago confirmado.": "Payment confirmed.",
+    "Cancelaste el pago. Tu carrito sigue intacto.": "You cancelled the payment. Your cart is unchanged."
 }

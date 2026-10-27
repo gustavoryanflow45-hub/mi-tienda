@@ -20,7 +20,7 @@ use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\MyProductsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PageController;
-use App\Http\Controllers\Payments\KushkiController;
+use App\Http\Controllers\Payments\PayPhoneController;
 use App\Http\Controllers\Payments\StripeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
@@ -83,9 +83,12 @@ Route::middleware('throttle:checkout')->group(function () {
 // usuario autenticado: por eso ambos exigen sesión. 'throttle:payments'
 // (AppServiceProvider) frena las pruebas de tarjetas robadas en masa.
 Route::post('/payments/stripe/intent', [StripeController::class, 'createIntent'])->middleware(['auth', 'throttle:payments'])->name('payments.stripe.intent');
-Route::post('/payments/kushki/charge', [KushkiController::class, 'charge'])->middleware(['auth', 'throttle:payments'])->name('payments.kushki.charge');
+Route::post('/payments/payphone/prepare', [PayPhoneController::class, 'prepare'])->middleware(['auth', 'throttle:payments'])->name('payments.payphone.prepare');
+// PayPhone vuelve aquí tras el pago: hay que confirmar en 5 min o revierte
+// el cobro, así que no exige sesión ni lleva límite (ver PayPhoneController).
+Route::get('/payments/payphone/return', [PayPhoneController::class, 'handleReturn'])->name('payments.payphone.return');
+Route::get('/payments/payphone/cancel', [PayPhoneController::class, 'cancel'])->name('payments.payphone.cancel');
 Route::post('/webhooks/stripe', [StripeController::class, 'webhook']);
-Route::post('/webhooks/kushki', [KushkiController::class, 'webhook']);
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
 
 // Comparar
