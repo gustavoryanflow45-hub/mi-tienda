@@ -7,12 +7,14 @@ use App\Models\WalletRecharge;
 use App\Models\WalletWithdrawal;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\BuildsCheckoutData;
+use Tests\Concerns\PassesAdminTwoFactor;
 use Tests\TestCase;
 
 class AdminWalletAccessTest extends TestCase
 {
     use BuildsCheckoutData;
     use RefreshDatabase;
+    use PassesAdminTwoFactor;
 
     protected function makeAdmin(): User
     {
@@ -64,7 +66,7 @@ class AdminWalletAccessTest extends TestCase
 
     public function test_admin_can_open_admin_wallet(): void
     {
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->get('/admin/wallet')
             ->assertOk();
     }
@@ -117,7 +119,7 @@ class AdminWalletAccessTest extends TestCase
         $customer = $this->makeCustomer();
         $recharge = $this->makeRecharge($customer);
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->post("/admin/wallet/approve/{$recharge->id}")
             ->assertRedirect();
 

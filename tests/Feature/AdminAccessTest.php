@@ -8,6 +8,7 @@ use Illuminate\Routing\Route;
 use Illuminate\Routing\RouteCollection;
 use Illuminate\Support\Facades\Hash;
 use Tests\Concerns\BuildsCheckoutData;
+use Tests\Concerns\PassesAdminTwoFactor;
 use Tests\TestCase;
 
 /**
@@ -19,6 +20,7 @@ class AdminAccessTest extends TestCase
 {
     use BuildsCheckoutData;
     use RefreshDatabase;
+    use PassesAdminTwoFactor;
 
     protected function makeAdmin(): User
     {
@@ -149,7 +151,7 @@ class AdminAccessTest extends TestCase
     {
         config(['admin.enforce_host' => true]);
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->get('/admin/warehouse')
             ->assertNotFound();
     }
@@ -159,8 +161,8 @@ class AdminAccessTest extends TestCase
         $this->useAdminDomain('admin.tienda.test');
         $admin = $this->makeAdmin();
 
-        $this->actingAs($admin)->get('http://localhost/admin/warehouse')->assertNotFound();
-        $this->actingAs($admin)->get('http://localhost/admin/shops')->assertNotFound();
+        $this->actingAsAdmin($admin)->get('http://localhost/admin/warehouse')->assertNotFound();
+        $this->actingAsAdmin($admin)->get('http://localhost/admin/shops')->assertNotFound();
 
         $this->actingAs($this->makeSeller())
             ->get('http://admin.tienda.test/admin/shops')

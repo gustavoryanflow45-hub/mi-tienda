@@ -9,6 +9,7 @@ use App\Notifications\SellerSettledNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\Concerns\BuildsCheckoutData;
+use Tests\Concerns\PassesAdminTwoFactor;
 use Tests\TestCase;
 
 /**
@@ -21,6 +22,7 @@ class SellerSettlementTest extends TestCase
 {
     use BuildsCheckoutData;
     use RefreshDatabase;
+    use PassesAdminTwoFactor;
 
     protected function setUp(): void
     {
@@ -106,7 +108,7 @@ class SellerSettlementTest extends TestCase
         $this->makeDeliveredOrder($customer, $seller, 60.00);
         $this->makeDeliveredOrder($customer, $other, 40.00);
 
-        $response = $this->actingAs($admin)->get('/admin/settlements');
+        $response = $this->actingAsAdmin($admin)->get('/admin/settlements');
 
         $response->assertOk();
         $response->assertViewHas('rows', function ($rows) use ($seller, $other) {
@@ -135,7 +137,7 @@ class SellerSettlementTest extends TestCase
         $this->makeDeliveredOrder($customer, $seller, 60.00);
         $this->makeDeliveredOrder($customer, $other, 40.00);
 
-        $this->actingAs($admin)
+        $this->actingAsAdmin($admin)
             ->post('/admin/settlements/'.$seller->id)
             ->assertRedirect()
             ->assertSessionHas('success');
@@ -190,11 +192,11 @@ class SellerSettlementTest extends TestCase
 
         $order = $this->makePaidOrder($customer, $seller, 100.00);
 
-        $this->actingAs($admin)->get('/admin/settlements')
+        $this->actingAsAdmin($admin)->get('/admin/settlements')
             ->assertViewHas('totals', fn ($totals) => (float) $totals['net_amount'] === 0.0
                 && $totals['sellers_pending'] === 0);
 
-        $this->actingAs($admin)
+        $this->actingAsAdmin($admin)
             ->post('/admin/settlements/'.$seller->id)
             ->assertSessionHas('warning');
         $this->assertDatabaseCount('seller_settlements', 0);
@@ -203,7 +205,7 @@ class SellerSettlementTest extends TestCase
         $order->update(['delivery_status' => 'delivered', 'delivered_at' => now()]);
         $order->orderDetails()->update(['delivery_status' => 'delivered']);
 
-        $this->actingAs($admin)
+        $this->actingAsAdmin($admin)
             ->post('/admin/settlements/'.$seller->id)
             ->assertSessionHas('success');
         $this->assertDatabaseCount('seller_settlements', 1);
@@ -221,7 +223,7 @@ class SellerSettlementTest extends TestCase
         $customer = $this->makeCustomer();
 
         $this->makeDeliveredOrder($customer, $seller, 100.00);
-        $this->actingAs($admin)->post('/admin/settlements/'.$seller->id)->assertSessionHas('success');
+        $this->actingAsAdmin($admin)->post('/admin/settlements/'.$seller->id)->assertSessionHas('success');
 
         $this->assertDatabaseHas('notifications', [
             'notifiable_id' => $seller->id,
@@ -251,7 +253,7 @@ class SellerSettlementTest extends TestCase
         $customer = $this->makeCustomer();
 
         $this->makeDeliveredOrder($customer, $seller, 100.00);
-        $this->actingAs($admin)->post('/admin/settlements/'.$seller->id)->assertSessionHas('success');
+        $this->actingAsAdmin($admin)->post('/admin/settlements/'.$seller->id)->assertSessionHas('success');
 
         $this->actingAs($seller)->get('/wallet')
             ->assertOk()
@@ -275,7 +277,7 @@ class SellerSettlementTest extends TestCase
         $customer = $this->makeCustomer();
 
         $this->makeDeliveredOrder($customer, $seller, 100.00);
-        $this->actingAs($admin)->post('/admin/settlements/'.$seller->id)->assertSessionHas('success');
+        $this->actingAsAdmin($admin)->post('/admin/settlements/'.$seller->id)->assertSessionHas('success');
 
         // Saldo extra que no viene de ventas (una recarga aprobada).
         $seller->forceFill(['balance' => 75.00 + 50.00])->save();
@@ -317,7 +319,7 @@ class SellerSettlementTest extends TestCase
         $admin = $this->makeAdmin();
         $seller = $this->makeVerifiedSeller();
 
-        $this->actingAs($admin)
+        $this->actingAsAdmin($admin)
             ->post('/admin/settlements/'.$seller->id)
             ->assertRedirect()
             ->assertSessionHas('warning');
@@ -333,8 +335,8 @@ class SellerSettlementTest extends TestCase
 
         $this->makeDeliveredOrder($customer, $seller, 100.00);
 
-        $this->actingAs($admin)->post('/admin/settlements/'.$seller->id)->assertSessionHas('success');
-        $this->actingAs($admin)->post('/admin/settlements/'.$seller->id)->assertSessionHas('warning');
+        $this->actingAsAdmin($admin)->post('/admin/settlements/'.$seller->id)->assertSessionHas('success');
+        $this->actingAsAdmin($admin)->post('/admin/settlements/'.$seller->id)->assertSessionHas('warning');
 
         $this->assertDatabaseCount('seller_settlements', 1);
         $this->assertEqualsWithDelta(75.0, (float) SellerSettlement::sum('net_amount'), 0.001);

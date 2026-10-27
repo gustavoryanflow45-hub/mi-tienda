@@ -32,6 +32,7 @@ use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\Payments\StripeController;
 use App\Http\Controllers\Payments\KushkiController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
+use App\Http\Controllers\Admin\TwoFactorController;
 
 
 /*
@@ -229,6 +230,16 @@ $adminRoutes->group(function () {
         // 'admin' va siempre después de 'auth': los invitados acaban en el
         // login, no en un 403.
         Route::middleware('admin')->group(function () {
+            // ── Segundo factor ───────────────────────────────────
+            // Después del login y antes de cualquier otra ruta del panel.
+            // El alta solo con el enlace firmado de `admin:2fa-invite`.
+            Route::get('/two-factor', [TwoFactorController::class, 'challenge'])->name('admin.two-factor.challenge');
+            Route::post('/two-factor', [TwoFactorController::class, 'verify'])->name('admin.two-factor.verify');
+            Route::get('/two-factor/setup', [TwoFactorController::class, 'setup'])->middleware('signed')->name('admin.two-factor.setup');
+            Route::post('/two-factor/setup', [TwoFactorController::class, 'confirm'])->middleware('signed')->name('admin.two-factor.confirm');
+        });
+
+        Route::middleware(['admin', 'admin.2fa'])->group(function () {
             Route::get('/', fn () => redirect()->route('admin.shops'))->name('admin.home');
 
             // ── Aprobación de tiendas ────────────────────────────

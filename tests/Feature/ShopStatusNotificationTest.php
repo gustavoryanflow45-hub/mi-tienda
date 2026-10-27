@@ -7,12 +7,14 @@ use App\Notifications\ShopStatusUpdatedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\Concerns\BuildsCheckoutData;
+use Tests\Concerns\PassesAdminTwoFactor;
 use Tests\TestCase;
 
 class ShopStatusNotificationTest extends TestCase
 {
     use BuildsCheckoutData;
     use RefreshDatabase;
+    use PassesAdminTwoFactor;
 
     protected function makeAdmin(): User
     {
@@ -24,7 +26,7 @@ class ShopStatusNotificationTest extends TestCase
         Notification::fake();
         $seller = $this->makePendingSeller();
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->post("/admin/shops/{$seller->shop->id}/approve");
 
         Notification::assertSentTo(
@@ -41,7 +43,7 @@ class ShopStatusNotificationTest extends TestCase
         Notification::fake();
         $seller = $this->makeSeller();
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->post("/admin/shops/{$seller->shop->id}/reject");
 
         Notification::assertSentTo(
@@ -57,7 +59,7 @@ class ShopStatusNotificationTest extends TestCase
         Notification::fake();
         $seller = $this->makeSeller();
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->post("/admin/shops/{$seller->shop->id}/approve");
 
         Notification::assertNothingSentTo($seller);
@@ -69,7 +71,7 @@ class ShopStatusNotificationTest extends TestCase
         $seller->email_verified_at = now();
         $seller->save();
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->post("/admin/shops/{$seller->shop->id}/approve");
 
         $this->assertSame(
@@ -103,7 +105,7 @@ class ShopStatusNotificationTest extends TestCase
         $seller->email_verified = 0;
         $seller->save();
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->post("/admin/shops/{$seller->shop->id}/reject");
 
         $this->actingAs($seller->fresh())

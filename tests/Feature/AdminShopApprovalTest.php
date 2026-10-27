@@ -6,12 +6,14 @@ use App\Models\Shop;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\BuildsCheckoutData;
+use Tests\Concerns\PassesAdminTwoFactor;
 use Tests\TestCase;
 
 class AdminShopApprovalTest extends TestCase
 {
     use BuildsCheckoutData;
     use RefreshDatabase;
+    use PassesAdminTwoFactor;
 
     protected function makeAdmin(): User
     {
@@ -50,7 +52,7 @@ class AdminShopApprovalTest extends TestCase
     {
         $seller = $this->makePendingSeller();
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->get('/admin/shops')
             ->assertOk()
             ->assertSee($seller->shop->name)
@@ -68,7 +70,7 @@ class AdminShopApprovalTest extends TestCase
         // Antes: bloqueado por shop.approved
         $this->actingAs($seller)->get('/seller/products')->assertRedirect(route('dashboard'));
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->post("/admin/shops/{$seller->shop->id}/approve")
             ->assertRedirect()
             ->assertSessionHas('success');
@@ -87,7 +89,7 @@ class AdminShopApprovalTest extends TestCase
 
         $this->actingAs($seller)->get('/seller/products')->assertOk();
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->post("/admin/shops/{$seller->shop->id}/reject")
             ->assertRedirect()
             ->assertSessionHas('error');
@@ -103,7 +105,7 @@ class AdminShopApprovalTest extends TestCase
     {
         $shop = $this->makeSeller()->shop;
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->post("/admin/shops/{$shop->id}/approve")
             ->assertSessionHas('warning');
 
@@ -112,7 +114,7 @@ class AdminShopApprovalTest extends TestCase
 
     public function test_unknown_shop_returns_404(): void
     {
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->post('/admin/shops/99999/approve')
             ->assertNotFound();
     }
@@ -124,7 +126,7 @@ class AdminShopApprovalTest extends TestCase
         $pending = $this->makePendingSeller();
         $approved = $this->makeSeller();
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->get('/admin/shops?status=0')
             ->assertOk()
             ->assertSee($pending->shop->name)
@@ -136,7 +138,7 @@ class AdminShopApprovalTest extends TestCase
         $wanted = $this->makePendingSeller();
         $other = $this->makePendingSeller();
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->get('/admin/shops?search='.urlencode($wanted->email))
             ->assertOk()
             ->assertSee($wanted->shop->name)
@@ -150,7 +152,7 @@ class AdminShopApprovalTest extends TestCase
         $rejected = $this->makePendingSeller();
         $rejected->shop->update(['status' => 2]);
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->get('/admin/shops')
             ->assertOk()
             ->assertViewHas('counts', fn (array $c) => $c['total'] === 3
@@ -166,7 +168,7 @@ class AdminShopApprovalTest extends TestCase
         $seller->email_verified = 0;
         $seller->save();
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->get('/admin/shops')
             ->assertOk()
             ->assertSee('correo sin verificar');
@@ -184,7 +186,7 @@ class AdminShopApprovalTest extends TestCase
             'status' => 0,
         ]);
 
-        $this->actingAs($this->makeAdmin())
+        $this->actingAsAdmin($this->makeAdmin())
             ->get('/admin/shops')
             ->assertOk()
             ->assertSee($shop->name);
