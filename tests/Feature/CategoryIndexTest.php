@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\Shop\CategoryController;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;

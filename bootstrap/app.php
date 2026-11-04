@@ -10,8 +10,16 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        // Panel admin: routes/admin.php con su prefijo y, si hay, su dominio.
-        then: fn () => \App\Support\AdminRoutes::register(),
+        then: function () {
+            // Panel del vendedor: todo /seller con la tienda aprobada.
+            \Illuminate\Support\Facades\Route::middleware(['web', 'auth', 'shop.approved', 'seller'])
+                ->prefix('seller')
+                ->name('seller.')
+                ->group(base_path('routes/seller.php'));
+
+            // Panel admin: routes/admin.php con su prefijo y, si hay, su dominio.
+            \App\Support\AdminRoutes::register();
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [
@@ -37,6 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'admin.2fa' => \App\Http\Middleware\EnsureAdminTwoFactor::class,
             'shop.approved' => \App\Http\Middleware\EnsureShopApproved::class,
+            'seller' => \App\Http\Middleware\EnsureUserIsSeller::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

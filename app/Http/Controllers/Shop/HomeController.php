@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Shop;
 
+use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 
 class HomeController extends Controller
 {
@@ -101,24 +101,5 @@ class HomeController extends Controller
             ->latest()
             ->take(12)
             ->get();
-    }
-
-    // ── POST /seller/products/{id}/toggle-published ──────────────
-    public function togglePublished(Request $request, int $id)
-    {
-        $product = Product::findOrFail($id);
-
-        // ProductPolicy; responde JSON porque lo llama el listado por AJAX.
-        if (Gate::denies('togglePublished', $product)) {
-            return response()->json(['error' => __('No autorizado.')], 403);
-        }
-
-        $product->published = $product->published ? 0 : 1;
-        $product->save();
-
-        return response()->json([
-            'published' => $product->published,
-            'message' => $product->published ? 'Producto publicado' : 'Producto despublicado',
-        ]);
     }
 }

@@ -111,7 +111,7 @@ class OwnershipPolicyTest extends TestCase
         $this->assertSame('pending', $order->fresh()->delivery_status);
 
         $order->update(['delivery_status' => 'confirmed']);
-        $this->actingAs($intruder)->post("/orders/{$order->id}/send-to-warehouse")->assertNotFound();
+        $this->actingAs($intruder)->post("/seller/orders/{$order->id}/send-to-warehouse")->assertNotFound();
         $this->assertSame('confirmed', $order->fresh()->delivery_status);
     }
 

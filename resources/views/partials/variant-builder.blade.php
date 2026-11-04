@@ -10,7 +10,7 @@
     Las tallas ofrecidas salen de config/variants.php: manda el tipo que declara
     el producto y, si no declara ninguno, el de la categoría elegida. Es la
     misma resolución que aplica el servidor en Product::sizeOptions(), desde
-    SellerProductController::validateVariants().
+    ProductService::validate().
 --}}
 
 @php

@@ -76,7 +76,7 @@ class User extends Authenticatable
 
     /**
      * Pedidos nuevos sin ver: alimenta el globo del menú "Pedidos".
-     * Solo cuenta las notificaciones que SellerOrderController@index
+     * Solo cuenta las notificaciones que Seller\OrderController@index
      * marca como leídas, para que el globo se apague al abrir la página.
      */
     public function newOrderNotificationsCount(): int

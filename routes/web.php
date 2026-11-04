@@ -4,29 +4,27 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerificationController;
-use App\Http\Controllers\BrandController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\CompareController;
-use App\Http\Controllers\CurrencyController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LanguageController;
-use App\Http\Controllers\MyProductsController;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\PageController;
 use App\Http\Controllers\Payments\PayPhoneController;
 use App\Http\Controllers\Payments\StripeController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\SearchController;
-use App\Http\Controllers\SellerController;
-use App\Http\Controllers\SellerOrderController;
-use App\Http\Controllers\SellerProductController;
-use App\Http\Controllers\SubscriberController;
-use App\Http\Controllers\WalletController;
-use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\Seller\RegistrationController;
+use App\Http\Controllers\Shop\BrandController;
+use App\Http\Controllers\Shop\CartController;
+use App\Http\Controllers\Shop\CategoryController;
+use App\Http\Controllers\Shop\CheckoutController;
+use App\Http\Controllers\Shop\CompareController;
+use App\Http\Controllers\Shop\CurrencyController;
+use App\Http\Controllers\Shop\DashboardController;
+use App\Http\Controllers\Shop\HomeController;
+use App\Http\Controllers\Shop\MyProductsController;
+use App\Http\Controllers\Shop\OrderController;
+use App\Http\Controllers\Shop\PageController;
+use App\Http\Controllers\Shop\ProductController;
+use App\Http\Controllers\Shop\ProfileController;
+use App\Http\Controllers\Shop\SearchController;
+use App\Http\Controllers\Shop\SubscriberController;
+use App\Http\Controllers\Shop\WalletController;
+use App\Http\Controllers\Shop\WishlistController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -105,8 +103,8 @@ Route::post('/language', [LanguageController::class, 'change'])->name('language.
 Route::post('/currency', [CurrencyController::class, 'change'])->name('currency.change');
 
 // Registro de tienda (público — el usuario aún no está logueado)
-Route::get('/shops/create', [SellerController::class, 'create'])->name('shops.create');
-Route::post('/shops/create', [SellerController::class, 'register'])->middleware('throttle:shop-register')->name('seller.register');
+Route::get('/shops/create', [RegistrationController::class, 'create'])->name('shops.create');
+Route::post('/shops/create', [RegistrationController::class, 'register'])->middleware('throttle:shop-register')->name('seller.register');
 
 /*
 |--------------------------------------------------------------------------
@@ -164,7 +162,6 @@ Route::middleware('auth')->group(function () {
     // Pedidos
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
-    Route::post('/orders/{id}/send-to-warehouse', [OrderController::class, 'sendToWarehouse'])->name('orders.send-to-warehouse');
 
     // Mis productos: lo que el usuario fue agregando al carrito
     Route::get('/my-products', [MyProductsController::class, 'index'])->name('my-products.index');
@@ -178,26 +175,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
     Route::post('/wallet/recharge', [WalletController::class, 'recharge'])->name('wallet.recharge');
     Route::post('/wallet/withdraw', [WalletController::class, 'withdraw'])->name('wallet.withdraw');
-
-    // ── Seller — productos ───────────────────────────────────────
-    // ⚠️ Las rutas específicas (bulk, template, create) van ANTES
-    //    que cualquier ruta con parámetro dinámico {id}
-
-    // Nadie vende hasta que un admin apruebe su tienda: /shops/create es
-    // público y auto-loguea, así que el rol 'seller' por sí solo no basta.
-    Route::middleware('shop.approved')->group(function () {
-        Route::get('/seller/products', [SellerProductController::class, 'index'])->name('seller.products.index');
-        Route::get('/seller/products/create', [SellerProductController::class, 'create'])->name('seller.products.create');
-        Route::post('/seller/products', [SellerProductController::class, 'store'])->name('seller.products.store');
-        Route::get('/seller/products/bulk', [SellerProductController::class, 'bulk'])->name('seller.products.bulk');
-        Route::get('/seller/products/bulk/template', [SellerProductController::class, 'bulkTemplate'])->name('seller.products.bulk.template');
-        Route::post('/seller/products/bulk', [SellerProductController::class, 'bulkStore'])->name('seller.products.bulk.store');
-        Route::post('/seller/products/{id}/toggle-published', [HomeController::class, 'togglePublished'])->name('seller.products.toggle-published');
-        Route::get('/seller/products/{id}/edit', [SellerProductController::class, 'edit'])->name('seller.products.edit');
-        Route::put('/seller/products/{id}', [SellerProductController::class, 'update'])->name('seller.products.update');
-
-        // ── Seller — pedidos ───────────────────────────────────────
-        Route::get('/seller/orders', [SellerOrderController::class, 'index'])->name('seller.orders.index');
-        Route::post('/seller/orders/{id}/confirm', [SellerOrderController::class, 'confirm'])->name('seller.orders.confirm');
-    });
 });
+
+// El panel del vendedor (/seller/*) está en routes/seller.php.

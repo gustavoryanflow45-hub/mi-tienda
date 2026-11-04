@@ -92,7 +92,7 @@ class WarehouseFlowTest extends TestCase
 
         // 2. Vendedor envía al almacén → se notifica al admin y al cliente
         $this->actingAs($seller)
-            ->post("/orders/{$order->id}/send-to-warehouse")
+            ->post("/seller/orders/{$order->id}/send-to-warehouse")
             ->assertSessionHas('warehouse_success');
 
         $order->refresh();
@@ -192,7 +192,7 @@ class WarehouseFlowTest extends TestCase
         ]);
 
         $this->actingAs($seller)
-            ->post("/orders/{$order->id}/send-to-warehouse")
+            ->post("/seller/orders/{$order->id}/send-to-warehouse")
             ->assertSessionHas('warehouse_error');
 
         $this->assertSame('confirmed', $order->fresh()->delivery_status);
@@ -219,7 +219,7 @@ class WarehouseFlowTest extends TestCase
         ]);
 
         $this->actingAs($seller)
-            ->post("/orders/{$order->id}/send-to-warehouse")
+            ->post("/seller/orders/{$order->id}/send-to-warehouse")
             ->assertSessionHas('warehouse_success');
 
         $order->refresh();
@@ -248,7 +248,7 @@ class WarehouseFlowTest extends TestCase
         $order = $this->makePaidOrder($this->makeCustomer(), $seller);
 
         $this->actingAs($seller)
-            ->post("/orders/{$order->id}/send-to-warehouse")
+            ->post("/seller/orders/{$order->id}/send-to-warehouse")
             ->assertSessionHas('warehouse_error');
 
         $this->assertSame('pending', $order->fresh()->delivery_status);
