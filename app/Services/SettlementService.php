@@ -101,7 +101,7 @@ class SettlementService
                 ->update(['settlement_id' => $settlement->id]);
 
             // El pago es saldo de la billetera: mismo mecanismo que una recarga
-            // aprobada (WalletController@approve); el retiro sale de ahí.
+            // aprobada (Admin\WalletController@approve); el retiro sale de ahí.
             User::whereKey($seller->id)->increment('balance', $settlement->net_amount);
 
             return $settlement;

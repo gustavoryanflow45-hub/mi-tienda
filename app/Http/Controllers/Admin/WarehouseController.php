@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Notifications\OrderArrivedWarehouseNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
@@ -24,7 +25,7 @@ class WarehouseController extends Controller
         });
     }
 
-    // ── GET /warehouse ───────────────────────────────────────────
+    // ── GET /admin/warehouse ─────────────────────────────────────
     public function index(Request $request)
     {
         $query = Order::with(['user', 'orderDetails.product.category'])
@@ -69,7 +70,7 @@ class WarehouseController extends Controller
         return view('pages.warehouse', compact('orders', 'stats', 'arrivals'));
     }
 
-    // ── POST /warehouse/orders/{id}/dispatch ─────────────────────
+    // ── POST /admin/warehouse/orders/{id}/dispatch ─────────────────────
     public function dispatchOrder(int $id, AuditLog $audit)
     {
         $order = Order::findOrFail($id);
@@ -91,7 +92,7 @@ class WarehouseController extends Controller
         return back()->with('warehouse_success', __('Pedido #:code despachado — ahora está en camino al cliente.', ['code' => $order->code]));
     }
 
-    // ── POST /warehouse/orders/{id}/deliver ──────────────────────
+    // ── POST /admin/warehouse/orders/{id}/deliver ──────────────────────
     public function deliver(int $id, AuditLog $audit)
     {
         $order = Order::findOrFail($id);

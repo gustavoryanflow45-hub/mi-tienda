@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\Shop;
 use App\Notifications\ShopStatusUpdatedNotification;
 use App\Services\AuditLog;
 use Illuminate\Http\Request;
 
-class AdminShopController extends Controller
+class ShopController extends Controller
 {
     /** Estados de shops.status (ver Shop::statusLabel). */
     public const PENDING = 0;
@@ -18,7 +19,7 @@ class AdminShopController extends Controller
 
     /**
      * Las rutas ya llevan 'auth' + 'admin'; esto es defensa en profundidad,
-     * igual que en WarehouseController.
+     * igual que en AdminWarehouseController.
      */
     public function __construct()
     {

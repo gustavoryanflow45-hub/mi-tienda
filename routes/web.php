@@ -1,9 +1,5 @@
 <?php
 
-use App\Http\Controllers\Admin\LoginController as AdminLoginController;
-use App\Http\Controllers\Admin\TwoFactorController;
-use App\Http\Controllers\AdminSettlementController;
-use App\Http\Controllers\AdminShopController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -30,7 +26,6 @@ use App\Http\Controllers\SellerOrderController;
 use App\Http\Controllers\SellerProductController;
 use App\Http\Controllers\SubscriberController;
 use App\Http\Controllers\WalletController;
-use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -204,77 +199,5 @@ Route::middleware('auth')->group(function () {
         // ── Seller — pedidos ───────────────────────────────────────
         Route::get('/seller/orders', [SellerOrderController::class, 'index'])->name('seller.orders.index');
         Route::post('/seller/orders/{id}/confirm', [SellerOrderController::class, 'confirm'])->name('seller.orders.confirm');
-    });
-});
-
-/*
-|--------------------------------------------------------------------------
-| Panel de administración
-|--------------------------------------------------------------------------
-| Tiendas, liquidaciones, billetera admin y almacén. Con ADMIN_DOMAIN las
-| rutas solo existen en ese host (admin.dominio/admin/...) y en la tienda dan
-| 404; sin él (XAMPP) cuelgan de /admin en el mismo host. El prefijo /admin
-| se mantiene en ambos modos. Ver config/admin.php.
-|
-| El almacén va aquí porque lista los pedidos de TODOS los vendedores junto
-| con los datos de contacto del comprador: los vendedores gestionan lo suyo
-| desde /seller/orders.
-*/
-$adminRoutes = Route::prefix('admin');
-
-if (config('admin.domain')) {
-    $adminRoutes->domain(config('admin.domain'));
-}
-
-$adminRoutes->group(function () {
-    // Login propio: en modo dominio la cookie de la tienda no llega aquí.
-    Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('admin.login');
-    Route::post('/login', [AdminLoginController::class, 'login'])
-        ->middleware('throttle:admin-login')->name('admin.login.attempt');
-
-    Route::middleware('auth')->group(function () {
-        Route::post('/logout', [AdminLoginController::class, 'logout'])->name('admin.logout');
-
-        // 'admin' va siempre después de 'auth': los invitados acaban en el
-        // login, no en un 403.
-        Route::middleware('admin')->group(function () {
-            // ── Segundo factor ───────────────────────────────────
-            // Después del login y antes de cualquier otra ruta del panel.
-            // El alta solo con el enlace firmado de `admin:2fa-invite`.
-            Route::get('/two-factor', [TwoFactorController::class, 'challenge'])->name('admin.two-factor.challenge');
-            Route::post('/two-factor', [TwoFactorController::class, 'verify'])
-                ->middleware('throttle:admin-2fa')->name('admin.two-factor.verify');
-            Route::get('/two-factor/setup', [TwoFactorController::class, 'setup'])->middleware('signed')->name('admin.two-factor.setup');
-            Route::post('/two-factor/setup', [TwoFactorController::class, 'confirm'])
-                ->middleware(['signed', 'throttle:admin-2fa'])->name('admin.two-factor.confirm');
-        });
-
-        Route::middleware(['admin', 'admin.2fa'])->group(function () {
-            Route::get('/', fn () => redirect()->route('admin.shops'))->name('admin.home');
-
-            // ── Aprobación de tiendas ────────────────────────────
-            Route::get('/shops', [AdminShopController::class, 'index'])->name('admin.shops');
-            Route::post('/shops/{id}/approve', [AdminShopController::class, 'approve'])->name('admin.shops.approve');
-            Route::post('/shops/{id}/reject', [AdminShopController::class, 'reject'])->name('admin.shops.reject');
-
-            // ── Liquidación de ventas a vendedores ───────────────
-            // Liquidar cierra las ventas cobradas del vendedor y deja su
-            // panel en cero: solo el admin paga.
-            Route::get('/settlements', [AdminSettlementController::class, 'index'])->name('admin.settlements');
-            Route::post('/settlements/{seller}', [AdminSettlementController::class, 'settle'])->name('admin.settlements.settle');
-
-            // ── Billetera ────────────────────────────────────────
-            // Aprobar una recarga acredita saldo real.
-            Route::get('/wallet', [WalletController::class, 'adminIndex'])->name('admin.wallet');
-            Route::post('/wallet/approve/{id}', [WalletController::class, 'approve'])->name('wallet.approve');
-            Route::post('/wallet/reject/{id}', [WalletController::class, 'reject'])->name('wallet.reject');
-            Route::post('/wallet/withdrawal/approve/{id}', [WalletController::class, 'approveWithdrawal'])->name('wallet.withdrawal.approve');
-            Route::post('/wallet/withdrawal/reject/{id}', [WalletController::class, 'rejectWithdrawal'])->name('wallet.withdrawal.reject');
-
-            // ── Almacén — panel de despacho ──────────────────────
-            Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse.index');
-            Route::post('/warehouse/orders/{id}/dispatch', [WarehouseController::class, 'dispatchOrder'])->name('warehouse.dispatch');
-            Route::post('/warehouse/orders/{id}/deliver', [WarehouseController::class, 'deliver'])->name('warehouse.deliver');
-        });
     });
 });

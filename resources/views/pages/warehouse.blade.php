@@ -209,7 +209,7 @@
         <div class="orders-panel">
             <div class="orders-panel-header">
                 <h5>{{ __('Pedidos en gestión de almacén') }}</h5>
-                <form method="GET" action="{{ route('warehouse.index') }}" class="filter-bar">
+                <form method="GET" action="{{ route('admin.warehouse.index') }}" class="filter-bar">
                     <input type="text" name="code" value="{{ request('code') }}" placeholder="{{ __('Código de pedido') }}">
                     <select name="delivery_status" onchange="this.form.submit()">
                         <option value="">{{ __('Activos (almacén + en camino)') }}</option>
@@ -278,7 +278,7 @@
                                 <td>
                                     <div class="d-flex align-items-center" style="gap:10px;">
                                         @if($order->delivery_status === 'warehouse')
-                                            <form method="POST" action="{{ route('warehouse.dispatch', $order->id) }}"
+                                            <form method="POST" action="{{ route('admin.warehouse.dispatch', $order->id) }}"
                                                   onsubmit="return confirm({{ json_encode(__('¿Despachar el pedido #:code? El cliente será notificado de que va en camino.', ['code' => $order->code])) }})">
                                                 @csrf
                                                 <button type="submit" class="btn-dispatch">
@@ -286,7 +286,7 @@
                                                 </button>
                                             </form>
                                         @elseif($order->delivery_status === 'on_the_way')
-                                            <form method="POST" action="{{ route('warehouse.deliver', $order->id) }}"
+                                            <form method="POST" action="{{ route('admin.warehouse.deliver', $order->id) }}"
                                                   onsubmit="return confirm({{ json_encode(__('¿Marcar el pedido #:code como entregado?', ['code' => $order->code])) }})">
                                                 @csrf
                                                 <button type="submit" class="btn-deliver">

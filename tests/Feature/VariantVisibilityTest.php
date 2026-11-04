@@ -171,7 +171,7 @@ class VariantVisibilityTest extends TestCase
     {
         $order = $this->makeWarehouseOrder($this->makeCustomer(), $this->makeSeller());
 
-        $this->actingAsAdmin($this->makeAdmin())->get(route('warehouse.index'))
+        $this->actingAsAdmin($this->makeAdmin())->get(route('admin.warehouse.index'))
             ->assertOk()
             ->assertSee('Zapatilla de prueba')
             ->assertSee('Talla US')

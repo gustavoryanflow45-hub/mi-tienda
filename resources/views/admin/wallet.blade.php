@@ -442,7 +442,7 @@
                                 @if($r->approval == 0)
                                 <div style="display:flex;gap:6px;">
                                     <form method="POST"
-                                          action="{{ route('wallet.approve', $r->id) }}"
+                                          action="{{ route('admin.wallet.approve', $r->id) }}"
                                           onsubmit="return confirm({{ json_encode(__('¿Aprobar esta recarga de $:amount?', ['amount' => number_format($r->amount, 2)])) }})">
                                         @csrf
                                         <button type="submit" class="btn-approve">
@@ -450,7 +450,7 @@
                                         </button>
                                     </form>
                                     <form method="POST"
-                                          action="{{ route('wallet.reject', $r->id) }}"
+                                          action="{{ route('admin.wallet.reject', $r->id) }}"
                                           onsubmit="return confirm({{ json_encode(__('¿Rechazar esta recarga?')) }})">
                                         @csrf
                                         <button type="submit" class="btn-reject">
@@ -587,7 +587,7 @@
                                 @if($w->status == 'pending')
                                 <div style="display:flex;gap:6px;">
                                     <form method="POST"
-                                          action="{{ route('wallet.withdrawal.approve', $w->id) }}"
+                                          action="{{ route('admin.wallet.withdrawal.approve', $w->id) }}"
                                           onsubmit="return confirm({{ json_encode(__('¿Confirmar retiro de $:amount?', ['amount' => number_format($w->amount, 2)])) }})">
                                         @csrf
                                         <button type="submit" class="btn-approve">
@@ -595,7 +595,7 @@
                                         </button>
                                     </form>
                                     <form method="POST"
-                                          action="{{ route('wallet.withdrawal.reject', $w->id) }}"
+                                          action="{{ route('admin.wallet.withdrawal.reject', $w->id) }}"
                                           onsubmit="return confirm({{ json_encode(__('¿Rechazar este retiro? El saldo será devuelto.')) }})">
                                         @csrf
                                         <button type="submit" class="btn-reject">

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\AdminRoutes;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\RouteCollection;
@@ -51,15 +52,21 @@ class AdminAccessTest extends TestCase
         return in_array('GET', $route->methods(), true) ? 'GET' : $route->methods()[0];
     }
 
-    /** Vuelve a registrar routes/web.php con otra configuración de admin. */
-    protected function useAdminDomain(?string $domain, bool $enforce = true): void
+    /** Vuelve a registrar las rutas con otra configuración de admin. */
+    protected function useAdminDomain(?string $domain, bool $enforce = true, ?string $path = null): void
     {
         config(['admin.domain' => $domain, 'admin.enforce_host' => $enforce]);
 
+        if ($path !== null) {
+            config(['admin.path' => $path]);
+        }
+
         $router = $this->app['router'];
         $router->setRoutes(new RouteCollection);
-        // Igual que bootstrap/app.php: el archivo va dentro del grupo 'web'.
+        // Igual que bootstrap/app.php: web.php dentro del grupo 'web' y el
+        // panel a través de AdminRoutes.
         $router->middleware('web')->group(base_path('routes/web.php'));
+        AdminRoutes::register();
         $router->getRoutes()->refreshNameLookups();
         $router->getRoutes()->refreshActionLookups();
     }
@@ -117,6 +124,45 @@ class AdminAccessTest extends TestCase
         $this->assertContains('admin/warehouse', $uris);
         $this->assertContains('admin/warehouse/orders/{id}/dispatch', $uris);
         $this->assertContains('admin/warehouse/orders/{id}/deliver', $uris);
+    }
+
+    // ── routes/admin.php ─────────────────────────────────────────
+
+    public function test_every_admin_route_comes_from_routes_admin_and_is_named_admin(): void
+    {
+        $adminControllers = 'App\\Http\\Controllers\\Admin\\';
+
+        foreach ($this->app['router']->getRoutes()->getRoutes() as $route) {
+            $isPanel = str_starts_with((string) $route->getActionName(), $adminControllers)
+                || str_starts_with((string) $route->getName(), 'admin.');
+
+            if (! $isPanel) {
+                continue;
+            }
+
+            $this->assertStringStartsWith('admin.', (string) $route->getName(), "{$route->uri()} sin nombre admin.*");
+            $this->assertStringStartsWith('admin', $route->uri(), "{$route->getName()} fuera del prefijo del panel");
+        }
+
+        $this->assertStringNotContainsString('Admin\\', file_get_contents(base_path('routes/web.php')));
+    }
+
+    public function test_admin_path_moves_the_whole_panel(): void
+    {
+        $this->useAdminDomain(null, false, 'gestion');
+
+        $this->get('/gestion/login')->assertOk();
+        $this->get('/admin/login')->assertNotFound();
+        $this->get('/gestion/shops')->assertRedirect('/gestion/login');
+        $this->assertSame(url('/gestion/warehouse'), route('admin.warehouse.index'));
+    }
+
+    public function test_an_empty_admin_path_without_a_domain_falls_back_to_admin(): void
+    {
+        $this->useAdminDomain(null, false, '');
+
+        $this->get('/admin/login')->assertOk();
+        $this->get('/')->assertOk();
     }
 
     // ── Login del panel ──────────────────────────────────────────
