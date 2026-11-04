@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\User;
 use App\Support\AdminRoutes;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -13,9 +14,11 @@ use Tests\Concerns\PassesAdminTwoFactor;
 use Tests\TestCase;
 
 /**
- * Separación del panel admin: ningún customer ni seller entra a una ruta
- * admin aunque conozca la URL, y con ADMIN_DOMAIN el panel solo existe en su
- * host y con su propia cookie de sesión.
+ * Separación del panel admin: el panel autentica con su propio guard
+ * ('admin', tabla admins), así que ningún usuario de la tienda —customer,
+ * seller, ni siquiera una fila de users con user_type = 'admin'— entra a una
+ * ruta admin aunque conozca la URL. Con ADMIN_DOMAIN el panel solo existe en
+ * su host; en ambos modos usa su propia cookie de sesión.
  */
 class AdminAccessTest extends TestCase
 {
@@ -23,9 +26,9 @@ class AdminAccessTest extends TestCase
     use PassesAdminTwoFactor;
     use RefreshDatabase;
 
-    protected function makeAdmin(): User
+    protected function makeAdmin(): Admin
     {
-        return User::factory()->create(['user_type' => 'admin']);
+        return Admin::factory()->create();
     }
 
     /** Todas las rutas protegidas por el middleware 'admin'. */
@@ -73,15 +76,16 @@ class AdminAccessTest extends TestCase
 
     // ── Orden de middleware ───────────────────────────────────────
 
-    public function test_admin_middleware_always_runs_after_auth(): void
+    public function test_admin_middleware_always_runs_after_the_admin_guard(): void
     {
         foreach ($this->adminRoutes() as $route) {
             $middleware = $route->gatherMiddleware();
-            $auth = array_search('auth', $middleware, true);
+            $auth = array_search('auth:admin', $middleware, true);
             $admin = array_search('admin', $middleware, true);
 
-            $this->assertNotFalse($auth, "{$route->uri()} no lleva 'auth'");
-            $this->assertLessThan($admin, $auth, "{$route->uri()}: 'admin' va antes que 'auth'");
+            $this->assertNotFalse($auth, "{$route->uri()} no lleva 'auth:admin'");
+            $this->assertNotContains('auth', $middleware, "{$route->uri()} usa el guard de la tienda");
+            $this->assertLessThan($admin, $auth, "{$route->uri()}: 'admin' va antes que 'auth:admin'");
         }
     }
 
@@ -95,25 +99,20 @@ class AdminAccessTest extends TestCase
         }
     }
 
-    public function test_customer_is_forbidden_on_every_admin_route(): void
+    /**
+     * Una sesión de la tienda no es una sesión del panel: para el guard
+     * 'admin' es un invitado, así que acaba en el login del panel.
+     */
+    public function test_storefront_users_of_any_role_are_guests_of_the_panel(): void
     {
-        $customer = $this->makeCustomer();
+        $legacyAdmin = User::factory()->create(['user_type' => 'admin']);
 
-        foreach ($this->adminRoutes() as $route) {
-            $this->actingAs($customer)
-                ->call($this->methodFor($route), $this->uriFor($route))
-                ->assertForbidden();
-        }
-    }
-
-    public function test_seller_is_forbidden_on_every_admin_route(): void
-    {
-        $seller = $this->makeSeller();
-
-        foreach ($this->adminRoutes() as $route) {
-            $this->actingAs($seller)
-                ->call($this->methodFor($route), $this->uriFor($route))
-                ->assertForbidden();
+        foreach ([$this->makeCustomer(), $this->makeSeller(), $legacyAdmin] as $user) {
+            foreach ($this->adminRoutes() as $route) {
+                $this->actingAs($user)
+                    ->call($this->methodFor($route), $this->uriFor($route))
+                    ->assertRedirect('/admin/login');
+            }
         }
     }
 
@@ -177,7 +176,19 @@ class AdminAccessTest extends TestCase
             ->assertRedirect('/admin/login')
             ->assertSessionHasErrors(['email' => __('Correo o contraseña incorrectos.')]);
 
-        $this->assertGuest();
+        $this->assertGuest('admin');
+    }
+
+    public function test_a_users_row_with_user_type_admin_cannot_log_into_the_panel(): void
+    {
+        $user = User::factory()->create(['user_type' => 'admin']);
+        $user->forceFill(['password' => Hash::make('secreto123')])->save();
+
+        $this->from('/admin/login')
+            ->post('/admin/login', ['email' => $user->email, 'password' => 'secreto123'])
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest('admin');
     }
 
     public function test_admin_can_log_into_the_panel(): void
@@ -188,7 +199,40 @@ class AdminAccessTest extends TestCase
         $this->post('/admin/login', ['email' => $admin->email, 'password' => 'secreto123'])
             ->assertRedirect(route('admin.home'));
 
-        $this->assertAuthenticatedAs($admin);
+        $this->assertAuthenticatedAs($admin, 'admin');
+        $this->assertGuest('web');
+        $this->assertNotNull($admin->fresh()->last_login_at);
+    }
+
+    public function test_changing_the_password_closes_the_admins_other_sessions(): void
+    {
+        $admin = $this->makeAdmin();
+
+        // Sesión abierta con la contraseña de antes ('auth.session' guarda su hash).
+        $this->actingAsAdmin($admin)
+            ->withSession(['password_hash_admin' => $admin->getAuthPassword()])
+            ->get('/admin/shops')->assertOk();
+
+        $admin->forceFill(['password' => 'Otra#Clave2026'])->save();
+
+        $this->get('/admin/shops')->assertRedirect('/admin/login');
+        $this->assertGuest('admin');
+    }
+
+    public function test_without_a_domain_the_panel_still_uses_its_own_cookie_scoped_to_its_path(): void
+    {
+        $admin = $this->get('/admin/login')->assertOk();
+        $shop = $this->get('/login')->assertOk();
+
+        $panelCookie = collect($admin->headers->getCookies())
+            ->first(fn ($c) => $c->getName() === config('admin.session_cookie'));
+
+        $this->assertNotNull($panelCookie, 'el panel no emitió su propia cookie de sesión');
+        $this->assertSame('/admin', $panelCookie->getPath());
+        $this->assertSame('strict', strtolower((string) $panelCookie->getSameSite()));
+
+        $shopCookies = collect($shop->headers->getCookies())->map->getName();
+        $this->assertNotContains(config('admin.session_cookie'), $shopCookies);
     }
 
     // ── Host ─────────────────────────────────────────────────────

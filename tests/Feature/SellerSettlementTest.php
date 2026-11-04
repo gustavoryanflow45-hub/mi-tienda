@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\Order;
 use App\Models\SellerSettlement;
 use App\Models\User;
@@ -31,9 +32,9 @@ class SellerSettlementTest extends TestCase
         config(['app.seller_commission_rate' => 0.25]);
     }
 
-    protected function makeAdmin(): User
+    protected function makeAdmin(): Admin
     {
-        return User::factory()->create(['user_type' => 'admin']);
+        return Admin::factory()->create();
     }
 
     protected function makeVerifiedSeller(): User
@@ -90,9 +91,9 @@ class SellerSettlementTest extends TestCase
         // Invitado primero: actingAs deja al usuario logueado el resto del test.
         $this->get('/admin/settlements')->assertRedirect('/admin/login');
 
-        $this->actingAs($this->makeCustomer())->get('/admin/settlements')->assertForbidden();
-        $this->actingAs($seller)->get('/admin/settlements')->assertForbidden();
-        $this->actingAs($seller)->post('/admin/settlements/'.$seller->id)->assertForbidden();
+        $this->actingAs($this->makeCustomer())->get('/admin/settlements')->assertRedirect('/admin/login');
+        $this->actingAs($seller)->get('/admin/settlements')->assertRedirect('/admin/login');
+        $this->actingAs($seller)->post('/admin/settlements/'.$seller->id)->assertRedirect('/admin/login');
 
         $this->assertDatabaseCount('seller_settlements', 0);
     }

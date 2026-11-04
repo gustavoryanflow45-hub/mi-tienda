@@ -6,13 +6,11 @@ use App\Models\Shop;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\BuildsCheckoutData;
-use Tests\Concerns\PassesAdminTwoFactor;
 use Tests\TestCase;
 
 class SellerShopApprovalTest extends TestCase
 {
     use BuildsCheckoutData;
-    use PassesAdminTwoFactor;
     use RefreshDatabase;
 
     public function test_pending_shop_cannot_reach_seller_panel(): void
@@ -82,9 +80,11 @@ class SellerShopApprovalTest extends TestCase
 
     public function test_admin_reaches_seller_panel_without_a_shop(): void
     {
+        // Fila de users con user_type = admin en la tienda (guard web). Lo
+        // que puede hacer en la tienda se revisa en la sub-fase 1d.
         $admin = User::factory()->create(['user_type' => 'admin']);
 
-        $this->actingAsAdmin($admin)
+        $this->actingAs($admin)
             ->get('/seller/products')
             ->assertOk();
     }

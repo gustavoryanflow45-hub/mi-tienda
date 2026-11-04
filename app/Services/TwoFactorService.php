@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Admin;
 use App\Models\AdminTwoFactor;
-use App\Models\User;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
@@ -32,9 +32,9 @@ class TwoFactorService
         return $this->google2fa->generateSecretKey(32);
     }
 
-    public function otpauthUrl(User $user, string $secret): string
+    public function otpauthUrl(Admin $admin, string $secret): string
     {
-        return $this->google2fa->getQRCodeUrl(config('app.name'), $user->email, $secret);
+        return $this->google2fa->getQRCodeUrl(config('app.name'), $admin->email, $secret);
     }
 
     public function qrSvg(string $otpauthUrl): string
@@ -49,7 +49,7 @@ class TwoFactorService
      * acaba de escanear. Devuelve los códigos de recuperación en claro (para
      * mostrarlos una vez) o null si el código no vale.
      */
-    public function confirm(User $user, string $secret, string $code): ?array
+    public function confirm(Admin $admin, string $secret, string $code): ?array
     {
         $timestep = $this->matchingTimestep($secret, $code, null);
 
@@ -59,7 +59,7 @@ class TwoFactorService
 
         $codes = $this->generateRecoveryCodes();
 
-        AdminTwoFactor::updateOrCreate(['user_id' => $user->id], [
+        AdminTwoFactor::updateOrCreate(['admin_id' => $admin->id], [
             'secret' => $secret,
             'recovery_codes' => array_map(fn ($c) => Hash::make($c), $codes),
             'last_used_timestep' => $timestep,

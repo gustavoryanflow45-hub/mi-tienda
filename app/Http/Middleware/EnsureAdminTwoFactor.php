@@ -8,8 +8,8 @@ use Illuminate\Http\Request;
 /**
  * Exige que el admin haya pasado el segundo factor en ESTA sesión.
  *
- * Va después de 'auth' y 'admin'. La marca se guarda en la sesión (no en
- * users) con el id del admin: si en el mismo navegador entra otra cuenta, la
+ * Va después de 'auth:admin' y 'admin'. La marca se guarda en la sesión (no
+ * en admins) con el id del admin: si en el mismo navegador entra otra cuenta, la
  * marca no le sirve. Caduca con la sesión, y el logout la borra.
  *
  * Un admin sin 2FA inscrito acaba en la pantalla del desafío, que le explica
@@ -25,7 +25,7 @@ class EnsureAdminTwoFactor
             return $next($request);
         }
 
-        if ((int) $request->session()->get(self::SESSION_KEY) === (int) $request->user()?->id) {
+        if ((int) $request->session()->get(self::SESSION_KEY) === (int) $request->user('admin')?->id) {
             return $next($request);
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Admin;
 use App\Models\OrderDetail;
 use App\Models\SellerSettlement;
 use App\Models\User;
@@ -71,7 +72,7 @@ class SettlementService
      * billetera, desde donde puede pedir el retiro. Devuelve null si no
      * había nada que liquidar.
      */
-    public function settle(User $seller, User $admin): ?SellerSettlement
+    public function settle(User $seller, Admin $admin): ?SellerSettlement
     {
         $settlement = DB::transaction(function () use ($seller, $admin) {
             // Se bloquean las líneas concretas (no un agregado, que PostgreSQL

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\AdminAuditLog;
 use App\Models\Category;
 use App\Models\Order;
@@ -25,9 +26,9 @@ class AuditLogTest extends TestCase
     use PassesAdminTwoFactor;
     use RefreshDatabase;
 
-    protected function makeAdmin(): User
+    protected function makeAdmin(): Admin
     {
-        return User::factory()->create(['user_type' => 'admin']);
+        return Admin::factory()->create();
     }
 
     protected function makeDeliveredOrder(User $customer, User $seller): Order
@@ -58,7 +59,9 @@ class AuditLogTest extends TestCase
 
         $log = $this->lastLog('shop.approved');
         $this->assertNotNull($log);
-        $this->assertSame($admin->id, $log->user_id);
+        // El actor es la cuenta del panel (admin_id), no una fila de users.
+        $this->assertSame($admin->id, $log->admin_id);
+        $this->assertNull($log->user_id);
         $this->assertSame((new Shop)->getMorphClass(), $log->subject_type);
         $this->assertSame($seller->shop->id, (int) $log->subject_id);
         $this->assertSame(['seller_id' => $seller->id], $log->meta);
@@ -84,7 +87,7 @@ class AuditLogTest extends TestCase
 
         $log = $this->lastLog('seller.settled');
         $this->assertNotNull($log);
-        $this->assertSame($admin->id, $log->user_id);
+        $this->assertSame($admin->id, $log->admin_id);
         $this->assertSame($seller->id, $log->meta['seller_id']);
         $this->assertEquals(200.0, $log->meta['total_sales']);
         $this->assertEqualsCanonicalizing(
@@ -174,11 +177,12 @@ class AuditLogTest extends TestCase
 
         $this->post('/admin/login', ['email' => strtoupper($admin->email), 'password' => 'mala']);
         $failed = $this->lastLog('admin.login_failed');
+        $this->assertNull($failed->admin_id);
         $this->assertNull($failed->user_id);
         $this->assertSame(['email' => strtolower($admin->email)], $failed->meta);
 
         $this->post('/admin/login', ['email' => $admin->email, 'password' => 'secreto123']);
-        $this->assertSame($admin->id, $this->lastLog('admin.login')?->user_id);
+        $this->assertSame($admin->id, $this->lastLog('admin.login')?->admin_id);
         $this->assertStringNotContainsString('secreto123', AdminAuditLog::all()->toJson());
     }
 

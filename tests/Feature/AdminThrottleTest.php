@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\Admin\TwoFactorController;
+use App\Models\Admin;
 use App\Models\AdminTwoFactor;
-use App\Models\User;
 use App\Services\TwoFactorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -15,20 +15,20 @@ class AdminThrottleTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function makeAdmin(): User
+    protected function makeAdmin(): Admin
     {
-        $admin = User::factory()->create(['user_type' => 'admin']);
+        $admin = Admin::factory()->create();
         $admin->forceFill(['password' => Hash::make('secreto123')])->save();
 
         return $admin;
     }
 
-    protected function enroll(User $admin): string
+    protected function enroll(Admin $admin): string
     {
         $service = app(TwoFactorService::class);
         $secret = $service->generateSecret();
         $service->confirm($admin, $secret, app(Google2FA::class)->getCurrentOtp($secret));
-        AdminTwoFactor::where('user_id', $admin->id)->update(['last_used_timestep' => null]);
+        AdminTwoFactor::where('admin_id', $admin->id)->update(['last_used_timestep' => null]);
 
         return $secret;
     }
@@ -44,13 +44,13 @@ class AdminThrottleTest extends TestCase
         $this->post('/admin/login', ['email' => $admin->email, 'password' => 'secreto123'])
             ->assertSessionHasErrors('email');
 
-        $this->assertGuest();
+        $this->assertGuest('admin');
 
         // Pasado el minuto vuelve a poder entrar.
         $this->travel(61)->seconds();
         $this->post('/admin/login', ['email' => $admin->email, 'password' => 'secreto123'])
             ->assertRedirect(route('admin.home'));
-        $this->assertAuthenticatedAs($admin);
+        $this->assertAuthenticatedAs($admin, 'admin');
     }
 
     public function test_the_storefront_password_reset_keeps_its_own_limit(): void
@@ -66,10 +66,10 @@ class AdminThrottleTest extends TestCase
         $secret = $this->enroll($admin);
 
         for ($i = 0; $i < 5; $i++) {
-            $this->actingAs($admin)->post('/admin/two-factor', ['code' => '000000']);
+            $this->actingAs($admin, 'admin')->post('/admin/two-factor', ['code' => '000000']);
         }
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->post('/admin/two-factor', ['code' => app(Google2FA::class)->getCurrentOtp($secret)])
             ->assertSessionHasErrors('code')
             ->assertSessionMissing(\App\Http\Middleware\EnsureAdminTwoFactor::SESSION_KEY);
@@ -81,7 +81,7 @@ class AdminThrottleTest extends TestCase
         $secret = $this->enroll($admin);
 
         for ($i = 1; $i <= TwoFactorController::MAX_FAILURES; $i++) {
-            $response = $this->actingAs($admin)->post('/admin/two-factor', ['code' => '000000']);
+            $response = $this->actingAs($admin, 'admin')->post('/admin/two-factor', ['code' => '000000']);
 
             if ($i % 5 === 0) {
                 $this->travel(61)->seconds(); // esquiva el límite por minuto
@@ -89,12 +89,12 @@ class AdminThrottleTest extends TestCase
         }
 
         $response->assertRedirect(route('admin.login'))->assertSessionHasErrors('email');
-        $this->assertGuest();
+        $this->assertGuest('admin');
 
         // Volver a iniciar sesión no reinicia la cuenta de fallos.
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->post('/admin/two-factor', ['code' => app(Google2FA::class)->getCurrentOtp($secret)])
             ->assertRedirect(route('admin.login'));
-        $this->assertGuest();
+        $this->assertGuest('admin');
     }
 }

@@ -14,15 +14,7 @@ class WarehouseController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
-        // Defensa en profundidad: las rutas ya llevan el middleware 'admin'.
-        $this->middleware(function ($request, $next) {
-            if (! Auth::user()->isAdmin()) {
-                abort(403, __('No autorizado.'));
-            }
-
-            return $next($request);
-        });
+        $this->middleware(['auth:admin', 'admin']);
     }
 
     // ── GET /admin/warehouse ─────────────────────────────────────
@@ -56,13 +48,13 @@ class WarehouseController extends Controller
         ];
 
         // Llegadas nuevas: notificaciones de almacén sin leer para este usuario
-        $arrivals = Auth::user()->unreadNotifications()
+        $arrivals = Auth::guard('admin')->user()->unreadNotifications()
             ->where('type', OrderArrivedWarehouseNotification::class)
             ->get();
 
         // Al abrir el panel se dan por vistas
         if ($arrivals->isNotEmpty()) {
-            Auth::user()->unreadNotifications()
+            Auth::guard('admin')->user()->unreadNotifications()
                 ->where('type', OrderArrivedWarehouseNotification::class)
                 ->update(['read_at' => now()]);
         }
@@ -82,7 +74,7 @@ class WarehouseController extends Controller
         $order->update([
             'delivery_status' => 'on_the_way',
             'dispatched_at' => now(),
-            'dispatched_by' => Auth::id(),
+            'dispatched_by' => Auth::guard('admin')->id(),
         ]);
         $order->orderDetails()->update(['delivery_status' => 'on_the_way']);
         $audit->record('order.dispatched', $order);

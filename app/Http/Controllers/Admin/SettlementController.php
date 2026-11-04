@@ -20,16 +20,9 @@ class SettlementController extends Controller
 {
     public function __construct(private SettlementService $settlements)
     {
-        // Las rutas ya llevan 'auth' + 'admin'; defensa en profundidad como
-        // en AdminShopController.
-        $this->middleware('auth');
-        $this->middleware(function ($request, $next) {
-            if (! $request->user()?->isAdmin()) {
-                abort(403, __('No autorizado.'));
-            }
-
-            return $next($request);
-        });
+        // Las rutas ya llevan 'auth:admin' + 'admin'; defensa en profundidad como
+        // en Admin\ShopController.
+        $this->middleware(['auth:admin', 'admin']);
     }
 
     // ── GET /admin/settlements ───────────────────────────────────
@@ -98,7 +91,7 @@ class SettlementController extends Controller
         $seller = User::where('user_type', 'seller')->with('shop')->findOrFail($seller);
         $label = $seller->shop?->name ?? $seller->name;
 
-        $settlement = $this->settlements->settle($seller, $request->user());
+        $settlement = $this->settlements->settle($seller, $request->user('admin'));
 
         if (! $settlement) {
             return back()->with('warning', __('«:label» no tiene ventas pendientes de liquidar.', ['label' => $label]));

@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\User;
+use App\Models\Admin;
 use App\Services\AuditLog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\URL;
@@ -25,7 +25,7 @@ class InviteAdminTwoFactor extends Command
 
     public function handle(AuditLog $audit): int
     {
-        $user = User::where('email', $this->argument('email'))->where('user_type', 'admin')->first();
+        $user = Admin::where('email', $this->argument('email'))->first();
 
         if (! $user) {
             $this->error('No hay ningún admin con ese correo.');

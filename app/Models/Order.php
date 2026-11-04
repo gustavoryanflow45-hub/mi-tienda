@@ -66,7 +66,7 @@ class Order extends Model
 
     public function dispatcher(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'dispatched_by');
+        return $this->belongsTo(Admin::class, 'dispatched_by');
     }
 
     public function isPaid(): bool

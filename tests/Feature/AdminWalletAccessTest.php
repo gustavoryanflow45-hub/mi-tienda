@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\User;
 use App\Models\WalletRecharge;
 use App\Models\WalletWithdrawal;
@@ -16,9 +17,9 @@ class AdminWalletAccessTest extends TestCase
     use PassesAdminTwoFactor;
     use RefreshDatabase;
 
-    protected function makeAdmin(): User
+    protected function makeAdmin(): Admin
     {
-        return User::factory()->create(['user_type' => 'admin']);
+        return Admin::factory()->create();
     }
 
     /** Recarga pendiente creada por el propio usuario. */
@@ -54,14 +55,14 @@ class AdminWalletAccessTest extends TestCase
     {
         $this->actingAs($this->makeCustomer())
             ->get('/admin/wallet')
-            ->assertForbidden();
+            ->assertRedirect('/admin/login');
     }
 
     public function test_seller_cannot_open_admin_wallet(): void
     {
         $this->actingAs($this->makeSeller())
             ->get('/admin/wallet')
-            ->assertForbidden();
+            ->assertRedirect('/admin/login');
     }
 
     public function test_admin_can_open_admin_wallet(): void
@@ -80,7 +81,7 @@ class AdminWalletAccessTest extends TestCase
 
         $this->actingAs($customer)
             ->post("/admin/wallet/approve/{$recharge->id}")
-            ->assertForbidden();
+            ->assertRedirect('/admin/login');
 
         $this->assertSame(0, (int) $recharge->fresh()->approval);
         $this->assertEquals($balanceBefore, (float) $customer->fresh()->balance);
@@ -93,7 +94,7 @@ class AdminWalletAccessTest extends TestCase
 
         $this->actingAs($seller)
             ->post("/admin/wallet/reject/{$recharge->id}")
-            ->assertForbidden();
+            ->assertRedirect('/admin/login');
 
         $this->assertSame(0, (int) $recharge->fresh()->approval);
     }
@@ -105,11 +106,11 @@ class AdminWalletAccessTest extends TestCase
 
         $this->actingAs($customer)
             ->post("/admin/wallet/withdrawal/approve/{$withdrawal->id}")
-            ->assertForbidden();
+            ->assertRedirect('/admin/login');
 
         $this->actingAs($customer)
             ->post("/admin/wallet/withdrawal/reject/{$withdrawal->id}")
-            ->assertForbidden();
+            ->assertRedirect('/admin/login');
 
         $this->assertSame('pending', $withdrawal->fresh()->status);
     }

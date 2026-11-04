@@ -9,18 +9,17 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 /**
- * Login del panel admin (/admin/login).
+ * Login del panel admin (/admin/login), con el guard 'admin'.
  *
- * En modo dominio la cookie de la tienda no llega al host admin, así que el
- * panel necesita su propio login. Solo admite cuentas admin; a cualquier otra
- * le responde el mismo error que a una contraseña equivocada, para no
+ * Solo busca en la tabla admins: una cuenta de la tienda, sea cual sea su
+ * rol, recibe el mismo error que una contraseña equivocada, para no
  * confirmar qué correos son de administradores. No ofrece "recordarme".
  */
 class LoginController extends Controller
 {
-    public function showLoginForm(Request $request)
+    public function showLoginForm()
     {
-        if ($request->user()?->isAdmin()) {
+        if (Auth::guard('admin')->check()) {
             return redirect()->route('admin.home');
         }
 
@@ -34,7 +33,7 @@ class LoginController extends Controller
             'password' => 'required|string',
         ]);
 
-        if (! Auth::attemptWhen($credentials, fn ($user) => $user->isAdmin())) {
+        if (! Auth::guard('admin')->attempt($credentials)) {
             // Sin actor: no hay sesión. El correo intentado sirve para ver
             // ataques dirigidos a una cuenta.
             $audit->record('admin.login_failed', null, ['email' => Str::lower($credentials['email'])]);
@@ -45,14 +44,17 @@ class LoginController extends Controller
         }
 
         $request->session()->regenerate();
-        $audit->record('admin.login');
+
+        $admin = Auth::guard('admin')->user();
+        $admin->forceFill(['last_login_at' => now()])->save();
+        $audit->record('admin.login', null, [], $admin);
 
         return redirect()->intended(route('admin.home'));
     }
 
     public function logout(Request $request)
     {
-        Auth::logout();
+        Auth::guard('admin')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

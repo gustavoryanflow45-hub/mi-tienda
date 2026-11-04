@@ -14,6 +14,7 @@ class AdminAuditLog extends Model
     public const UPDATED_AT = null;
 
     protected $fillable = [
+        'admin_id',
         'user_id',
         'action',
         'subject_type',
@@ -35,6 +36,11 @@ class AdminAuditLog extends Model
     {
         static::updating(fn () => throw new LogicException('El registro de auditoría no se modifica.'));
         static::deleting(fn () => throw new LogicException('El registro de auditoría no se borra.'));
+    }
+
+    public function admin()
+    {
+        return $this->belongsTo(Admin::class);
     }
 
     public function user()

@@ -156,9 +156,9 @@ class TwoFactorController extends Controller
             ->header('Cache-Control', 'no-store');
     }
 
-    protected function failuresKey(int $userId): string
+    protected function failuresKey(int $adminId): string
     {
-        return 'admin-2fa-failures:'.$userId;
+        return 'admin-2fa-failures:'.$adminId;
     }
 
     /** Demasiados códigos fallidos: fuera de la sesión, sin más intentos. */
@@ -166,7 +166,7 @@ class TwoFactorController extends Controller
     {
         $this->audit->record('admin.2fa.locked_out');
 
-        Auth::logout();
+        Auth::guard('admin')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

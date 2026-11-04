@@ -30,11 +30,14 @@ Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])
     ->middleware('throttle:admin-login')->name('login.attempt');
 
-Route::middleware('auth')->group(function () {
+// Guard 'admin' (tabla admins): una sesión de la tienda no sirve aquí.
+// 'auth.session' cierra las demás sesiones del admin cuando cambia su
+// contraseña (php artisan admin:password).
+Route::middleware(['auth:admin', 'auth.session'])->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-    // 'admin' va siempre después de 'auth': los invitados acaban en el
-    // login, no en un 403.
+    // 'admin' va siempre después de 'auth:admin': los invitados acaban en
+    // el login, no en un 403.
     Route::middleware('admin')->group(function () {
         // ── Segundo factor ───────────────────────────────────────
         // Después del login y antes de cualquier otra ruta del panel.
