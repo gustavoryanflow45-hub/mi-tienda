@@ -1,5 +1,5 @@
 {{-- resources/views/admin/two-factor/recovery-codes.blade.php --}}
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('Códigos de recuperación'))
 

@@ -20,9 +20,6 @@ return [
         'manage_profile' => 'Administrar Perfil',
         'products' => 'Productos',
         'orders' => 'Pedidos',
-        'warehouse' => 'Almacén / Despacho',
-        'shop_approvals' => 'Aprobar Tiendas',
-        'settlements' => 'Liquidaciones',
         'support' => 'Soporte',
     ],
 

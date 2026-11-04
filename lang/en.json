@@ -681,5 +681,7 @@
     "El monto cobrado no coincide con tu pedido. Contacta a soporte con la referencia :ref.": "The amount charged does not match your order. Contact support with reference :ref.",
     "Pago confirmado. Inicia sesión para ver tu pedido.": "Payment confirmed. Sign in to see your order.",
     "Pago confirmado.": "Payment confirmed.",
-    "Cancelaste el pago. Tu carrito sigue intacto.": "You cancelled the payment. Your cart is unchanged."
+    "Cancelaste el pago. Tu carrito sigue intacto.": "You cancelled the payment. Your cart is unchanged.",
+    "Panel": "Admin",
+    "Tiendas pendientes de aprobación": "Shops pending approval"
 }

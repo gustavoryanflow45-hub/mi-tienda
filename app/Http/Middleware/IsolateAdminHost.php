@@ -16,9 +16,9 @@ use Illuminate\Http\Request;
  *    al host (sin Domain) y SameSite=strict. Aunque alguien ponga
  *    SESSION_DOMAIN=.dominio.com para la tienda, la cookie del admin nunca
  *    viaja a dominio.com, y la de la tienda no abre el panel.
- *  - Solo responden las rutas del grupo admin. Un GET a una ruta de la tienda
- *    (los enlaces del layout común) se redirige a APP_URL; cualquier otro
- *    verbo da 404.
+ *  - Solo responden las rutas del grupo admin (idioma incluido: admin.language).
+ *    Un GET a una ruta de la tienda (un marcador viejo) se redirige a APP_URL;
+ *    cualquier otro verbo da 404.
  *
  * Sin ADMIN_DOMAIN (XAMPP) las rutas admin.* usan esa misma cookie propia,
  * limitada además a /ADMIN_PATH: el navegador no la manda a la tienda, y
@@ -26,12 +26,6 @@ use Illuminate\Http\Request;
  */
 class IsolateAdminHost
 {
-    /**
-     * Rutas de la tienda que el layout común usa y que solo tocan la sesión
-     * del propio host: el selector de idioma y el de moneda.
-     */
-    public const SHARED_ROUTES = ['language.change', 'currency.change'];
-
     public function handle(Request $request, Closure $next)
     {
         if (! AdminHost::matches($request)) {
@@ -44,9 +38,7 @@ class IsolateAdminHost
 
         $route = $request->route();
 
-        if ($route
-            && strcasecmp((string) $route->getDomain(), AdminHost::domain()) !== 0
-            && ! $route->named(self::SHARED_ROUTES)) {
+        if ($route && strcasecmp((string) $route->getDomain(), AdminHost::domain()) !== 0) {
             if ($request->isMethod('GET') || $request->isMethod('HEAD')) {
                 return redirect()->away(rtrim(config('app.url'), '/').$request->getRequestUri());
             }

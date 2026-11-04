@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('Panel de almacén'))
 
@@ -136,8 +136,6 @@
 @section('content')
 <section class="py-5">
     <div class="container">
-
-        @include('partials.admin-nav')
 
         {{-- ── Header ── --}}
         <div class="warehouse-header">

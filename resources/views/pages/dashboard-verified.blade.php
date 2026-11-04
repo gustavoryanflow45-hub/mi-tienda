@@ -88,27 +88,6 @@
                                     @endif
                                 </a>
                             </li>
-                            @if(Auth::user()->isAdmin())
-                                <li class="aiz-side-nav-item mb-1">
-                                    <a href="{{ route('admin.warehouse.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                        <i class="las la-warehouse mr-2 fs-16"></i><span>{{ __('dashboard.nav.warehouse') }}</span>
-                                    </a>
-                                </li>
-                                <li class="aiz-side-nav-item mb-1">
-                                    <a href="{{ route('admin.settlements') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                        <i class="las la-hand-holding-usd mr-2 fs-16"></i><span>{{ __('dashboard.nav.settlements') }}</span>
-                                    </a>
-                                </li>
-                                <li class="aiz-side-nav-item mb-1">
-                                    <a href="{{ route('admin.shops') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
-                                        <i class="las la-store mr-2 fs-16"></i><span>{{ __('dashboard.nav.shop_approvals') }}</span>
-                                        @php $pendingShops = \App\Models\Shop::where('status', 0)->count(); @endphp
-                                        @if($pendingShops > 0)
-                                            <span style="margin-left:auto;background:#e74c3c;color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;">{{ $pendingShops }}</span>
-                                        @endif
-                                    </a>
-                                </li>
-                            @endif
                             <li class="aiz-side-nav-item mb-1">
                                 <a href="{{ route('wallet.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                     <i class="las la-wallet mr-2 fs-16"></i><span>{{ __('dashboard.nav.wallet') }}</span>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ShopController;
 use App\Http\Controllers\Admin\TwoFactorController;
 use App\Http\Controllers\Admin\WalletController;
 use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\LanguageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -29,6 +30,11 @@ use Illuminate\Support\Facades\Route;
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])
     ->middleware('throttle:admin-login')->name('login.attempt');
+
+// Idioma del panel: se guarda en la sesión del panel (otra cookie que la de
+// la tienda), así que no sirve el /language de la tienda. Sin 'auth': el
+// login también lo ofrece.
+Route::post('/language', [LanguageController::class, 'change'])->name('language');
 
 // Guard 'admin' (tabla admins): una sesión de la tienda no sirve aquí.
 // 'auth.session' cierra las demás sesiones del admin cuando cambia su
