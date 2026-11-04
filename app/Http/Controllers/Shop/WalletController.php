@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Shop;
 
+use App\Http\Controllers\Controller;
 use App\Models\SellerSettlement;
 use App\Models\WalletRecharge;
 use App\Models\WalletWithdrawal;

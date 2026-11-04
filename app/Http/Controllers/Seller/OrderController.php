@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Seller;
 
 use App\Exceptions\BusinessRuleException;
+use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\OrderFulfillmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class SellerOrderController extends Controller
+class OrderController extends Controller
 {
     public function __construct()
     {
@@ -63,5 +64,26 @@ class SellerOrderController extends Controller
         }
 
         return back()->with('warehouse_success', __('Pedido #:code confirmado correctamente.', ['code' => $order->code]));
+    }
+
+    // ── POST /seller/orders/{id}/send-to-warehouse ───────────────
+    public function sendToWarehouse(int $id, OrderFulfillmentService $fulfillment)
+    {
+        $user = Auth::user();
+
+        if (! $user->isSeller()) {
+            abort(403, __('Solo los vendedores pueden enviar pedidos al almacén.'));
+        }
+
+        $order = Order::findOrFail($id);
+        $this->authorize('sendToWarehouse', $order);
+
+        try {
+            $fulfillment->sendToWarehouse($order, $user);
+        } catch (BusinessRuleException $e) {
+            return back()->with('warehouse_error', $e->getMessage());
+        }
+
+        return back()->with('warehouse_success', __('¡Pedido enviado al almacén correctamente! El personal de despacho fue notificado.'));
     }
 }

@@ -353,7 +353,7 @@
                 <h6><i class="las la-warehouse mr-1"></i> {{ __('Enviar pedido al almacén') }}</h6>
                 <p>{{ __('El pedido está confirmado y listo para prepararse. Envíalo al almacén para iniciar el despacho.') }}</p>
             </div>
-            <form method="POST" action="{{ route('orders.send-to-warehouse', $order->id) }}"
+            <form method="POST" action="{{ route('seller.orders.send-to-warehouse', $order->id) }}"
                   onsubmit="return confirm({{ json_encode(__('¿Confirmar envío del pedido #:code al almacén?', ['code' => $order->code])) }})">
                 @csrf
                 <button type="submit" class="btn-warehouse">

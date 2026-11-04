@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Seller;
 
+use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
@@ -10,9 +11,10 @@ use App\Services\AuditLog;
 use App\Services\ProductService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
-class SellerProductController extends Controller
+class ProductController extends Controller
 {
     public function __construct()
     {
@@ -234,5 +236,24 @@ class SellerProductController extends Controller
         return redirect()->route('seller.products.index')
             ->with('bulk_success', __('Se importaron :count producto(s) exitosamente.', ['count' => $created]))
             ->with('bulk_errors', $errors);
+    }
+
+    // ── POST /seller/products/{id}/toggle-published ──────────────
+    public function togglePublished(Request $request, int $id)
+    {
+        $product = Product::findOrFail($id);
+
+        // ProductPolicy; responde JSON porque lo llama el listado por AJAX.
+        if (Gate::denies('togglePublished', $product)) {
+            return response()->json(['error' => __('No autorizado.')], 403);
+        }
+
+        $product->published = $product->published ? 0 : 1;
+        $product->save();
+
+        return response()->json([
+            'published' => $product->published,
+            'message' => $product->published ? 'Producto publicado' : 'Producto despublicado',
+        ]);
     }
 }

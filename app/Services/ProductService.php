@@ -16,12 +16,12 @@ use Illuminate\Validation\ValidationException;
 /**
  * Alta y edición de un producto con sus combinaciones talla × color.
  *
- * Lo usan el panel del vendedor (SellerProductController) y la moderación
+ * Lo usan el panel del vendedor (Seller\ProductController) y la moderación
  * del admin (Admin\ProductController), así que las reglas de las variantes
  * no pueden divergir entre los dos. Quién puede editar qué lo decide
  * ProductPolicy; aquí solo se valida y se guarda.
  *
- * La importación CSV (SellerProductController@bulkStore) tiene sus propias
+ * La importación CSV (Seller\ProductController@bulkStore) tiene sus propias
  * reglas por fila y solo comparte uniqueSlug().
  */
 class ProductService

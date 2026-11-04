@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Seller;
 
+use App\Http\Controllers\Controller;
 use App\Models\Shop;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 
-class SellerController extends Controller
+class RegistrationController extends Controller
 {
     /**
      * Muestra el formulario de registro de tienda.

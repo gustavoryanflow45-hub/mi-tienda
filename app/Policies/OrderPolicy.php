@@ -31,13 +31,13 @@ class OrderPolicy
             : Response::denyAsNotFound();
     }
 
-    /** Confirmar el pedido (SellerOrderController@confirm). */
+    /** Confirmar el pedido (Seller\OrderController@confirm). */
     public function confirm(User|Admin $actor, Order $order): Response
     {
         return $actor instanceof User && $this->sellsIn($actor, $order) ? Response::allow() : Response::denyAsNotFound();
     }
 
-    /** Enviarlo al almacén (OrderController@sendToWarehouse). */
+    /** Enviarlo al almacén (Seller\OrderController@sendToWarehouse). */
     public function sendToWarehouse(User|Admin $actor, Order $order): Response
     {
         return $actor instanceof User && $this->sellsIn($actor, $order) ? Response::allow() : Response::denyAsNotFound();

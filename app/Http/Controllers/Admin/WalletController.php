@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 /**
  * Revisión de recargas y retiros (/admin/wallet). La lógica está en
  * WalletService; lo que hace el propio usuario —recargar, retirar, ver su
- * historial— está en App\Http\Controllers\WalletController.
+ * historial— está en App\Http\Controllers\Shop\WalletController.
  */
 class WalletController extends Controller
 {

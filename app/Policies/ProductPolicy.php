@@ -18,7 +18,7 @@ class ProductPolicy
         return $actor instanceof Admin || $this->owns($actor, $product);
     }
 
-    /** Publicar / despublicar (HomeController@togglePublished): solo su vendedor. */
+    /** Publicar / despublicar (Seller\ProductController@togglePublished): solo su vendedor. */
     public function togglePublished(User|Admin $actor, Product $product): bool
     {
         return $actor instanceof User && $this->owns($actor, $product);
