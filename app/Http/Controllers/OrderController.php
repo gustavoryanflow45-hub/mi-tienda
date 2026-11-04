@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Admin;
+use App\Exceptions\BusinessRuleException;
 use App\Models\Order;
-use App\Notifications\OrderArrivedWarehouseNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
+use App\Services\OrderFulfillmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -69,12 +69,12 @@ class OrderController extends Controller
     public function show(int $id)
     {
         $user = Auth::user();
-        $canSell = in_array($user->user_type, ['seller', 'admin']);
+        $canSell = $user->isSeller();
 
         $order = Order::with(['orderDetails.product', 'orderDetails.product.category'])->findOrFail($id);
 
-        // Comprador, vendedor con líneas en el pedido o admin (OrderPolicy;
-        // a cualquier otro le responde 404).
+        // Comprador o vendedor con líneas en el pedido (OrderPolicy; a
+        // cualquier otro le responde 404). El panel tiene su propio detalle.
         $this->authorize('view', $order);
 
         $isSeller = $canSell && $order->orderDetails->contains(fn ($d) => $d->seller_id === $user->id);
@@ -83,47 +83,22 @@ class OrderController extends Controller
     }
 
     // ── POST /orders/{id}/send-to-warehouse ──────────────────────
-    public function sendToWarehouse(int $id)
+    public function sendToWarehouse(int $id, OrderFulfillmentService $fulfillment)
     {
         $user = Auth::user();
 
-        if (! in_array($user->user_type, ['seller', 'admin'])) {
+        if (! $user->isSeller()) {
             abort(403, __('Solo los vendedores pueden enviar pedidos al almacén.'));
         }
 
         $order = Order::findOrFail($id);
         $this->authorize('sendToWarehouse', $order);
 
-        if ($order->delivery_status !== 'confirmed') {
-            return back()->with('warehouse_error', __('El pedido debe estar en estado "Confirmado" para enviarlo al almacén.'));
+        try {
+            $fulfillment->sendToWarehouse($order, $user);
+        } catch (BusinessRuleException $e) {
+            return back()->with('warehouse_error', $e->getMessage());
         }
-
-        // El almacén no puede despachar sin los datos del comprador:
-        // intenta completar desde su dirección guardada / perfil antes de bloquear.
-        if (! $order->hasCompleteShippingInfo() && $order->user) {
-            $order->update(['shipping_address' => array_merge(
-                $order->user->shippingSnapshot(),
-                array_filter($order->shippingInfo(), fn ($v) => trim((string) $v) !== ''),
-            )]);
-        }
-
-        if (! $order->hasCompleteShippingInfo()) {
-            return back()->with('warehouse_error', __('No se puede enviar al almacén: faltan datos de envío del cliente (nombre, teléfono, correo, dirección o ciudad). Pide al cliente que complete su dirección de envío.'));
-        }
-
-        $order->update([
-            'delivery_status' => 'warehouse',
-            'warehouse_at' => now(),
-        ]);
-        $order->orderDetails()->where('seller_id', $user->id)
-            ->update(['delivery_status' => 'warehouse']);
-
-        // Avisar al personal del almacén (admins) que llegó un pedido
-        Admin::all()
-            ->each(fn ($admin) => $admin->notify(new OrderArrivedWarehouseNotification($order, $user->name)));
-
-        // Avisar al cliente que su pedido está en el almacén
-        $order->user?->notify(new OrderStatusUpdatedNotification($order, 'warehouse'));
 
         return back()->with('warehouse_success', __('¡Pedido enviado al almacén correctamente! El personal de despacho fue notificado.'));
     }

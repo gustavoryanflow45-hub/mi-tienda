@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\BusinessRuleException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Notifications\OrderArrivedWarehouseNotification;
-use App\Notifications\OrderStatusUpdatedNotification;
-use App\Services\AuditLog;
+use App\Services\OrderFulfillmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -62,46 +62,26 @@ class WarehouseController extends Controller
         return view('admin.warehouse', compact('orders', 'stats', 'arrivals'));
     }
 
-    // ── POST /admin/warehouse/orders/{id}/dispatch ─────────────────────
-    public function dispatchOrder(int $id, AuditLog $audit)
+    // ── POST /admin/warehouse/orders/{id}/dispatch ───────────────
+    public function dispatchOrder(Request $request, int $id, OrderFulfillmentService $fulfillment)
     {
-        $order = Order::findOrFail($id);
-
-        if ($order->delivery_status !== 'warehouse') {
-            return back()->with('warehouse_error', __('Solo se pueden despachar pedidos que están en el almacén.'));
+        try {
+            $order = $fulfillment->dispatch(Order::findOrFail($id), $request->user('admin'));
+        } catch (BusinessRuleException $e) {
+            return back()->with('warehouse_error', $e->getMessage());
         }
-
-        $order->update([
-            'delivery_status' => 'on_the_way',
-            'dispatched_at' => now(),
-            'dispatched_by' => Auth::guard('admin')->id(),
-        ]);
-        $order->orderDetails()->update(['delivery_status' => 'on_the_way']);
-        $audit->record('order.dispatched', $order);
-
-        $order->user?->notify(new OrderStatusUpdatedNotification($order, 'on_the_way'));
 
         return back()->with('warehouse_success', __('Pedido #:code despachado — ahora está en camino al cliente.', ['code' => $order->code]));
     }
 
-    // ── POST /admin/warehouse/orders/{id}/deliver ──────────────────────
-    public function deliver(int $id, AuditLog $audit)
+    // ── POST /admin/warehouse/orders/{id}/deliver ────────────────
+    public function deliver(Request $request, int $id, OrderFulfillmentService $fulfillment)
     {
-        $order = Order::findOrFail($id);
-
-        if ($order->delivery_status !== 'on_the_way') {
-            return back()->with('warehouse_error', __('Solo se pueden marcar como entregados los pedidos que están en camino.'));
+        try {
+            $order = $fulfillment->deliver(Order::findOrFail($id), $request->user('admin'));
+        } catch (BusinessRuleException $e) {
+            return back()->with('warehouse_error', $e->getMessage());
         }
-
-        $order->update([
-            'delivery_status' => 'delivered',
-            'delivered_at' => now(),
-        ]);
-        $order->orderDetails()->update(['delivery_status' => 'delivered']);
-        // Entregado = liquidable (OrderDetail::scopeSettleable).
-        $audit->record('order.delivered', $order);
-
-        $order->user?->notify(new OrderStatusUpdatedNotification($order, 'delivered'));
 
         return back()->with('warehouse_success', __('Pedido #:code marcado como entregado.', ['code' => $order->code]));
     }

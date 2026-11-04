@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\BusinessRuleException;
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\WalletRecharge;
 use App\Models\WalletWithdrawal;
-use App\Services\AuditLog;
-use Illuminate\Support\Facades\DB;
+use App\Services\WalletService;
+use Illuminate\Http\Request;
 
 /**
- * Revisión de recargas y retiros (/admin/wallet). Lo que hace el propio
- * usuario —recargar, retirar, ver su historial— está en
- * App\Http\Controllers\WalletController.
+ * Revisión de recargas y retiros (/admin/wallet). La lógica está en
+ * WalletService; lo que hace el propio usuario —recargar, retirar, ver su
+ * historial— está en App\Http\Controllers\WalletController.
  */
 class WalletController extends Controller
 {
-    public function __construct()
+    public function __construct(private WalletService $wallet)
     {
         // Las rutas ya llevan 'auth:admin' + 'admin'; defensa en profundidad como
         // en Admin\ShopController.
@@ -36,35 +36,24 @@ class WalletController extends Controller
      | RECARGAS
     ───────────────────────────────────────── */
 
-    public function approve($id, AuditLog $audit)
+    public function approve(Request $request, $id)
     {
-        $recharge = WalletRecharge::findOrFail($id);
-
-        if ($recharge->approval == 1) {
-            return back()->with('warning', __('Esta recarga ya fue aprobada.'));
+        try {
+            $recharge = $this->wallet->approveRecharge(WalletRecharge::findOrFail($id), $request->user('admin'));
+        } catch (BusinessRuleException $e) {
+            return back()->with('warning', $e->getMessage());
         }
-
-        DB::transaction(function () use ($recharge) {
-            $recharge->update(['approval' => 1]);
-            User::where('id', $recharge->user_id)
-                ->increment('balance', $recharge->amount);
-        });
-
-        $audit->record('wallet.recharge.approved', $recharge, ['user_id' => $recharge->user_id, 'amount' => (float) $recharge->amount]);
 
         return back()->with('success', __('Recarga #:id aprobada. Se sumaron $:amount al saldo del usuario.', ['id' => $recharge->id, 'amount' => $recharge->amount]));
     }
 
-    public function reject($id, AuditLog $audit)
+    public function reject(Request $request, $id)
     {
-        $recharge = WalletRecharge::findOrFail($id);
-
-        if ($recharge->approval == 1) {
-            return back()->with('warning', __('No se puede rechazar una recarga ya aprobada.'));
+        try {
+            $recharge = $this->wallet->rejectRecharge(WalletRecharge::findOrFail($id), $request->user('admin'));
+        } catch (BusinessRuleException $e) {
+            return back()->with('warning', $e->getMessage());
         }
-
-        $recharge->update(['approval' => -1]);
-        $audit->record('wallet.recharge.rejected', $recharge, ['user_id' => $recharge->user_id, 'amount' => (float) $recharge->amount]);
 
         return back()->with('error', __('Recarga #:id rechazada.', ['id' => $recharge->id]));
     }
@@ -73,38 +62,24 @@ class WalletController extends Controller
      | RETIROS
     ───────────────────────────────────────── */
 
-    public function approveWithdrawal($id, AuditLog $audit)
+    public function approveWithdrawal(Request $request, $id)
     {
-        $withdrawal = WalletWithdrawal::findOrFail($id);
-
-        if ($withdrawal->status !== 'pending') {
-            return back()->with('warning', __('Este retiro ya fue procesado.'));
+        try {
+            $withdrawal = $this->wallet->approveWithdrawal(WalletWithdrawal::findOrFail($id), $request->user('admin'));
+        } catch (BusinessRuleException $e) {
+            return back()->with('warning', $e->getMessage());
         }
-
-        // Solo marcar como aprobado — el saldo ya se descontó al crear la solicitud
-        $withdrawal->update(['status' => 'approved']);
-        $audit->record('wallet.withdrawal.approved', $withdrawal, ['user_id' => $withdrawal->user_id, 'amount' => (float) $withdrawal->amount]);
 
         return back()->with('success', __('Retiro #:id aprobado por $:amount.', ['id' => $withdrawal->id, 'amount' => $withdrawal->amount]));
     }
 
-    public function rejectWithdrawal($id, AuditLog $audit)
+    public function rejectWithdrawal(Request $request, $id)
     {
-        $withdrawal = WalletWithdrawal::findOrFail($id);
-
-        if ($withdrawal->status !== 'pending') {
-            return back()->with('warning', __('Este retiro ya fue procesado.'));
+        try {
+            $withdrawal = $this->wallet->rejectWithdrawal(WalletWithdrawal::findOrFail($id), $request->user('admin'));
+        } catch (BusinessRuleException $e) {
+            return back()->with('warning', $e->getMessage());
         }
-
-        DB::transaction(function () use ($withdrawal) {
-            $withdrawal->update(['status' => 'rejected']);
-
-            // Devolver el saldo al usuario
-            User::where('id', $withdrawal->user_id)
-                ->increment('balance', $withdrawal->amount);
-        });
-
-        $audit->record('wallet.withdrawal.rejected', $withdrawal, ['user_id' => $withdrawal->user_id, 'amount' => (float) $withdrawal->amount]);
 
         return back()->with('success', __('Retiro #:id rechazado. Saldo devuelto al usuario.', ['id' => $withdrawal->id]));
     }

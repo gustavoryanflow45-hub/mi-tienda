@@ -7,12 +7,10 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Services\AuditLog;
-use App\Services\ImageOptimizer;
+use App\Services\ProductService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class SellerProductController extends Controller
 {
@@ -21,7 +19,7 @@ class SellerProductController extends Controller
         $this->middleware('auth');
         $this->middleware(function ($request, $next) {
             $user = Auth::user();
-            if (! in_array($user->user_type, ['seller', 'admin'])) {
+            if (! $user->isSeller()) {
                 abort(403, __('No autorizado.'));
             }
             if (! $user->isVerified()) {
@@ -58,157 +56,19 @@ class SellerProductController extends Controller
     }
 
     // ── POST /seller/products ────────────────────────────────────
-    public function store(Request $request, ImageOptimizer $images)
+    public function store(Request $request, ProductService $products)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'unit_price' => 'required|numeric|min:0',
-            'unit' => 'required|string|max:50',
-            'thumbnail' => 'required|image|mimes:jpg,jpeg,png,webp|max:'.config('images.max_upload_kb'),
-            'photos.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:'.config('images.max_upload_kb'),
-            'stocks' => 'required|array|min:1',
-            'stocks.*.price' => 'required|numeric|min:0',
-            'stocks.*.qty' => 'required|integer|min:0',
-        ]);
+        $products->validate($request->all(), creating: true);
 
-        $this->validateVariants($request);
-
-        // Slug único
-        $slug = Str::slug($request->name);
-        $count = Product::where('slug', 'like', $slug.'%')->count();
-        if ($count > 0) {
-            $slug .= '-'.($count + 1);
-        }
-
-        // Imagen principal (reducida y en WebP: ver config/images.php)
-        $thumbnailPath = $images->store($request->file('thumbnail'), 'products/thumbnails', 'product_thumbnail');
-
-        // Imágenes adicionales
-        $photosPaths = [];
-        if ($request->hasFile('photos')) {
-            foreach (array_slice($request->file('photos'), 0, 5) as $photo) {
-                $photosPaths[] = $images->store($photo, 'products/photos', 'product_photo');
-            }
-        }
-
-        // Crear producto
-        $product = Product::create([
-            'name' => $request->name,
-            'slug' => $slug,
-            'category_id' => $request->category_id,
-            'brand_id' => $request->brand_id ?: null,
-            'added_by' => Auth::id(),
-            'unit_price' => $request->unit_price,
-            'purchase_price' => $request->purchase_price ?: null,
-            'discount' => $request->discount ?? 0,
-            'discount_type' => $request->discount_type ?? 'percent',
-            'thumbnail' => $thumbnailPath,
-            'photos' => ! empty($photosPaths) ? $photosPaths : null,
-            'description' => $request->description,
-            'short_description' => $request->short_description,
-            'unit' => $request->unit,
-            'variant_type' => $request->variant_type ?: null,
-            'min_qty' => $request->min_qty ?? 1,
-            'low_stock_qty' => $request->low_stock_qty ?? 5,
-            'shipping_cost' => $request->shipping_cost ?? 0,
-            'is_quantity_multiplied' => $request->is_quantity_multiplied ?? 0,
-            'featured' => $request->featured ?? 0,
-            'todays_deal' => $request->todays_deal ?? 0,
-            'published' => $request->published ?? 1,
-            'digital' => $request->digital ?? 0,
-            'meta_title' => $request->meta_title,
-            'meta_description' => $request->meta_description,
-        ]);
-
-        $this->syncStocks($product, $request->stocks);
+        $product = $products->create(
+            Auth::user(),
+            $request->all(),
+            $request->file('thumbnail'),
+            $request->file('photos', []),
+        );
 
         return redirect()->route('seller.products.index')
             ->with('success', __('¡Producto ":name" creado exitosamente!', ['name' => $product->name]));
-    }
-
-    /**
-     * Valida las combinaciones talla/color contra lo que admite la categoría.
-     *
-     * La UI ya oculta las tallas en categorías que no las usan, pero la regla
-     * se aplica aquí para que no dependa del formulario: un POST directo con
-     * talla en una categoría "solo color" tiene que fallar.
-     */
-    private function validateVariants(Request $request): void
-    {
-        $category = Category::find($request->category_id);
-
-        if (! $category) {
-            return; // la regla exists: del validate() ya se encargó
-        }
-
-        $request->validate([
-            'variant_type' => ['nullable', Rule::in(array_keys(config('variants.types', [])))],
-        ], [
-            'variant_type.in' => 'Tipo de talla no válido.',
-        ]);
-
-        // Se resuelven las tallas sobre un producto en memoria, el mismo objeto
-        // que usa la vista: manda el variant_type declarado y, si no viene, el
-        // de la categoría. Así la regla del servidor no puede divergir de las
-        // tallas que el formulario acaba de pintar.
-        $resolver = new Product(['variant_type' => $request->input('variant_type')]);
-        $resolver->setRelation('category', $category);
-
-        $allowedSizes = $resolver->sizeOptions();
-        $allowedColors = array_keys(config('variants.colors', []));
-        $rules = [];
-
-        foreach (array_keys($request->stocks ?? []) as $i) {
-            $rules["stocks.$i.color"] = ['nullable', Rule::in($allowedColors)];
-
-            $rules["stocks.$i.size"] = $resolver->usesSizes()
-                ? ['nullable', Rule::in($allowedSizes)]
-                : ['nullable', 'prohibited'];
-        }
-
-        $request->validate($rules, [
-            'stocks.*.size.prohibited' => "Este producto no maneja tallas. La categoría \"{$category->name}\" no las trae por defecto: elige un tipo de talla para ofrecerlas, o deja solo el color.",
-            'stocks.*.size.in' => 'Talla no válida para el tipo de talla elegido.',
-            'stocks.*.color.in' => 'Color no válido.',
-        ]);
-
-        // Dos filas con la misma combinación dejarían el stock ambiguo: al
-        // resolver la variante en el carrito ganaría una de las dos al azar.
-        $combos = collect($request->stocks)
-            ->map(fn ($s) => ProductStock::buildVariant($s['size'] ?? null, $s['color'] ?? null));
-
-        if ($combos->count() !== $combos->unique()->count()) {
-            $repetida = $combos->duplicates()->first();
-
-            throw ValidationException::withMessages([
-                'stocks' => 'Hay filas de stock repetidas para la misma combinación'
-                    .($repetida ? " (\"{$repetida}\")" : '').'. Deja una sola por talla y color.',
-            ]);
-        }
-    }
-
-    /** Reemplaza las filas de stock del producto por las del formulario. */
-    private function syncStocks(Product $product, array $stocks): void
-    {
-        $product->stocks()->delete();
-
-        foreach ($stocks as $stockData) {
-            ProductStock::create([
-                'product_id' => $product->id,
-                'size' => filled($stockData['size'] ?? null) ? $stockData['size'] : null,
-                'color' => filled($stockData['color'] ?? null) ? $stockData['color'] : null,
-                'price' => $stockData['price'],
-                'qty' => $stockData['qty'],
-                'sku' => $stockData['sku'] ?? null,
-            ]);
-        }
-
-        // variant_product refleja si el producto se vende por combinaciones,
-        // que es lo que el detalle usa para exigir una selección.
-        $product->update([
-            'variant_product' => $product->load('stocks')->hasVariants() ? 1 : 0,
-        ]);
     }
 
     // ── GET /seller/products/{id}/edit ───────────────────────────
@@ -216,7 +76,7 @@ class SellerProductController extends Controller
     {
         $product = Product::with('stocks')->findOrFail($id);
 
-        // Solo el dueño (o un admin): ProductPolicy
+        // Solo el dueño: ProductPolicy
         $this->authorize('update', $product);
 
         $categories = Category::where('status', 1)->orderBy('name')->get();
@@ -226,66 +86,14 @@ class SellerProductController extends Controller
     }
 
     // ── PUT /seller/products/{id} ────────────────────────────────
-    public function update(Request $request, $id, ImageOptimizer $images)
+    public function update(Request $request, $id, ProductService $products)
     {
         $product = Product::with('stocks')->findOrFail($id);
 
         $this->authorize('update', $product);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'unit_price' => 'required|numeric|min:0',
-            'unit' => 'required|string|max:50',
-            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:'.config('images.max_upload_kb'),
-            'photos.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:'.config('images.max_upload_kb'),
-            'stocks' => 'required|array|min:1',
-            'stocks.*.price' => 'required|numeric|min:0',
-            'stocks.*.qty' => 'required|integer|min:0',
-        ]);
-
-        $this->validateVariants($request);
-
-        // Imagen principal: solo se reemplaza si se sube una nueva
-        if ($request->hasFile('thumbnail')) {
-            $product->thumbnail = $images->store($request->file('thumbnail'), 'products/thumbnails', 'product_thumbnail');
-        }
-
-        // Imágenes adicionales: si se suben nuevas, reemplazan las existentes
-        if ($request->hasFile('photos')) {
-            $photosPaths = [];
-            foreach (array_slice($request->file('photos'), 0, 5) as $photo) {
-                $photosPaths[] = $images->store($photo, 'products/photos', 'product_photo');
-            }
-            $product->photos = $photosPaths;
-        }
-
-        $product->fill([
-            'name' => $request->name,
-            'category_id' => $request->category_id,
-            'brand_id' => $request->brand_id ?: null,
-            'unit_price' => $request->unit_price,
-            'purchase_price' => $request->purchase_price ?: null,
-            'discount' => $request->discount ?? 0,
-            'discount_type' => $request->discount_type ?? 'percent',
-            'description' => $request->description,
-            'short_description' => $request->short_description,
-            'unit' => $request->unit,
-            'variant_type' => $request->variant_type ?: null,
-            'min_qty' => $request->min_qty ?? 1,
-            'low_stock_qty' => $request->low_stock_qty ?? 5,
-            'shipping_cost' => $request->shipping_cost ?? 0,
-            'is_quantity_multiplied' => $request->is_quantity_multiplied ?? 0,
-            'featured' => $request->featured ?? 0,
-            'todays_deal' => $request->todays_deal ?? 0,
-            'published' => $request->published ?? 1,
-            'digital' => $request->digital ?? 0,
-            'meta_title' => $request->meta_title,
-            'meta_description' => $request->meta_description,
-        ]);
-        $product->save();
-
-        $this->syncStocks($product, $request->stocks);
+        $products->validate($request->all(), creating: false);
+        $products->update($product, $request->all(), $request->file('thumbnail'), $request->file('photos', []));
 
         return redirect()->route('seller.products.index')
             ->with('success', __('¡Producto ":name" actualizado exitosamente!', ['name' => $product->name]));
@@ -359,11 +167,7 @@ class SellerProductController extends Controller
                 }
             }
 
-            $slug = Str::slug($d['name']);
-            $count = Product::where('slug', 'like', $slug.'%')->count();
-            if ($count > 0) {
-                $slug .= '-'.($count + 1);
-            }
+            $slug = ProductService::uniqueSlug($d['name']);
 
             try {
                 // Antes del create: un tipo inventado dejaría el producto

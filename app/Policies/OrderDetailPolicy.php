@@ -2,26 +2,28 @@
 
 namespace App\Policies;
 
+use App\Models\Admin;
 use App\Models\OrderDetail;
 use App\Models\User;
 
 /**
  * Una línea de pedido es del vendedor que la vende (seller_id). La ven ese
- * vendedor, el comprador del pedido y el admin; solo su vendedor la mueve.
+ * vendedor, el comprador del pedido y las cuentas del panel; solo su
+ * vendedor la mueve.
  */
 class OrderDetailPolicy
 {
-    public function view(User $user, OrderDetail $detail): bool
+    public function view(User|Admin $actor, OrderDetail $detail): bool
     {
-        return $user->isAdmin()
-            || $this->sells($user, $detail)
-            || (int) $detail->order?->user_id === (int) $user->id;
+        return $actor instanceof Admin
+            || $this->sells($actor, $detail)
+            || (int) $detail->order?->user_id === (int) $actor->id;
     }
 
     /** Cambiar su estado de entrega (confirmar, enviar al almacén). */
-    public function update(User $user, OrderDetail $detail): bool
+    public function update(User|Admin $actor, OrderDetail $detail): bool
     {
-        return $this->sells($user, $detail);
+        return $actor instanceof User && $this->sells($actor, $detail);
     }
 
     protected function sells(User $user, OrderDetail $detail): bool

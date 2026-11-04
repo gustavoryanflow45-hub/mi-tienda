@@ -91,7 +91,9 @@ class CartController extends Controller
             'quantity'   => 'nullable|integer|min:1',
         ]);
 
-        $product  = Product::findOrFail($request->product_id);
+        // Solo productos a la venta: publicados por su vendedor y no
+        // desactivados por el panel (Product::scopeActive).
+        $product  = Product::active()->findOrFail($request->product_id);
         $quantity = $request->quantity ?? 1;
         $variant  = $request->variation ?? null;
 
@@ -202,7 +204,7 @@ class CartController extends Controller
         abort_unless($productId, 422, 'product_id required');
 
         // La categoría entra por el rótulo de la talla ("Talla US", "Cintura").
-        $product = Product::with('stocks', 'category')->findOrFail($productId);
+        $product = Product::active()->with('stocks', 'category')->findOrFail($productId);
 
         return response()->view('partials.quick-add-modal', compact('product'));
     }

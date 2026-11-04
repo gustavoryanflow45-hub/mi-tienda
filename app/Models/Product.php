@@ -26,6 +26,8 @@ class Product extends Model
     ];
 
     public function category() { return $this->belongsTo(Category::class); }
+    /** Vendedor dueño del producto (products.added_by). */
+    public function seller()   { return $this->belongsTo(User::class, 'added_by'); }
     public function brand()    { return $this->belongsTo(Brand::class); }
     public function stocks()   { return $this->hasMany(ProductStock::class); }
     public function reviews()  { return $this->hasMany(Review::class); }

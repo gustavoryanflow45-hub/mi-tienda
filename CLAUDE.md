@@ -41,17 +41,17 @@ No API layer — all responses are server-rendered Blade. AJAX calls (search aut
 
 ### User Types
 
-`users.user_type` distinguishes `customer` and `seller` (and the legacy `admin`, see below). The storefront's `User` model handles them. **Panel admins are not users**: they live in the `admins` table (`App\Models\Admin`) and authenticate with the separate `admin` guard — see **Admin Access Separation**. The rows that still carry `user_type = 'admin'` in `users` were copied to `admins` (same id, `admins.legacy_user_id`) and kept; they no longer open the panel, but the storefront still gives them the old admin powers (seller panel without a shop, any product/order) until sub-phase 1d removes `isAdmin()` from the storefront. Sellers also have a `shops` record. Shop registration (`/shops/create`) is public and creates the user with `user_type = 'seller'`.
+`users.user_type` distinguishes `customer` and `seller` (and the legacy `admin`, see below). The storefront's `User` model handles them. **Panel admins are not users**: they live in the `admins` table (`App\Models\Admin`) and authenticate with the separate `admin` guard — see **Admin Access Separation**. The rows that still carry `user_type = 'admin'` in `users` were copied to `admins` (same id, `admins.legacy_user_id`) and kept; they no longer open the panel and have **no special power in the storefront**: `User::isAdmin()` no longer exists, nothing in the shop checks `user_type = 'admin'`, so such a row behaves like a customer (`OwnershipPolicyTest`, `SellerShopApprovalTest`). Sellers also have a `shops` record. Shop registration (`/shops/create`) is public and creates the user with `user_type = 'seller'`.
 
 Three middleware aliases are registered in `bootstrap/app.php` (the third, `admin.2fa`, is under **Admin Access Separation**):
 - **`admin`** (`EnsureUserIsAdmin`) — guards the whole admin panel (`/admin/*`, warehouse included), together with `auth:admin` and `admin.2fa`: it requires an `Admin` on the `admin` guard. Always place it after `auth:admin` so guests get redirected to the login instead of a 403, and never use plain `auth` on a panel route (`AdminAccessTest` checks both on every route). See **Admin Access Separation** below.
-- **`shop.approved`** (`EnsureShopApproved`) — guards every `/seller/*` route. Because `/shops/create` is public and logs the user straight in, `user_type = 'seller'` alone means nothing: the shop must also have `status = 1`. Admins bypass it (they have no shop); pending/rejected/shopless sellers are redirected to `/dashboard` with a `warning` flash.
+- **`shop.approved`** (`EnsureShopApproved`) — guards every `/seller/*` route. Because `/shops/create` is public and logs the user straight in, `user_type = 'seller'` alone means nothing: the shop must also have `status = 1`. Nobody bypasses it (panel accounts are another table and never use `/seller`); pending/rejected/shopless sellers are redirected to `/dashboard` with a `warning` flash.
 
 Admins approve shops at `/admin/shops` (`Admin\ShopController`, view `admin/shops.blade.php`) — list with status/search filters, ID document thumbnails, and approve/reject actions. `shops.status`: `0` pending, `1` approved, `2` rejected (`Shop::statusLabel()`); the constants live on `Admin\ShopController`. The panel nav (`layouts/admin`) shows the pending-count badge.
 
 Each decision sends `ShopStatusUpdatedNotification` to the seller on **both** `database` and `mail` (a decision can take days, so the seller may not be logged in). A no-op re-approval sends nothing. `DashboardController` reads the unread ones, marks them read, and passes `$shopUpdates` to both dashboard views, which render `partials/shop-status-banner.blade.php` — same read-once pattern as `OrderStatusUpdatedNotification` in `/orders`. Its `toMail()` calls `route()`, which is safe in console and queue contexts (the console kernel's `SetRequestForConsole` bootstrapper builds a request from `APP_URL`). It only breaks in ad-hoc scripts that boot the **HTTP** kernel without binding a `request` — `url()` fails there too, so swapping helpers is not a fix; bind a request instead.
 
-Controllers additionally check `in_array($user->user_type, ['seller', 'admin'])` in a constructor middleware closure (`SellerProductController`, `SellerOrderController`); the `Admin\*` controllers check `isAdmin()`. These are defense in depth — the route middleware is the real gate for roles, and **ownership** is decided by the policies in `app/Policies` (auto-discovered): `ProductPolicy` (`update`, `togglePublished`: owner via `added_by`, or admin), `OrderPolicy` (`view`: buyer, a seller with a line in the order, or admin; `confirm` / `sendToWarehouse`: a seller with a line — denials are `denyAsNotFound()`, i.e. 404, so another seller's order id is not confirmed to exist), `OrderDetailPolicy` (lines belong to `seller_id`) and `ShopPolicy` (`approve`/`reject` admin only). Controllers call `$this->authorize()` (`HomeController@togglePublished` uses `Gate::denies` to keep its JSON 403). Lists still filter by `added_by` / `seller_id` in the query — a policy does not filter collections. Covered by `tests/Feature/OwnershipPolicyTest.php`.
+Controllers additionally check `$user->isSeller()` in a constructor middleware closure (`SellerProductController`, `SellerOrderController`); the `Admin\*` controllers repeat `auth:admin` + `admin`. These are defense in depth — the route middleware is the real gate for roles, and **ownership** is decided by the policies in `app/Policies` (auto-discovered): `ProductPolicy` (`update`: owner via `added_by`, or a panel `Admin`; `togglePublished`: the owner only; `moderate`: `Admin` only), `OrderPolicy` (`view`: buyer, a seller with a line in the order, or a panel `Admin`; `confirm` / `sendToWarehouse`: a seller with a line — denials are `denyAsNotFound()`, i.e. 404, so another seller's order id is not confirmed to exist), `OrderDetailPolicy` (lines belong to `seller_id`) and `ShopPolicy` (`approve`/`reject` `Admin` only). Every policy method takes `User|Admin`: the panel authorizes with the same policies (inside `auth:admin` the `Admin` is the Gate user), and a storefront `User` gets `false`, never a `TypeError`. Controllers call `$this->authorize()` (`HomeController@togglePublished` uses `Gate::denies` to keep its JSON 403). Lists still filter by `added_by` / `seller_id` in the query — a policy does not filter collections. Covered by `tests/Feature/OwnershipPolicyTest.php`.
 
 `User::$fillable` deliberately **excludes** `user_type`, `balance`, `banned`, `email_verified` and `verification_code`. Assign them explicitly (`$user->user_type = ...`), never through `create()`/`fill()` with request data — see `RegisterController` and `SellerController`. Model factories bypass this via `Model::unguarded()`, so tests can still set them inline.
 
@@ -96,7 +96,8 @@ Enrollment is **only** through `php artisan admin:2fa-invite {email}`, which pri
 | `shop.approved` / `shop.rejected` | `Admin\ShopController` (not on a no-op) | `seller_id` |
 | `seller.settled` | `Admin\SettlementController`, after `SettlementService::settle()` returns (the service itself is not touched) | gross, commission, net, lines |
 | `wallet.recharge.approved` / `.rejected`, `wallet.withdrawal.approved` / `.rejected` | `Admin\WalletController` | `user_id`, `amount` |
-| `order.dispatched` / `order.delivered` | `Admin\WarehouseController` — delivery is what makes a sale settleable | — |
+| `order.dispatched` / `order.delivered` | `OrderFulfillmentService` (from `Admin\WarehouseController`) — delivery is what makes a sale settleable | — |
+| `product.approved` / `product.disabled` / `product.edited` | `ProductService::setApproved()` / `Admin\ProductController@update` | `seller_id` |
 | `products.csv_imported` | `SellerProductController@bulkStore` (seller or admin) | `created`, `errors` counts |
 | `admin.login` / `admin.login_failed` | `Admin\LoginController` (failed: no actor, attempted email) | `email` |
 | `admin.2fa.passed` / `.failed` / `.recovery_used` / `.locked_out` / `.enrolled` | `Admin\TwoFactorController` | method / remaining codes |
@@ -158,13 +159,13 @@ The header's "Mis productos" link (it replaced "Productos"; the full catalog `/p
 ### Key Models and Relationships
 
 - `Order` → hasMany `OrderDetail` (each carries `seller_id`, denormalized `product_name`/`price`) → belongsTo `Product` / `User` (seller)
-- `Product` → belongsTo `Category`, `Brand`, `User` (seller, via `added_by`) → hasMany `ProductStock`, `Review`
+- `Product` → belongsTo `Category`, `Brand`, `User` (`seller()`, via `added_by`) → hasMany `ProductStock`, `Review`
 - `User` (seller) → hasOne `Shop` → hasMany `Product`
 - `Category` is self-referential via `parent_id`
 
 Common query scopes: `scopeActive()`, `scopePublished()`, `scopeFeatured()`, `scopeApproved()`.
 
-Wallet: `WalletRecharge` / `WalletWithdrawal` records. The user side (recharge, withdraw, history) is `WalletController`; the admin approve/reject routes under `/admin/wallet` are `Admin\WalletController`.
+Wallet: `WalletRecharge` / `WalletWithdrawal` records, all logic in `App\Services\WalletService` (see **Shared Business Services**). The user side (recharge, withdraw, history) is `WalletController`; the admin approve/reject routes under `/admin/wallet` are `Admin\WalletController`.
 
 ### Seller Earnings & Settlements
 
@@ -178,9 +179,29 @@ The admin panel is `/admin/settlements` (`Admin\SettlementController`, view `adm
 
 ### Delivery / Warehouse Flow
 
-After payment, `orders.delivery_status` advances: `pending` → `confirmed` (seller, `SellerOrderController@confirm`) → `warehouse` (seller, `OrderController@sendToWarehouse`) → `on_the_way` (warehouse panel dispatch) → `delivered`. Each step stamps its timestamp (`confirmed_at`, `warehouse_at`, `dispatched_at` + `dispatched_by`, `delivered_at`) and every transition is guarded by a check on the previous status.
+After payment, `orders.delivery_status` advances (all four steps in `App\Services\OrderFulfillmentService`, the controllers only authorize and show the result): `pending` → `confirmed` (seller, `SellerOrderController@confirm`) → `warehouse` (seller, `OrderController@sendToWarehouse`) → `on_the_way` (warehouse panel dispatch) → `delivered`. Each step stamps its timestamp (`confirmed_at`, `warehouse_at`, `dispatched_at` + `dispatched_by`, `delivered_at`) and every transition is guarded by a check on the previous status.
 
 The warehouse panel (`/admin/warehouse`, `Admin\WarehouseController`, view `admin/warehouse.blade.php`) is **admin-only** (it lives in the admin route group, behind `admin` + `admin.2fa`) — it lists every seller's orders together with buyer contact data, so sellers must not reach it; they work from `/seller/orders`. It drives dispatch (`POST /admin/warehouse/orders/{id}/dispatch`) and delivery (`.../deliver`). Notifications (all `database` channel): `OrderArrivedWarehouseNotification` goes to all admins when a seller sends an order to the warehouse (shown as "nuevas llegadas" in the panel, marked read on view); `OrderStatusUpdatedNotification` goes to the customer on every status change (shown as a banner in `/orders`, marked read on view). The customer-facing tracker with step dates lives in `pages/order-detail.blade.php`. Full flow covered by `tests/Feature/WarehouseFlowTest.php`.
+
+### Shared Business Services
+
+Business rules live in `app/Services`, not in controllers, so the storefront, the seller panel, the admin panel and the future API run the same code. Controllers authorize (policies), call the service, and turn the result into a response.
+
+- `ShopApprovalService` — approve/reject a shop (`Shop::PENDING|APPROVED|REJECTED`), audit, notify; a no-op returns `false`.
+- `WalletService` — `requestRecharge`, `requestWithdrawal` (throws a `ValidationException` on `amount` when the balance is short), `approveRecharge` / `rejectRecharge` / `approveWithdrawal` / `rejectWithdrawal`.
+- `OrderFulfillmentService` — `confirm` and `sendToWarehouse` (seller), `dispatch` and `deliver` (an `Admin`).
+- `ProductService` — `validate($input, creating:)`, `create`, `update`, `setApproved` (moderation), `uniqueSlug`. It owns the size × color rules that used to be private to `SellerProductController`; the CSV import keeps its per-row rules and shares only `uniqueSlug`.
+- `SettlementService`, `CheckoutService` — as described in their sections.
+
+When a step does not apply in the current state, a service throws `App\Exceptions\BusinessRuleException` with a translated, user-facing message (web controllers flash it; an API would answer 422 with it). Every state change that moves money or an order (`approveRecharge`, `rejectWithdrawal`, each fulfillment step…) runs in a transaction that **re-reads the row with `lockForUpdate()`** before checking its state, so a double click or two admins cannot credit, refund or advance twice — before this a doubled "approve recharge" could credit the balance twice. Notifications go out after the commit. Covered by `tests/Feature/AdminOrdersTest.php`.
+
+### Admin Catalog Moderation & Orders
+
+`/admin/products` (`Admin\ProductController`, views `admin/products/*`): list with search, shop and status filters (on sale / disabled by moderation / unpublished by its seller), product page with stock per combination, edit, approve and disable. **`published` belongs to the seller and `approved` to the panel**; the shop shows a product only when both are 1 (`Product::scopeActive()`), and the seller's list marks a disabled product "Desactivado por moderación". Editing uses **the seller's form**, `partials/product-form.blade.php` (taking `$formAction` and `$cancelUrl`; `pages/seller-product-edit` includes it too) and `ProductService`, so the panel cannot save a combination the seller form would reject; the owner (`added_by`) never changes.
+
+Every storefront product query goes through `->active()` — home, search, brands, `/products`, the product page, related products, `/categories` and `/category/{slug}` (the last three used to check only `published`, so a disabled product stayed reachable) — and `CartController@add` / `@modal` use `Product::active()->findOrFail()`, so a disabled or unpublished product cannot be added to a cart (404). Lines already in a cart are not removed.
+
+`/admin/orders` (`Admin\OrderController`, views `admin/orders/*`) lists every order with code, payment, delivery and date filters, and shows any order with buyer contact, lines per shop with variant badge, settlement mark, payment reference and the step dates. It is read-only: the warehouse moves orders. This replaced the old storefront power of `user_type = 'admin'` to open any `/orders/{id}`; `pages/order-detail` now shows full buyer data only to the order's seller. Covered by `tests/Feature/AdminProductModerationTest.php` and `tests/Feature/AdminOrdersTest.php`.
 
 ### Frontend
 

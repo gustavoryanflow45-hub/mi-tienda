@@ -14,7 +14,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::with(['category', 'stocks', 'brand'])
-            ->where('published', 1);
+            ->active();
 
         if ($request->filled('search')) {
             $query->search($request->search);
@@ -36,14 +36,14 @@ class ProductController extends Controller
             'reviews',
         ])
             ->where('slug', $slug)
-            ->where('published', 1)
+            ->active()
             ->firstOrFail();
 
         // Productos relacionados (misma categoría, excluye el actual)
         $related = Product::with('stocks')
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
-            ->where('published', 1)
+            ->active()
             ->limit(6)
             ->get();
 
