@@ -6,13 +6,16 @@ use App\Models\SellerSettlement;
 use App\Models\User;
 use App\Models\WalletRecharge;
 use App\Models\WalletWithdrawal;
-use App\Services\AuditLog;
 use App\Services\ImageOptimizer;
 use App\Services\SettlementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Billetera del propio usuario. La aprobación de recargas y retiros es del
+ * panel: App\Http\Controllers\Admin\WalletController.
+ */
 class WalletController extends Controller
 {
     public function __construct()
@@ -34,18 +37,6 @@ class WalletController extends Controller
         $withdrawable = $settlementService->withdrawableFor(Auth::user());
 
         return view('users.wallet', compact('recharges', 'withdrawals', 'settlements', 'withdrawable'));
-    }
-
-    /* ─────────────────────────────────────────
-     | VISTA ADMIN
-    ───────────────────────────────────────── */
-
-    public function adminIndex()
-    {
-        $recharges = WalletRecharge::with('user')->latest()->get();
-        $withdrawals = WalletWithdrawal::with('user')->latest()->get();
-
-        return view('admin.wallet', compact('recharges', 'withdrawals'));
     }
 
     /* ─────────────────────────────────────────
@@ -77,39 +68,6 @@ class WalletController extends Controller
         ]);
 
         return back()->with('success', __('Solicitud de recarga enviada. Está pendiente de aprobación.'));
-    }
-
-    public function approve($id, AuditLog $audit)
-    {
-        $recharge = WalletRecharge::findOrFail($id);
-
-        if ($recharge->approval == 1) {
-            return back()->with('warning', __('Esta recarga ya fue aprobada.'));
-        }
-
-        DB::transaction(function () use ($recharge) {
-            $recharge->update(['approval' => 1]);
-            User::where('id', $recharge->user_id)
-                ->increment('balance', $recharge->amount);
-        });
-
-        $audit->record('wallet.recharge.approved', $recharge, ['user_id' => $recharge->user_id, 'amount' => (float) $recharge->amount]);
-
-        return back()->with('success', __('Recarga #:id aprobada. Se sumaron $:amount al saldo del usuario.', ['id' => $recharge->id, 'amount' => $recharge->amount]));
-    }
-
-    public function reject($id, AuditLog $audit)
-    {
-        $recharge = WalletRecharge::findOrFail($id);
-
-        if ($recharge->approval == 1) {
-            return back()->with('warning', __('No se puede rechazar una recarga ya aprobada.'));
-        }
-
-        $recharge->update(['approval' => -1]);
-        $audit->record('wallet.recharge.rejected', $recharge, ['user_id' => $recharge->user_id, 'amount' => (float) $recharge->amount]);
-
-        return back()->with('error', __('Recarga #:id rechazada.', ['id' => $recharge->id]));
     }
 
     /* ─────────────────────────────────────────
@@ -155,41 +113,5 @@ class WalletController extends Controller
         return back()->with('success', $fromSettlement
             ? __('Retiro aprobado: proviene de ventas ya liquidadas, no necesita otra aprobación.')
             : __('Solicitud de retiro enviada. Está pendiente de aprobación.'));
-    }
-
-    public function approveWithdrawal($id, AuditLog $audit)
-    {
-        $withdrawal = WalletWithdrawal::findOrFail($id);
-
-        if ($withdrawal->status !== 'pending') {
-            return back()->with('warning', __('Este retiro ya fue procesado.'));
-        }
-
-        // Solo marcar como aprobado — el saldo ya se descontó al crear la solicitud
-        $withdrawal->update(['status' => 'approved']);
-        $audit->record('wallet.withdrawal.approved', $withdrawal, ['user_id' => $withdrawal->user_id, 'amount' => (float) $withdrawal->amount]);
-
-        return back()->with('success', __('Retiro #:id aprobado por $:amount.', ['id' => $withdrawal->id, 'amount' => $withdrawal->amount]));
-    }
-
-    public function rejectWithdrawal($id, AuditLog $audit)
-    {
-        $withdrawal = WalletWithdrawal::findOrFail($id);
-
-        if ($withdrawal->status !== 'pending') {
-            return back()->with('warning', __('Este retiro ya fue procesado.'));
-        }
-
-        DB::transaction(function () use ($withdrawal) {
-            $withdrawal->update(['status' => 'rejected']);
-
-            // Devolver el saldo al usuario
-            User::where('id', $withdrawal->user_id)
-                ->increment('balance', $withdrawal->amount);
-        });
-
-        $audit->record('wallet.withdrawal.rejected', $withdrawal, ['user_id' => $withdrawal->user_id, 'amount' => (float) $withdrawal->amount]);
-
-        return back()->with('success', __('Retiro #:id rechazado. Saldo devuelto al usuario.', ['id' => $withdrawal->id]));
     }
 }

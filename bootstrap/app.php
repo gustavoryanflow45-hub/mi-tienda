@@ -10,6 +10,8 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        // Panel admin: routes/admin.php con su prefijo y, si hay, su dominio.
+        then: fn () => \App\Support\AdminRoutes::register(),
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [

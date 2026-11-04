@@ -14,7 +14,7 @@
     <a href="{{ route('admin.wallet') }}" class="btn btn-sm mr-2 mb-1 {{ request()->routeIs('admin.wallet') ? 'btn-primary' : 'btn-light' }}">
         <i class="las la-wallet"></i> {{ __('Billetera') }}
     </a>
-    <a href="{{ route('warehouse.index') }}" class="btn btn-sm mr-2 mb-1 {{ request()->routeIs('warehouse.index') ? 'btn-primary' : 'btn-light' }}">
+    <a href="{{ route('admin.warehouse.index') }}" class="btn btn-sm mr-2 mb-1 {{ request()->routeIs('admin.warehouse.index') ? 'btn-primary' : 'btn-light' }}">
         <i class="las la-warehouse"></i> {{ __('Almacén') }}
     </a>
     <form method="POST" action="{{ route('admin.logout') }}" class="ml-auto mb-1">

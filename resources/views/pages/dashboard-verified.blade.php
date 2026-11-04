@@ -90,7 +90,7 @@
                             </li>
                             @if(Auth::user()->isAdmin())
                                 <li class="aiz-side-nav-item mb-1">
-                                    <a href="{{ route('warehouse.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
+                                    <a href="{{ route('admin.warehouse.index') }}" class="aiz-side-nav-link d-flex align-items-center text-reset p-2">
                                         <i class="las la-warehouse mr-2 fs-16"></i><span>{{ __('dashboard.nav.warehouse') }}</span>
                                     </a>
                                 </li>

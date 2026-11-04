@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\SellerSettlement;
 use App\Models\User;
 use App\Services\AuditLog;
@@ -15,7 +16,7 @@ use Illuminate\Http\Request;
  * comisión que retiene el marketplace y el neto a pagar; al liquidar, esas
  * ventas quedan cerradas y el panel del vendedor vuelve a cero.
  */
-class AdminSettlementController extends Controller
+class SettlementController extends Controller
 {
     public function __construct(private SettlementService $settlements)
     {
