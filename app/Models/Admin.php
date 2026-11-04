@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Validation\Rules\Password;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * Cuenta del panel de administración (guard 'admin', tabla admins).
@@ -15,10 +16,16 @@ use Illuminate\Validation\Rules\Password;
  * cambiando una columna, y los tokens o sesiones de la tienda nunca
  * autentican aquí. Las cuentas se crean y cambian de contraseña solo desde
  * la consola (admin:create, admin:password).
+ *
+ * Qué puede hacer dentro del panel lo deciden sus roles (super-admin,
+ * finanzas, operaciones, soporte): ver App\Support\AdminPermissions.
  */
 class Admin extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
+
+    /** Roles y permisos de spatie viven en el guard del panel. */
+    protected string $guard_name = 'admin';
 
     protected $fillable = [
         'name',

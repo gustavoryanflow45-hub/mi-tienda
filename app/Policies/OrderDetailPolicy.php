@@ -15,8 +15,11 @@ class OrderDetailPolicy
 {
     public function view(User|Admin $actor, OrderDetail $detail): bool
     {
-        return $actor instanceof Admin
-            || $this->sells($actor, $detail)
+        if ($actor instanceof Admin) {
+            return $actor->checkPermissionTo('orders.view') || $actor->checkPermissionTo('warehouse.view');
+        }
+
+        return $this->sells($actor, $detail)
             || (int) $detail->order?->user_id === (int) $actor->id;
     }
 

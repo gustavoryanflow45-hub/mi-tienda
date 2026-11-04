@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\LoginController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
@@ -58,45 +59,48 @@ Route::middleware(['auth:admin', 'auth.session'])->group(function () {
             ->middleware(['signed', 'throttle:admin-2fa'])->name('two-factor.confirm');
     });
 
+    // Cada ruta exige además su permiso (spatie, guard 'admin'): ver
+    // App\Support\AdminPermissions. Sin él, 403.
     Route::middleware(['admin', 'admin.2fa'])->group(function () {
-        Route::get('/', fn () => redirect()->route('admin.shops'))->name('home');
+        // Inicio: la primera sección que el rol de la cuenta puede ver.
+        Route::get('/', HomeController::class)->name('home');
 
         // ── Aprobación de tiendas ────────────────────────────────
-        Route::get('/shops', [ShopController::class, 'index'])->name('shops');
-        Route::post('/shops/{id}/approve', [ShopController::class, 'approve'])->name('shops.approve');
-        Route::post('/shops/{id}/reject', [ShopController::class, 'reject'])->name('shops.reject');
+        Route::get('/shops', [ShopController::class, 'index'])->middleware('permission:shops.view')->name('shops');
+        Route::post('/shops/{id}/approve', [ShopController::class, 'approve'])->middleware('permission:shops.decide')->name('shops.approve');
+        Route::post('/shops/{id}/reject', [ShopController::class, 'reject'])->middleware('permission:shops.decide')->name('shops.reject');
 
         // ── Moderación de productos ──────────────────────────────
         // Aprobar/desactivar es products.approved; editar usa el mismo
         // formulario y ProductService que el panel del vendedor.
-        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-        Route::get('/products/{id}', [ProductController::class, 'show'])->whereNumber('id')->name('products.show');
-        Route::get('/products/{id}/edit', [ProductController::class, 'edit'])->whereNumber('id')->name('products.edit');
-        Route::put('/products/{id}', [ProductController::class, 'update'])->whereNumber('id')->name('products.update');
-        Route::post('/products/{id}/approve', [ProductController::class, 'approve'])->whereNumber('id')->name('products.approve');
-        Route::post('/products/{id}/disable', [ProductController::class, 'disable'])->whereNumber('id')->name('products.disable');
+        Route::get('/products', [ProductController::class, 'index'])->middleware('permission:products.view')->name('products.index');
+        Route::get('/products/{id}', [ProductController::class, 'show'])->whereNumber('id')->middleware('permission:products.view')->name('products.show');
+        Route::get('/products/{id}/edit', [ProductController::class, 'edit'])->whereNumber('id')->middleware('permission:products.edit')->name('products.edit');
+        Route::put('/products/{id}', [ProductController::class, 'update'])->whereNumber('id')->middleware('permission:products.edit')->name('products.update');
+        Route::post('/products/{id}/approve', [ProductController::class, 'approve'])->whereNumber('id')->middleware('permission:products.moderate')->name('products.approve');
+        Route::post('/products/{id}/disable', [ProductController::class, 'disable'])->whereNumber('id')->middleware('permission:products.moderate')->name('products.disable');
 
         // ── Pedidos (solo lectura; los mueve el almacén) ─────────
-        Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-        Route::get('/orders/{id}', [OrderController::class, 'show'])->whereNumber('id')->name('orders.show');
+        Route::get('/orders', [OrderController::class, 'index'])->middleware('permission:orders.view')->name('orders.index');
+        Route::get('/orders/{id}', [OrderController::class, 'show'])->whereNumber('id')->middleware('permission:orders.view')->name('orders.show');
 
         // ── Liquidación de ventas a vendedores ───────────────────
         // Liquidar cierra las ventas cobradas del vendedor y deja su
         // panel en cero: solo el admin paga.
-        Route::get('/settlements', [SettlementController::class, 'index'])->name('settlements');
-        Route::post('/settlements/{seller}', [SettlementController::class, 'settle'])->name('settlements.settle');
+        Route::get('/settlements', [SettlementController::class, 'index'])->middleware('permission:settlements.view')->name('settlements');
+        Route::post('/settlements/{seller}', [SettlementController::class, 'settle'])->middleware('permission:settlements.settle')->name('settlements.settle');
 
         // ── Billetera ────────────────────────────────────────────
         // Aprobar una recarga acredita saldo real.
-        Route::get('/wallet', [WalletController::class, 'index'])->name('wallet');
-        Route::post('/wallet/approve/{id}', [WalletController::class, 'approve'])->name('wallet.approve');
-        Route::post('/wallet/reject/{id}', [WalletController::class, 'reject'])->name('wallet.reject');
-        Route::post('/wallet/withdrawal/approve/{id}', [WalletController::class, 'approveWithdrawal'])->name('wallet.withdrawal.approve');
-        Route::post('/wallet/withdrawal/reject/{id}', [WalletController::class, 'rejectWithdrawal'])->name('wallet.withdrawal.reject');
+        Route::get('/wallet', [WalletController::class, 'index'])->middleware('permission:wallet.view')->name('wallet');
+        Route::post('/wallet/approve/{id}', [WalletController::class, 'approve'])->middleware('permission:wallet.decide')->name('wallet.approve');
+        Route::post('/wallet/reject/{id}', [WalletController::class, 'reject'])->middleware('permission:wallet.decide')->name('wallet.reject');
+        Route::post('/wallet/withdrawal/approve/{id}', [WalletController::class, 'approveWithdrawal'])->middleware('permission:wallet.decide')->name('wallet.withdrawal.approve');
+        Route::post('/wallet/withdrawal/reject/{id}', [WalletController::class, 'rejectWithdrawal'])->middleware('permission:wallet.decide')->name('wallet.withdrawal.reject');
 
         // ── Almacén — panel de despacho ──────────────────────────
-        Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse.index');
-        Route::post('/warehouse/orders/{id}/dispatch', [WarehouseController::class, 'dispatchOrder'])->name('warehouse.dispatch');
-        Route::post('/warehouse/orders/{id}/deliver', [WarehouseController::class, 'deliver'])->name('warehouse.deliver');
+        Route::get('/warehouse', [WarehouseController::class, 'index'])->middleware('permission:warehouse.view')->name('warehouse.index');
+        Route::post('/warehouse/orders/{id}/dispatch', [WarehouseController::class, 'dispatchOrder'])->middleware('permission:warehouse.operate')->name('warehouse.dispatch');
+        Route::post('/warehouse/orders/{id}/deliver', [WarehouseController::class, 'deliver'])->middleware('permission:warehouse.operate')->name('warehouse.deliver');
     });
 });

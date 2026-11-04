@@ -23,7 +23,7 @@
         <div class="d-flex flex-wrap" style="gap:.4rem;">
             <span class="pill {{ $order->payment_status === 'paid' ? 'pill-ok' : 'pill-muted' }}">{{ payment_status_label($order->payment_status) }}</span>
             <span class="pill {{ $order->delivery_status === 'delivered' ? 'pill-ok' : 'pill-muted' }}">{{ delivery_status_label($order->delivery_status) }}</span>
-            @if(in_array($order->delivery_status, ['warehouse', 'on_the_way'], true))
+            @if(in_array($order->delivery_status, ['warehouse', 'on_the_way'], true) && auth()->user()->can('warehouse.view'))
                 <a href="{{ route('admin.warehouse.index', ['code' => $order->code]) }}" class="btn btn-sm btn-light"><i class="las la-warehouse"></i> {{ __('Gestionar en el almacén') }}</a>
             @endif
         </div>
@@ -49,7 +49,7 @@
                                 @foreach($order->orderDetails as $detail)
                                     <tr>
                                         <td>
-                                            @if($detail->product)
+                                            @if($detail->product && auth()->user()->can('products.view'))
                                                 <a href="{{ route('admin.products.show', $detail->product_id) }}" class="text-reset fw-600">{{ $detail->product->name }}</a>
                                             @else
                                                 <span class="fw-600">{{ $detail->product_name }}</span>

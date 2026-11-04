@@ -727,5 +727,7 @@
     "El producto «:name» ya estaba aprobado.": "Product “:name” was already approved.",
     "Producto «:name» aprobado: vuelve a verse en la tienda si su vendedor lo tiene publicado.": "Product “:name” approved: it shows in the shop again if its seller has it published.",
     "El producto «:name» ya estaba desactivado.": "Product “:name” was already disabled.",
-    "Producto «:name» desactivado: ya no se muestra en la tienda ni se puede añadir al carrito.": "Product “:name” disabled: it is no longer shown in the shop and cannot be added to the cart."
+    "Producto «:name» desactivado: ya no se muestra en la tienda ni se puede añadir al carrito.": "Product “:name” disabled: it is no longer shown in the shop and cannot be added to the cart.",
+    "Solo lectura": "Read only",
+    "Tu cuenta no tiene ningún rol en el panel. Pide a un super-admin que te asigne uno.": "Your account has no role in the panel. Ask a super-admin to assign you one."
 }

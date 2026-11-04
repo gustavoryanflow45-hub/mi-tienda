@@ -12,8 +12,12 @@
         </h1>
         <div class="d-flex flex-wrap" style="gap:.4rem;">
             @include('admin.products.partials.status', ['product' => $product])
-            <a href="{{ route('admin.products.edit', $product->id) }}" class="btn btn-sm btn-light"><i class="las la-pen"></i> {{ __('Editar') }}</a>
-            @include('admin.products.partials.moderate', ['product' => $product])
+            @can('products.edit')
+                <a href="{{ route('admin.products.edit', $product->id) }}" class="btn btn-sm btn-light"><i class="las la-pen"></i> {{ __('Editar') }}</a>
+            @endcan
+            @can('products.moderate')
+                @include('admin.products.partials.moderate', ['product' => $product])
+            @endcan
             @if($product->published && $product->approved)
                 <a href="{{ route('products.show', $product->slug) }}" target="_blank" rel="noopener" class="btn btn-sm btn-light">
                     <i class="las la-external-link-alt"></i> {{ __('Ver en la tienda') }}

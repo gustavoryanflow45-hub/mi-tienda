@@ -226,6 +226,7 @@
                                 @endif
                             </td>
                             <td data-label="{{ __('Acción') }}">
+                                @can('settlements.settle')
                                 <form method="POST" action="{{ route('admin.settlements.settle', $seller->id) }}"
                                       data-confirm="{{ $confirm }}"
                                       onsubmit="return confirm(this.dataset.confirm);">
@@ -234,6 +235,9 @@
                                         <i class="las la-hand-holding-usd"></i> {{ __('Liquidar') }}
                                     </button>
                                 </form>
+                                @else
+                                    <span style="color:#8a9585;font-size:.8rem;">{{ __('Solo lectura') }}</span>
+                                @endcan
                             </td>
                         </tr>
                     @empty

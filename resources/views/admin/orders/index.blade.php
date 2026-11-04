@@ -11,7 +11,9 @@
 
     <div class="admin-page-title">
         <h1>{{ __('Pedidos') }}</h1>
-        <a href="{{ route('admin.warehouse.index') }}" class="btn btn-sm btn-light"><i class="las la-warehouse"></i> {{ __('Ir al almacén') }}</a>
+        @can('warehouse.view')
+            <a href="{{ route('admin.warehouse.index') }}" class="btn btn-sm btn-light"><i class="las la-warehouse"></i> {{ __('Ir al almacén') }}</a>
+        @endcan
     </div>
 
     <div class="admin-card">

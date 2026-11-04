@@ -44,8 +44,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'admin.2fa' => \App\Http\Middleware\EnsureAdminTwoFactor::class,
+            'admin.ip' => \App\Http\Middleware\RestrictAdminIp::class,
             'shop.approved' => \App\Http\Middleware\EnsureShopApproved::class,
             'seller' => \App\Http\Middleware\EnsureUserIsSeller::class,
+            // spatie/laravel-permission, para los roles del panel (guard 'admin').
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

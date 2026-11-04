@@ -177,6 +177,7 @@
             @if($adminNav['ready'])
                 <nav aria-label="{{ __('Panel de administración') }}" class="flex-grow-1">
                     <ul class="admin-nav">
+                        @can('shops.view')
                         <li>
                             <a href="{{ route('admin.shops') }}" class="{{ request()->routeIs('admin.shops*') ? 'active' : '' }}">
                                 <i class="las la-store"></i> {{ __('Tiendas') }}
@@ -185,26 +186,36 @@
                                 @endif
                             </a>
                         </li>
+                        @endcan
+                        @can('products.view')
                         <li>
                             <a href="{{ route('admin.products.index') }}" class="{{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
                                 <i class="las la-box"></i> {{ __('Productos') }}
                             </a>
                         </li>
+                        @endcan
+                        @can('orders.view')
                         <li>
                             <a href="{{ route('admin.orders.index') }}" class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
                                 <i class="las la-receipt"></i> {{ __('Pedidos') }}
                             </a>
                         </li>
+                        @endcan
+                        @can('settlements.view')
                         <li>
                             <a href="{{ route('admin.settlements') }}" class="{{ request()->routeIs('admin.settlements*') ? 'active' : '' }}">
                                 <i class="las la-hand-holding-usd"></i> {{ __('Liquidaciones') }}
                             </a>
                         </li>
+                        @endcan
+                        @can('wallet.view')
                         <li>
                             <a href="{{ route('admin.wallet') }}" class="{{ request()->routeIs('admin.wallet*') ? 'active' : '' }}">
                                 <i class="las la-wallet"></i> {{ __('Billetera') }}
                             </a>
                         </li>
+                        @endcan
+                        @can('warehouse.view')
                         <li>
                             <a href="{{ route('admin.warehouse.index') }}" class="{{ request()->routeIs('admin.warehouse.*') ? 'active' : '' }}">
                                 <i class="las la-warehouse"></i> {{ __('Almacén') }}
@@ -213,6 +224,7 @@
                                 @endif
                             </a>
                         </li>
+                        @endcan
                     </ul>
                 </nav>
             @endif

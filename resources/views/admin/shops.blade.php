@@ -212,6 +212,7 @@
                             </td>
                             <td data-label="{{ __('Registrada') }}">{{ $shop->created_at?->format('d/m/Y') }}</td>
                             <td data-label="{{ __('Acciones') }}">
+                                @can('shops.decide')
                                 <div style="display:flex;gap:6px;flex-wrap:wrap;">
                                     @if((int) $shop->status !== 1)
                                         <form method="POST" action="{{ route('admin.shops.approve', $shop->id) }}">
@@ -231,6 +232,9 @@
                                         </form>
                                     @endif
                                 </div>
+                                @else
+                                    <span style="color:#8a9585;font-size:.8rem;">{{ __('Solo lectura') }}</span>
+                                @endcan
                             </td>
                         </tr>
                     @empty
