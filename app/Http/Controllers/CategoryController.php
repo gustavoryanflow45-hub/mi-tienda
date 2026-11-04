@@ -25,7 +25,7 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
-        $panelProducts = fn ($query) => $query->where('published', 1)
+        $panelProducts = fn ($query) => $query->active()
             ->latest()
             ->limit(self::PANEL_PRODUCTS);
 
@@ -40,7 +40,7 @@ class CategoryController extends Controller
             ->get();
 
         // Un solo conteo agrupado en vez de una consulta por categoría.
-        $counts = Product::where('published', 1)
+        $counts = Product::active()
             ->selectRaw('category_id, count(*) as total')
             ->groupBy('category_id')
             ->pluck('total', 'category_id');
@@ -61,12 +61,12 @@ class CategoryController extends Controller
 
         // Destacados: los marcados como tales; si no hay ninguno, los más
         // vendidos, para que la primera pestaña nunca abra vacía.
-        $featured = Product::where('published', 1)->featured()
+        $featured = Product::active()->featured()
             ->orderByDesc('num_of_sale')->latest()
             ->limit(self::PANEL_PRODUCTS)->get();
 
         if ($featured->isEmpty()) {
-            $featured = Product::where('published', 1)
+            $featured = Product::active()
                 ->orderByDesc('num_of_sale')->latest()
                 ->limit(self::PANEL_PRODUCTS)->get();
         }
@@ -96,7 +96,7 @@ class CategoryController extends Controller
         // Query base: productos de esta cat o sus hijas
         $query = Product::with(['category', 'stocks'])
             ->whereIn('category_id', $childIds)
-            ->where('published', 1);
+            ->active();
 
         // ── Filtro precio ────────────────────────────────────────
         if ($request->filled('min_price')) {
@@ -123,7 +123,7 @@ class CategoryController extends Controller
 
         // Precio máximo para el slider
         $maxPrice = Product::whereIn('category_id', $childIds)
-            ->where('published', 1)
+            ->active()
             ->max('unit_price') ?? 100;
 
         // Todas las categorías activas para el sidebar

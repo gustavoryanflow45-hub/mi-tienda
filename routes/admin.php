@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\LoginController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\SettlementController;
 use App\Http\Controllers\Admin\ShopController;
 use App\Http\Controllers\Admin\TwoFactorController;
@@ -63,6 +65,20 @@ Route::middleware(['auth:admin', 'auth.session'])->group(function () {
         Route::get('/shops', [ShopController::class, 'index'])->name('shops');
         Route::post('/shops/{id}/approve', [ShopController::class, 'approve'])->name('shops.approve');
         Route::post('/shops/{id}/reject', [ShopController::class, 'reject'])->name('shops.reject');
+
+        // ── Moderación de productos ──────────────────────────────
+        // Aprobar/desactivar es products.approved; editar usa el mismo
+        // formulario y ProductService que el panel del vendedor.
+        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+        Route::get('/products/{id}', [ProductController::class, 'show'])->whereNumber('id')->name('products.show');
+        Route::get('/products/{id}/edit', [ProductController::class, 'edit'])->whereNumber('id')->name('products.edit');
+        Route::put('/products/{id}', [ProductController::class, 'update'])->whereNumber('id')->name('products.update');
+        Route::post('/products/{id}/approve', [ProductController::class, 'approve'])->whereNumber('id')->name('products.approve');
+        Route::post('/products/{id}/disable', [ProductController::class, 'disable'])->whereNumber('id')->name('products.disable');
+
+        // ── Pedidos (solo lectura; los mueve el almacén) ─────────
+        Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{id}', [OrderController::class, 'show'])->whereNumber('id')->name('orders.show');
 
         // ── Liquidación de ventas a vendedores ───────────────────
         // Liquidar cierra las ventas cobradas del vendedor y deja su

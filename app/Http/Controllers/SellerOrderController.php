@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\BusinessRuleException;
 use App\Models\Order;
-use App\Notifications\OrderStatusUpdatedNotification;
+use App\Services\OrderFulfillmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,7 +14,7 @@ class SellerOrderController extends Controller
     {
         $this->middleware('auth');
         $this->middleware(function ($request, $next) {
-            if (! in_array(Auth::user()->user_type, ['seller', 'admin'])) {
+            if (! Auth::user()->isSeller()) {
                 abort(403, __('No autorizado.'));
             }
 
@@ -49,29 +50,17 @@ class SellerOrderController extends Controller
     }
 
     // ── POST /seller/orders/{id}/confirm ─────────────────────────
-    public function confirm(int $id)
+    public function confirm(int $id, OrderFulfillmentService $fulfillment)
     {
-        $sellerId = Auth::id();
-
         $order = Order::findOrFail($id);
         // Solo un vendedor con líneas en el pedido (OrderPolicy; si no, 404).
         $this->authorize('confirm', $order);
 
-        if ($order->payment_status !== 'paid') {
-            return back()->with('warehouse_error', __('El pedido aún no tiene el pago confirmado.'));
+        try {
+            $order = $fulfillment->confirm($order, Auth::user());
+        } catch (BusinessRuleException $e) {
+            return back()->with('warehouse_error', $e->getMessage());
         }
-
-        if ($order->delivery_status !== 'pending') {
-            return back()->with('warehouse_error', __('Solo se pueden confirmar pedidos en estado "Pendiente".'));
-        }
-
-        $order->update([
-            'delivery_status' => 'confirmed',
-            'confirmed_at' => now(),
-        ]);
-        $order->orderDetails()->where('seller_id', $sellerId)->update(['delivery_status' => 'confirmed']);
-
-        $order->user?->notify(new OrderStatusUpdatedNotification($order, 'confirmed'));
 
         return back()->with('warehouse_success', __('Pedido #:code confirmado correctamente.', ['code' => $order->code]));
     }

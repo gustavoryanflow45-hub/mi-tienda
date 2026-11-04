@@ -13,14 +13,14 @@ use App\Models\User;
  */
 class ShopPolicy
 {
-    public function view(User $user, Shop $shop): bool
+    public function view(User|Admin $actor, Shop $shop): bool
     {
-        return $user->isAdmin() || $this->owns($user, $shop);
+        return $actor instanceof Admin || $this->owns($actor, $shop);
     }
 
-    public function update(User $user, Shop $shop): bool
+    public function update(User|Admin $actor, Shop $shop): bool
     {
-        return $this->owns($user, $shop);
+        return $actor instanceof User && $this->owns($actor, $shop);
     }
 
     // Admite también un User para que Gate::forUser($vendedor) responda

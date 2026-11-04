@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -57,15 +58,33 @@ class OwnershipPolicyTest extends TestCase
         $this->assertSame($published, (int) $product->fresh()->published);
     }
 
-    public function test_owner_and_admin_can_edit_the_product(): void
+    public function test_owner_and_panel_admin_can_edit_the_product(): void
     {
         $owner = $this->makeSeller();
         $product = $this->makeProduct($owner);
 
         $this->actingAs($owner)->get("/seller/products/{$product->id}/edit")->assertOk();
 
-        $admin = User::factory()->create(['user_type' => 'admin']);
+        // Una cuenta del panel modera; publicar/despublicar sigue siendo del vendedor.
+        $admin = Admin::factory()->create();
         $this->assertTrue(Gate::forUser($admin)->allows('update', $product));
+        $this->assertTrue(Gate::forUser($admin)->allows('moderate', $product));
+        $this->assertFalse(Gate::forUser($admin)->allows('togglePublished', $product));
+        $this->assertFalse(Gate::forUser($owner)->allows('moderate', $product));
+    }
+
+    /** Una fila de users con user_type = admin ya no es nadie en la tienda. */
+    public function test_a_legacy_admin_row_has_no_powers_in_the_storefront(): void
+    {
+        $legacy = User::factory()->create(['user_type' => 'admin']);
+        $product = $this->makeProduct($this->makeSeller());
+        $order = $this->makePaidOrder($this->makeCustomer(), $this->makeSeller());
+
+        $this->assertFalse(Gate::forUser($legacy)->allows('update', $product));
+        $this->assertFalse(Gate::forUser($legacy)->allows('view', $order));
+        // shop.approved lo para antes que la policy: no tiene tienda.
+        $this->actingAs($legacy)->get("/seller/products/{$product->id}/edit")->assertRedirect(route('dashboard'));
+        $this->actingAs($legacy)->get("/orders/{$order->id}")->assertNotFound();
     }
 
     // ── Pedidos ──────────────────────────────────────────────────
@@ -96,7 +115,7 @@ class OwnershipPolicyTest extends TestCase
         $this->assertSame('confirmed', $order->fresh()->delivery_status);
     }
 
-    public function test_order_is_visible_to_its_buyer_its_seller_and_admin_only(): void
+    public function test_order_is_visible_to_its_buyer_its_seller_and_the_panel_only(): void
     {
         $buyer = $this->makeCustomer();
         $seller = $this->makeSeller();
@@ -106,8 +125,7 @@ class OwnershipPolicyTest extends TestCase
         $this->actingAs($seller)->get("/orders/{$order->id}")->assertOk();
         $this->actingAs($this->makeCustomer())->get("/orders/{$order->id}")->assertNotFound();
 
-        $admin = User::factory()->create(['user_type' => 'admin']);
-        $this->assertTrue(Gate::forUser($admin)->allows('view', $order));
+        $this->assertTrue(Gate::forUser(Admin::factory()->create())->allows('view', $order));
     }
 
     public function test_order_lines_belong_to_their_seller(): void

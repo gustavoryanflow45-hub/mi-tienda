@@ -58,13 +58,11 @@ class User extends Authenticatable
 
     // ── Helpers ─────────────────────────────────────────────────
 
-    /** ¿Es administrador? */
-    public function isAdmin(): bool
-    {
-        return $this->user_type === 'admin';
-    }
-
-    /** ¿Es seller? */
+    /**
+     * ¿Es seller? No hay isAdmin(): las cuentas del panel son App\Models\Admin
+     * (tabla admins). Una fila con user_type = 'admin' que quedó de antes de
+     * separarlas no tiene ningún poder especial en la tienda.
+     */
     public function isSeller(): bool
     {
         return $this->user_type === 'seller';

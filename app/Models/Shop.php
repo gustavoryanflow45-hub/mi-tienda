@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Shop extends Model
 {
+    /** Estados de shops.status. */
+    public const PENDING = 0;
+
+    public const APPROVED = 1;
+
+    public const REJECTED = 2;
+
     protected $fillable = [
         'user_id',
         'name',

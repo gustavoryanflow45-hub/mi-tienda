@@ -4,18 +4,17 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Shop;
-use App\Notifications\ShopStatusUpdatedNotification;
-use App\Services\AuditLog;
+use App\Services\ShopApprovalService;
 use Illuminate\Http\Request;
 
 class ShopController extends Controller
 {
-    /** Estados de shops.status (ver Shop::statusLabel). */
-    public const PENDING = 0;
+    /** Estados de shops.status; la fuente es Shop::PENDING|APPROVED|REJECTED. */
+    public const PENDING = Shop::PENDING;
 
-    public const APPROVED = 1;
+    public const APPROVED = Shop::APPROVED;
 
-    public const REJECTED = 2;
+    public const REJECTED = Shop::REJECTED;
 
     /**
      * Las rutas ya llevan 'auth:admin' + 'admin'; esto es defensa en
@@ -58,37 +57,27 @@ class ShopController extends Controller
     }
 
     // ── POST /admin/shops/{id}/approve ───────────────────────────
-    public function approve(int $id, AuditLog $audit)
+    public function approve(Request $request, int $id, ShopApprovalService $approvals)
     {
         $shop = Shop::with('user')->findOrFail($id);
         $this->authorize('approve', $shop);
 
-        if ((int) $shop->status === self::APPROVED) {
+        if (! $approvals->approve($shop, $request->user('admin'))) {
             return back()->with('warning', __('La tienda «:name» ya estaba aprobada.', ['name' => $shop->name]));
         }
-
-        $shop->update(['status' => self::APPROVED]);
-        $audit->record('shop.approved', $shop, ['seller_id' => $shop->user_id]);
-
-        $shop->user?->notify(new ShopStatusUpdatedNotification($shop, self::APPROVED));
 
         return back()->with('success', __('Tienda «:name» aprobada. Ya puede publicar productos. Se notificó al vendedor.', ['name' => $shop->name]));
     }
 
     // ── POST /admin/shops/{id}/reject ────────────────────────────
-    public function reject(int $id, AuditLog $audit)
+    public function reject(Request $request, int $id, ShopApprovalService $approvals)
     {
         $shop = Shop::with('user')->findOrFail($id);
         $this->authorize('reject', $shop);
 
-        if ((int) $shop->status === self::REJECTED) {
+        if (! $approvals->reject($shop, $request->user('admin'))) {
             return back()->with('warning', __('La tienda «:name» ya estaba rechazada.', ['name' => $shop->name]));
         }
-
-        $shop->update(['status' => self::REJECTED]);
-        $audit->record('shop.rejected', $shop, ['seller_id' => $shop->user_id]);
-
-        $shop->user?->notify(new ShopStatusUpdatedNotification($shop, self::REJECTED));
 
         return back()->with('error', __('Tienda «:name» rechazada. Su acceso al panel de vendedor queda bloqueado. Se notificó al vendedor.', ['name' => $shop->name]));
     }

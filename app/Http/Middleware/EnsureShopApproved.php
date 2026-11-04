@@ -15,7 +15,8 @@ class EnsureShopApproved
      * user_type = 'seller' al instante; sin esto podría publicar productos
      * sin que nadie revise su documentación.
      *
-     * Los admin pasan siempre: no tienen tienda.
+     * Nadie se salta la regla: las cuentas del panel son otra tabla (admins)
+     * y no usan /seller.
      */
     public function handle(Request $request, Closure $next)
     {
@@ -23,10 +24,6 @@ class EnsureShopApproved
 
         if (! $user) {
             abort(403, 'No autorizado.');
-        }
-
-        if ($user->isAdmin()) {
-            return $next($request);
         }
 
         $shop = $user->shop;

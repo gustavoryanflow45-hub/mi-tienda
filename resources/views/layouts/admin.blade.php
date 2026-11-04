@@ -138,6 +138,28 @@
         .admin-tools .btn-logout:hover { background: #c0392b; border-color: #c0392b; }
 
         .admin-main { flex: 1 0 auto; }
+
+        /* Piezas comunes de las páginas nuevas del panel (productos, pedidos). */
+        .admin-page-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin: 1.5rem 0 1rem; }
+        .admin-page-title h1 { font-size: 1.35rem; font-weight: 700; margin: 0; }
+        .admin-card { background: #fff; border-radius: 10px; box-shadow: 0 1px 6px rgba(0, 0, 0, .06); margin-bottom: 1rem; }
+        .admin-card > .admin-card-body { padding: 1rem 1.25rem; }
+        .admin-card h2 { font-size: 1rem; font-weight: 700; margin: 0 0 .75rem; }
+        .admin-filters { display: flex; flex-wrap: wrap; gap: .5rem; align-items: flex-end; }
+        .admin-filters .form-control { width: auto; min-width: 150px; flex: 1 1 150px; }
+        .table-admin { width: 100%; font-size: .85rem; margin: 0; }
+        .table-admin th { font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; color: #6b7766; border-top: 0; white-space: nowrap; }
+        .table-admin td { vertical-align: middle; }
+        .table-admin .thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid #e3e7e0; }
+        .pill { display: inline-block; border-radius: 20px; padding: 1px 9px; font-size: .72rem; font-weight: 600; white-space: nowrap; }
+        .pill-ok { background: #e3f1d8; color: #3f6b22; }
+        .pill-off { background: #fbe1df; color: #a12a1f; }
+        .pill-muted { background: #eceeea; color: #59645a; }
+        .pill-warn { background: #fff1d1; color: #8a5a00; }
+        .dl-admin { display: grid; grid-template-columns: max-content 1fr; gap: .35rem 1rem; font-size: .85rem; margin: 0; }
+        .dl-admin dt { color: #6b7766; font-weight: 600; }
+        .dl-admin dd { margin: 0; word-break: break-word; }
+        @media (max-width: 575.98px) { .dl-admin { grid-template-columns: 1fr; } .dl-admin dd { margin-bottom: .4rem; } }
         .admin-footer { color: #8a9585; font-size: .75rem; }
     </style>
 
@@ -161,6 +183,16 @@
                                 @if($adminNav['pending_shops'] > 0)
                                     <span class="count" title="{{ __('Tiendas pendientes de aprobación') }}">{{ $adminNav['pending_shops'] }}</span>
                                 @endif
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.products.index') }}" class="{{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
+                                <i class="las la-box"></i> {{ __('Productos') }}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.orders.index') }}" class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
+                                <i class="las la-receipt"></i> {{ __('Pedidos') }}
                             </a>
                         </li>
                         <li>

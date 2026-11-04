@@ -78,15 +78,17 @@ class SellerShopApprovalTest extends TestCase
             ->assertOk();
     }
 
-    public function test_admin_reaches_seller_panel_without_a_shop(): void
+    /**
+     * Antes un user_type = admin se saltaba shop.approved. Las cuentas del
+     * panel son otra tabla y nadie se salta la regla.
+     */
+    public function test_a_legacy_admin_row_does_not_bypass_the_shop_check(): void
     {
-        // Fila de users con user_type = admin en la tienda (guard web). Lo
-        // que puede hacer en la tienda se revisa en la sub-fase 1d.
-        $admin = User::factory()->create(['user_type' => 'admin']);
+        $legacy = User::factory()->create(['user_type' => 'admin']);
 
-        $this->actingAs($admin)
+        $this->actingAs($legacy)
             ->get('/seller/products')
-            ->assertOk();
+            ->assertRedirect(route('dashboard'));
     }
 
     /** Registrarse como tienda no debe conceder acceso inmediato. */

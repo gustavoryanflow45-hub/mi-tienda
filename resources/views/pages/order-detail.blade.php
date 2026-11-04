@@ -427,9 +427,9 @@
                 ? $order->shipping_address
                 : null;
 
-            // Vendedor del pedido y admin (almacén) ven los datos completos;
-            // en la vista del cliente se enmascaran.
-            $staffView = Auth::user()->user_type === 'admin' || ($isSeller ?? false);
+            // El vendedor del pedido ve los datos completos; en la vista del
+            // cliente se enmascaran. El almacén usa el detalle del panel.
+            $staffView = $isSeller ?? false;
 
             $buyerName  = $addressData['full_name'] ?? $order->user->name ?? '—';
             $buyerEmail = $addressData['email'] ?? $order->user->email ?? null;

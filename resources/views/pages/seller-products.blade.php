@@ -495,6 +495,12 @@
                                                         <i class="las la-sync-alt"></i>{{ $product->published ? __('Despublicar') : __('Publicar') }}
                                                     </span>
                                                 </button>
+                                                {{-- Desactivado por el panel (products.approved = 0): no se ve en la tienda aunque esté publicado. --}}
+                                                @unless($product->approved)
+                                                    <span class="badge-unpublished d-inline-block mt-1" title="{{ __('Un administrador lo desactivó: no se muestra en la tienda. Contacta con soporte.') }}">
+                                                        <i class="las la-ban"></i> {{ __('Desactivado por moderación') }}
+                                                    </span>
+                                                @endunless
                                             </td>
                                             <td>
                                                 @if($product->featured)

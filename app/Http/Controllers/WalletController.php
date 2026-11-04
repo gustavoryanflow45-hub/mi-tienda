@@ -3,18 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\SellerSettlement;
-use App\Models\User;
 use App\Models\WalletRecharge;
 use App\Models\WalletWithdrawal;
-use App\Services\ImageOptimizer;
 use App\Services\SettlementService;
+use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 /**
- * Billetera del propio usuario. La aprobación de recargas y retiros es del
- * panel: App\Http\Controllers\Admin\WalletController.
+ * Billetera del propio usuario. La lógica está en WalletService; la
+ * aprobación de recargas y retiros es del panel
+ * (App\Http\Controllers\Admin\WalletController).
  */
 class WalletController extends Controller
 {
@@ -43,29 +42,16 @@ class WalletController extends Controller
      | RECARGAS
     ───────────────────────────────────────── */
 
-    public function recharge(Request $request, ImageOptimizer $images)
+    public function recharge(Request $request, WalletService $wallet)
     {
-        $request->validate([
+        $data = $request->validate([
             'amount' => 'required|numeric|min:1',
             'network' => 'required|in:BEP20,TRC20,ERC20',
             'transaction_id' => 'required|string|max:255',
             'payment_proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:'.config('images.max_upload_kb'),
         ]);
 
-        $proofPath = null;
-        if ($request->hasFile('payment_proof')) {
-            // Un PDF pasa sin tocar; una foto del comprobante se reduce.
-            $proofPath = $images->store($request->file('payment_proof'), 'wallet/proofs', 'payment_proof');
-        }
-
-        WalletRecharge::create([
-            'user_id' => Auth::id(),
-            'amount' => $request->amount,
-            'network' => $request->network,
-            'transaction_id' => $request->transaction_id,
-            'payment_proof' => $proofPath,
-            'approval' => 0,
-        ]);
+        $wallet->requestRecharge($request->user(), $data, $request->file('payment_proof'));
 
         return back()->with('success', __('Solicitud de recarga enviada. Está pendiente de aprobación.'));
     }
@@ -74,43 +60,19 @@ class WalletController extends Controller
      | RETIROS
     ───────────────────────────────────────── */
 
-    public function withdraw(Request $request, SettlementService $settlementService)
+    public function withdraw(Request $request, WalletService $wallet)
     {
-        $request->validate([
+        $data = $request->validate([
             'amount' => 'required|numeric|min:1',
             'full_name' => 'required|string|max:255',
             'bank_name' => 'required|string|max:255',
             'account_number' => 'required|string|max:255',
         ]);
 
-        $balance = Auth::user()->balance ?? 0;
+        // Sin saldo suficiente lanza una ValidationException sobre 'amount'.
+        $withdrawal = $wallet->requestWithdrawal($request->user(), $data);
 
-        if ($request->amount > $balance) {
-            return back()->withErrors(['amount' => __('Saldo insuficiente.')])->withInput();
-        }
-
-        // Si el monto cabe en lo que viene de liquidaciones, el admin ya lo
-        // aprobó al liquidar: sale aprobado sin segunda revisión. Lo que
-        // exceda (saldo recargado) sigue pendiente como siempre.
-        $fromSettlement = (float) $request->amount <= $settlementService->withdrawableFor(Auth::user());
-
-        DB::transaction(function () use ($request, $fromSettlement) {
-            WalletWithdrawal::create([
-                'user_id' => Auth::id(),
-                'amount' => $request->amount,
-                'full_name' => $request->full_name,
-                'bank_name' => $request->bank_name,
-                'account_number' => $request->account_number,
-                'status' => $fromSettlement ? 'approved' : 'pending',
-                'from_settlement' => $fromSettlement,
-            ]);
-
-            // Descontar el saldo al solicitar (se devuelve si se rechaza)
-            User::where('id', Auth::id())
-                ->decrement('balance', $request->amount);
-        });
-
-        return back()->with('success', $fromSettlement
+        return back()->with('success', $withdrawal->from_settlement
             ? __('Retiro aprobado: proviene de ventas ya liquidadas, no necesita otra aprobación.')
             : __('Solicitud de retiro enviada. Está pendiente de aprobación.'));
     }
