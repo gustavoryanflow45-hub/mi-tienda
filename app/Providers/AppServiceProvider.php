@@ -170,7 +170,7 @@ class AppServiceProvider extends ServiceProvider
         // bruta sin límite. El bloqueo largo (10 fallos en 15 min cierran la
         // sesión) está en TwoFactorController.
         RateLimiter::for('admin-2fa', fn (Request $request) => Limit::perMinute(5)
-            ->by('user:'.($request->user()?->id ?? $request->ip()))
+            ->by('admin:'.($request->user('admin')?->id ?? $request->ip()))
             ->response($tooMany('code')));
     }
 }

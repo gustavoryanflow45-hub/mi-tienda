@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Http\Middleware\EnsureAdminTwoFactor;
+use App\Models\Admin;
 use App\Models\AdminTwoFactor;
-use App\Models\User;
 use App\Services\TwoFactorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route;
@@ -20,9 +20,9 @@ class AdminTwoFactorTest extends TestCase
     use BuildsCheckoutData;
     use RefreshDatabase;
 
-    protected function makeAdmin(): User
+    protected function makeAdmin(): Admin
     {
-        return User::factory()->create(['user_type' => 'admin']);
+        return Admin::factory()->create();
     }
 
     protected function otp(string $secret): string
@@ -31,7 +31,7 @@ class AdminTwoFactorTest extends TestCase
     }
 
     /** Inscribe al admin y devuelve [secreto, códigos de recuperación]. */
-    protected function enroll(User $admin): array
+    protected function enroll(Admin $admin): array
     {
         $service = app(TwoFactorService::class);
         $secret = $service->generateSecret();
@@ -39,12 +39,12 @@ class AdminTwoFactorTest extends TestCase
 
         // El alta consume el código actual; se libera para poder probar el
         // desafío sin esperar al siguiente paso de 30 s.
-        AdminTwoFactor::where('user_id', $admin->id)->update(['last_used_timestep' => null]);
+        AdminTwoFactor::where('admin_id', $admin->id)->update(['last_used_timestep' => null]);
 
         return [$secret, $codes];
     }
 
-    protected function setupUrl(User $admin): string
+    protected function setupUrl(Admin $admin): string
     {
         return URL::temporarySignedRoute('admin.two-factor.setup', now()->addMinutes(30), ['user' => $admin->id]);
     }
@@ -64,7 +64,7 @@ class AdminTwoFactorTest extends TestCase
             $method = in_array('GET', $route->methods(), true) ? 'GET' : $route->methods()[0];
             $uri = '/'.preg_replace('/\{[^}]+\}/', '1', $route->uri());
 
-            $this->actingAs($admin)->call($method, $uri)
+            $this->actingAs($admin, 'admin')->call($method, $uri)
                 ->assertRedirect(route('admin.two-factor.challenge'));
         }
     }
@@ -74,7 +74,7 @@ class AdminTwoFactorTest extends TestCase
         $admin = $this->makeAdmin();
         $other = $this->makeAdmin();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession([EnsureAdminTwoFactor::SESSION_KEY => $other->id])
             ->get('/admin/shops')
             ->assertRedirect(route('admin.two-factor.challenge'));
@@ -82,7 +82,7 @@ class AdminTwoFactorTest extends TestCase
 
     public function test_an_unenrolled_admin_is_told_how_to_get_an_enrollment_link(): void
     {
-        $this->actingAs($this->makeAdmin())
+        $this->actingAs($this->makeAdmin(), 'admin')
             ->get('/admin/two-factor')
             ->assertOk()
             ->assertSee('admin:2fa-invite')
@@ -95,14 +95,14 @@ class AdminTwoFactorTest extends TestCase
     {
         $admin = $this->makeAdmin();
 
-        $this->actingAs($admin)->get('/admin/two-factor/setup?user='.$admin->id)->assertForbidden();
+        $this->actingAs($admin, 'admin')->get('/admin/two-factor/setup?user='.$admin->id)->assertForbidden();
     }
 
     public function test_a_signed_link_only_works_for_its_own_account(): void
     {
         $invited = $this->makeAdmin();
 
-        $this->actingAs($this->makeAdmin())->get($this->setupUrl($invited))->assertForbidden();
+        $this->actingAs($this->makeAdmin(), 'admin')->get($this->setupUrl($invited))->assertForbidden();
     }
 
     public function test_admin_enrolls_with_the_signed_link_and_gets_hashed_recovery_codes(): void
@@ -110,11 +110,11 @@ class AdminTwoFactorTest extends TestCase
         $admin = $this->makeAdmin();
         $url = $this->setupUrl($admin);
 
-        $this->actingAs($admin)->get($url)->assertOk()->assertSee('<svg', false);
+        $this->actingAs($admin, 'admin')->get($url)->assertOk()->assertSee('<svg', false);
         $secret = session(\App\Http\Controllers\Admin\TwoFactorController::SETUP_SESSION_KEY);
         $this->assertNotEmpty($secret);
 
-        $response = $this->actingAs($admin)->post($url, ['code' => $this->otp($secret)])->assertOk();
+        $response = $this->actingAs($admin, 'admin')->post($url, ['code' => $this->otp($secret)])->assertOk();
         $response->assertSessionHas(EnsureAdminTwoFactor::SESSION_KEY, $admin->id);
 
         $record = $admin->fresh()->twoFactor;
@@ -129,10 +129,10 @@ class AdminTwoFactorTest extends TestCase
         }
 
         // El secreto va cifrado en la columna.
-        $raw = DB::table('admin_two_factors')->where('user_id', $admin->id)->value('secret');
+        $raw = DB::table('admin_two_factors')->where('admin_id', $admin->id)->value('secret');
         $this->assertStringNotContainsString($secret, $raw);
 
-        $this->actingAs($admin)->get('/admin/shops')->assertOk();
+        $this->actingAs($admin, 'admin')->get('/admin/shops')->assertOk();
     }
 
     public function test_enrollment_rejects_a_wrong_code(): void
@@ -140,8 +140,8 @@ class AdminTwoFactorTest extends TestCase
         $admin = $this->makeAdmin();
         $url = $this->setupUrl($admin);
 
-        $this->actingAs($admin)->get($url);
-        $this->actingAs($admin)->post($url, ['code' => '000000'])->assertSessionHasErrors('code');
+        $this->actingAs($admin, 'admin')->get($url);
+        $this->actingAs($admin, 'admin')->post($url, ['code' => '000000'])->assertSessionHasErrors('code');
 
         $this->assertNull($admin->fresh()->twoFactor);
     }
@@ -154,14 +154,14 @@ class AdminTwoFactorTest extends TestCase
         [$secret] = $this->enroll($admin);
         $code = $this->otp($secret);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->post('/admin/two-factor', ['code' => $code])
             ->assertRedirect(route('admin.home'))
             ->assertSessionHas(EnsureAdminTwoFactor::SESSION_KEY, $admin->id);
 
         // Otra sesión intenta reutilizar el mismo código.
         $this->flushSession();
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->post('/admin/two-factor', ['code' => $code])
             ->assertSessionHasErrors('code')
             ->assertSessionMissing(EnsureAdminTwoFactor::SESSION_KEY);
@@ -172,11 +172,11 @@ class AdminTwoFactorTest extends TestCase
         $admin = $this->makeAdmin();
         $this->enroll($admin);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->post('/admin/two-factor', ['code' => '123456'])
             ->assertSessionHasErrors('code');
 
-        $this->actingAs($admin)->get('/admin/shops')->assertRedirect(route('admin.two-factor.challenge'));
+        $this->actingAs($admin, 'admin')->get('/admin/shops')->assertRedirect(route('admin.two-factor.challenge'));
     }
 
     public function test_a_recovery_code_works_exactly_once(): void
@@ -184,7 +184,7 @@ class AdminTwoFactorTest extends TestCase
         $admin = $this->makeAdmin();
         [, $codes] = $this->enroll($admin);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->post('/admin/two-factor', ['recovery_code' => strtolower($codes[3])])
             ->assertRedirect(route('admin.home'))
             ->assertSessionHas('warning');
@@ -192,7 +192,7 @@ class AdminTwoFactorTest extends TestCase
         $this->assertCount(TwoFactorService::RECOVERY_CODES - 1, $admin->fresh()->twoFactor->recovery_codes);
 
         $this->flushSession();
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->post('/admin/two-factor', ['recovery_code' => $codes[3]])
             ->assertSessionHasErrors('code');
     }
@@ -201,12 +201,12 @@ class AdminTwoFactorTest extends TestCase
     {
         $admin = $this->makeAdmin();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession([EnsureAdminTwoFactor::SESSION_KEY => $admin->id])
             ->post('/admin/logout')
             ->assertRedirect(route('admin.login'));
 
-        $this->assertGuest();
+        $this->assertGuest('admin');
         $this->assertNull(session(EnsureAdminTwoFactor::SESSION_KEY));
     }
 

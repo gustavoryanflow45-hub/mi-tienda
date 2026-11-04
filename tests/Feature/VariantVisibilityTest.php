@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
@@ -24,9 +25,9 @@ class VariantVisibilityTest extends TestCase
     use PassesAdminTwoFactor;
     use RefreshDatabase;
 
-    protected function makeAdmin(): User
+    protected function makeAdmin(): Admin
     {
-        return User::factory()->create(['user_type' => 'admin']);
+        return Admin::factory()->create();
     }
 
     /** Zapatilla de categoría footwear: sus tallas se rotulan "Talla US". */

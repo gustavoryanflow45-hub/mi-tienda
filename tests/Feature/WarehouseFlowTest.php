@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\Order;
 use App\Models\User;
 use App\Notifications\OrderArrivedWarehouseNotification;
@@ -17,9 +18,9 @@ class WarehouseFlowTest extends TestCase
     use PassesAdminTwoFactor;
     use RefreshDatabase;
 
-    protected function makeAdmin(): User
+    protected function makeAdmin(): Admin
     {
-        return User::factory()->create(['user_type' => 'admin']);
+        return Admin::factory()->create();
     }
 
     /** Order already paid, ready to start the delivery flow. */
@@ -35,7 +36,7 @@ class WarehouseFlowTest extends TestCase
     {
         $this->actingAs($this->makeCustomer())
             ->get('/admin/warehouse')
-            ->assertForbidden();
+            ->assertRedirect('/admin/login');
     }
 
     /**
@@ -47,7 +48,7 @@ class WarehouseFlowTest extends TestCase
     {
         $this->actingAs($this->makeSeller())
             ->get('/admin/warehouse')
-            ->assertForbidden();
+            ->assertRedirect('/admin/login');
     }
 
     public function test_seller_cannot_dispatch_or_deliver_an_order(): void
@@ -61,14 +62,14 @@ class WarehouseFlowTest extends TestCase
 
         $this->actingAs($intruder)
             ->post("/admin/warehouse/orders/{$order->id}/dispatch")
-            ->assertForbidden();
+            ->assertRedirect('/admin/login');
 
         $this->assertSame('warehouse', $order->fresh()->delivery_status);
 
         // Tampoco el vendedor dueño del pedido: despachar es tarea del almacén.
         $this->actingAs($owner)
             ->post("/admin/warehouse/orders/{$order->id}/deliver")
-            ->assertForbidden();
+            ->assertRedirect('/admin/login');
 
         $this->assertSame('warehouse', $order->fresh()->delivery_status);
     }

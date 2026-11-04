@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 class AdminTwoFactor extends Model
 {
     protected $fillable = [
-        'user_id',
+        'admin_id',
         'secret',
         'recovery_codes',
         'last_used_timestep',
@@ -33,9 +33,9 @@ class AdminTwoFactor extends Model
         ];
     }
 
-    public function user()
+    public function admin()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Admin::class);
     }
 
     public function isConfirmed(): bool

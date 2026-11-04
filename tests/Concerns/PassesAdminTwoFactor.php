@@ -3,7 +3,7 @@
 namespace Tests\Concerns;
 
 use App\Http\Middleware\EnsureAdminTwoFactor;
-use App\Models\User;
+use App\Models\Admin;
 
 /**
  * Actúa como un admin que ya pasó el segundo factor en esta sesión. Los
@@ -11,9 +11,9 @@ use App\Models\User;
  */
 trait PassesAdminTwoFactor
 {
-    protected function actingAsAdmin(User $admin): static
+    protected function actingAsAdmin(Admin $admin): static
     {
-        return $this->actingAs($admin)
+        return $this->actingAs($admin, 'admin')
             ->withSession([EnsureAdminTwoFactor::SESSION_KEY => $admin->id]);
     }
 }

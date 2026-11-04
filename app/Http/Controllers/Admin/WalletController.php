@@ -18,16 +18,9 @@ class WalletController extends Controller
 {
     public function __construct()
     {
-        // Las rutas ya llevan 'auth' + 'admin'; defensa en profundidad como
+        // Las rutas ya llevan 'auth:admin' + 'admin'; defensa en profundidad como
         // en Admin\ShopController.
-        $this->middleware('auth');
-        $this->middleware(function ($request, $next) {
-            if (! $request->user()?->isAdmin()) {
-                abort(403, __('No autorizado.'));
-            }
-
-            return $next($request);
-        });
+        $this->middleware(['auth:admin', 'admin']);
     }
 
     // ── GET /admin/wallet ────────────────────────────────────────

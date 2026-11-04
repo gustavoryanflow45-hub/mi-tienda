@@ -18,19 +18,12 @@ class ShopController extends Controller
     public const REJECTED = 2;
 
     /**
-     * Las rutas ya llevan 'auth' + 'admin'; esto es defensa en profundidad,
-     * igual que en AdminWarehouseController.
+     * Las rutas ya llevan 'auth:admin' + 'admin'; esto es defensa en
+     * profundidad, igual que en los demás controladores del panel.
      */
     public function __construct()
     {
-        $this->middleware('auth');
-        $this->middleware(function ($request, $next) {
-            if (! $request->user()?->isAdmin()) {
-                abort(403, __('No autorizado.'));
-            }
-
-            return $next($request);
-        });
+        $this->middleware(['auth:admin', 'admin']);
     }
 
     // ── GET /admin/shops ─────────────────────────────────────────

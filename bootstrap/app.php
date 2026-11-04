@@ -28,8 +28,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Un invitado en una ruta admin va al login del panel, no al de la
-        // tienda: en modo dominio la sesión de la tienda no llega al panel.
-        $middleware->redirectGuestsTo(fn (Request $request) => in_array('admin', $request->route()?->gatherMiddleware() ?? [], true)
+        // tienda: el panel usa su propio guard y su propia cookie.
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->routeIs('admin.*')
             ? route('admin.login')
             : route('login'));
 

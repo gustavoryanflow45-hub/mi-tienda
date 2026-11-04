@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Admin;
 use App\Support\AdminHost;
 use Closure;
 use Illuminate\Http\Request;
@@ -10,10 +11,11 @@ use Illuminate\Support\Facades\Auth;
 class EnsureUserIsAdmin
 {
     /**
-     * Restringe una ruta a users.user_type = 'admin'.
+     * Restringe una ruta a una cuenta del guard 'admin' (tabla admins).
      *
-     * Va siempre después de 'auth': los invitados deben acabar en el login,
-     * no en un 403.
+     * Va siempre después de 'auth:admin', que ya manda a los invitados al
+     * login del panel; esto es la segunda comprobación. Un usuario de la
+     * tienda, sea del rol que sea, no es un Admin y nunca pasa.
      *
      * Con ADMIN_ENFORCE_HOST además exige que la petición llegue por
      * ADMIN_DOMAIN, y responde 404 (no 403) para no confirmar que la ruta
@@ -26,7 +28,7 @@ class EnsureUserIsAdmin
             abort(404);
         }
 
-        if (! Auth::check() || ! Auth::user()->isAdmin()) {
+        if (! Auth::guard('admin')->user() instanceof Admin) {
             abort(403, __('No autorizado.'));
         }
 

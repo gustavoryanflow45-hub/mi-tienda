@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Admin;
 use App\Models\Order;
-use App\Models\User;
 use App\Notifications\OrderArrivedWarehouseNotification;
 use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Http\Request;
@@ -119,7 +119,7 @@ class OrderController extends Controller
             ->update(['delivery_status' => 'warehouse']);
 
         // Avisar al personal del almacén (admins) que llegó un pedido
-        User::where('user_type', 'admin')->get()
+        Admin::all()
             ->each(fn ($admin) => $admin->notify(new OrderArrivedWarehouseNotification($order, $user->name)));
 
         // Avisar al cliente que su pedido está en el almacén

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use App\Models\Admin;
 use App\Notifications\ShopStatusUpdatedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -16,9 +16,9 @@ class ShopStatusNotificationTest extends TestCase
     use PassesAdminTwoFactor;
     use RefreshDatabase;
 
-    protected function makeAdmin(): User
+    protected function makeAdmin(): Admin
     {
-        return User::factory()->create(['user_type' => 'admin']);
+        return Admin::factory()->create();
     }
 
     public function test_approving_notifies_the_seller(): void

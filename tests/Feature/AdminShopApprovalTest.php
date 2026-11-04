@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\Shop;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\BuildsCheckoutData;
 use Tests\Concerns\PassesAdminTwoFactor;
@@ -15,9 +15,9 @@ class AdminShopApprovalTest extends TestCase
     use PassesAdminTwoFactor;
     use RefreshDatabase;
 
-    protected function makeAdmin(): User
+    protected function makeAdmin(): Admin
     {
-        return User::factory()->create(['user_type' => 'admin']);
+        return Admin::factory()->create();
     }
 
     // ── Acceso ───────────────────────────────────────────────────
@@ -31,7 +31,7 @@ class AdminShopApprovalTest extends TestCase
     {
         $this->actingAs($this->makeCustomer())
             ->get('/admin/shops')
-            ->assertForbidden();
+            ->assertRedirect('/admin/login');
     }
 
     /** Un vendedor no debe poder aprobarse a sí mismo. */
@@ -39,11 +39,11 @@ class AdminShopApprovalTest extends TestCase
     {
         $seller = $this->makePendingSeller();
 
-        $this->actingAs($seller)->get('/admin/shops')->assertForbidden();
+        $this->actingAs($seller)->get('/admin/shops')->assertRedirect('/admin/login');
 
         $this->actingAs($seller)
             ->post("/admin/shops/{$seller->shop->id}/approve")
-            ->assertForbidden();
+            ->assertRedirect('/admin/login');
 
         $this->assertSame(0, (int) $seller->shop->fresh()->status);
     }
