@@ -59,7 +59,7 @@ class WarehouseController extends Controller
                 ->update(['read_at' => now()]);
         }
 
-        return view('pages.warehouse', compact('orders', 'stats', 'arrivals'));
+        return view('admin.warehouse', compact('orders', 'stats', 'arrivals'));
     }
 
     // ── POST /admin/warehouse/orders/{id}/dispatch ─────────────────────

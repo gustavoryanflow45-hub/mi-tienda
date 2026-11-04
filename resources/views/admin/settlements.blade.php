@@ -1,6 +1,9 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('Admin — Liquidación de ventas'))
+
+{{-- Los avisos success / warning / error se pintan en la página. --}}
+@section('flash_in_page', '1')
 
 @section('extra_css')
 <style>
@@ -107,8 +110,6 @@
 @section('content')
 <div class="admin-settle-wrapper">
 <div class="container">
-
-    @include('partials.admin-nav')
 
     <div class="as-header">
         <h1>{!! __('Liquidación de <span>ventas</span>') !!}</h1>

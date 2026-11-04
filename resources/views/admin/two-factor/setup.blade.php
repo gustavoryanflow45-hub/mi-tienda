@@ -1,5 +1,5 @@
 {{-- resources/views/admin/two-factor/setup.blade.php --}}
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('Configurar la verificación en dos pasos'))
 

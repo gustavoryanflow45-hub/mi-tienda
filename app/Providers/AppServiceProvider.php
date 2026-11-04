@@ -5,9 +5,11 @@ namespace App\Providers;
 use App\Services\GeolocationService;
 use App\Services\Payments\PayPhoneService;
 use App\Services\Payments\StripeService;
+use App\View\Composers\AdminNavComposer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 
@@ -33,6 +35,9 @@ class AppServiceProvider extends ServiceProvider
         $this->configurePaymentRateLimiting();
         $this->configureStorefrontRateLimiting();
         $this->configureAccountRateLimiting();
+
+        // Barra del panel (layouts/admin): admin, 2FA y contadores.
+        View::composer('layouts.admin', AdminNavComposer::class);
     }
 
     /**

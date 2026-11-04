@@ -1,6 +1,9 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('Admin — Gestión de billetera'))
+
+{{-- Los avisos success / warning / error se pintan en la página. --}}
+@section('flash_in_page', '1')
 
 @section('extra_css')
 <style>
@@ -273,8 +276,6 @@
 @section('content')
 <div class="admin-wallet-wrapper">
 <div class="container">
-
-    @include('partials.admin-nav')
 
     {{-- Header --}}
     <div class="aw-header">

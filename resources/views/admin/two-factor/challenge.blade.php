@@ -1,5 +1,5 @@
 {{-- resources/views/admin/two-factor/challenge.blade.php --}}
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('Verificación en dos pasos'))
 

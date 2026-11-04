@@ -20,9 +20,6 @@ return [
         'manage_profile' => 'Manage Profile',
         'products' => 'Products',
         'orders' => 'Orders',
-        'warehouse' => 'Warehouse / Dispatch',
-        'shop_approvals' => 'Shop Approvals',
-        'settlements' => 'Settlements',
         'support' => 'Support',
     ],
 
