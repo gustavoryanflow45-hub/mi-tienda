@@ -11,12 +11,8 @@
     combinaciones sale de Product::stockMap(), el mismo que usa la ficha.
 --}}
 @php
-    $finalPrice = $product->unit_price;
-    if ($product->discount > 0) {
-        $finalPrice = $product->discount_type === 'percent'
-            ? $product->unit_price * (1 - $product->discount / 100)
-            : $product->unit_price - $product->discount;
-    }
+    // Misma regla de descuento que el carrito, la ficha y la API.
+    $finalPrice = $product->finalPrice();
 
     $sizes      = $product->availableSizes();
     $colors     = $product->availableColors();

@@ -346,12 +346,8 @@
 
                         {{-- Precio --}}
                         @php
-                            $finalPrice = $product->unit_price;
-                            if ($product->discount > 0) {
-                                $finalPrice = $product->discount_type === 'percent'
-                                    ? $product->unit_price * (1 - $product->discount / 100)
-                                    : $product->unit_price - $product->discount;
-                            }
+                            // Misma regla de descuento que el carrito y la API.
+                            $finalPrice = $product->finalPrice();
                             $totalStock = $product->stocks->sum('qty');
 
                             // Talla y color salen de columnas propias, no de adivinar

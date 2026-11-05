@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Shop;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\CatalogService;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
@@ -84,7 +85,7 @@ class CategoryController extends Controller
      * Muestra los productos de una categoría por su slug.
      * GET /category/{slug}
      */
-    public function show(Request $request, string $slug)
+    public function show(Request $request, string $slug, CatalogService $catalog)
     {
         // Buscar la categoría activa
         $category = Category::where('slug', $slug)
@@ -94,31 +95,15 @@ class CategoryController extends Controller
         // Esta categoría y sus subcategorías activas
         $childIds = $category->selfAndChildrenIds();
 
-        // Query base: productos de esta cat o sus hijas
-        $query = Product::with(['category', 'stocks'])
-            ->whereIn('category_id', $childIds)
-            ->active();
-
-        // ── Filtro precio ────────────────────────────────────────
-        if ($request->filled('min_price')) {
-            $query->where('unit_price', '>=', (float) $request->min_price);
-        }
-        if ($request->filled('max_price')) {
-            $query->where('unit_price', '<=', (float) $request->max_price);
-        }
-
-        // ── Filtro marca ─────────────────────────────────────────
-        if ($request->filled('brand')) {
-            $query->where('brand_id', (int) $request->brand);
-        }
-
-        // ── Ordenamiento ─────────────────────────────────────────
-        match ($request->get('sort', 'newest')) {
-            'price_asc' => $query->orderBy('unit_price', 'asc'),
-            'price_desc' => $query->orderBy('unit_price', 'desc'),
-            'popular' => $query->orderBy('num_of_sale', 'desc'),
-            default => $query->latest(),   // newest
-        };
+        // Mismos filtros que la API (CatalogService): esta categoría y sus
+        // subcategorías, marca, rango de precio y orden.
+        $query = $catalog->filter($catalog->products(), [
+            'category' => $category,
+            'brand' => $request->input('brand'),
+            'min_price' => $request->input('min_price'),
+            'max_price' => $request->input('max_price'),
+            'sort' => $request->get('sort', 'newest'),
+        ]);
 
         $products = $query->paginate(12)->withQueryString();
 
