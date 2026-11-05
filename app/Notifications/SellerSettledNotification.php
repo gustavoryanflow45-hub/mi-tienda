@@ -3,6 +3,9 @@
 namespace App\Notifications;
 
 use App\Models\SellerSettlement;
+use App\Models\User;
+use App\Notifications\Channels\FcmChannel;
+use App\Services\Push\FcmMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -17,7 +20,19 @@ class SellerSettledNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database', 'mail'];
+
+        // Push a la app del vendedor (si tiene sesión abierta en ella).
+        return $notifiable instanceof User ? [...$channels, FcmChannel::class] : $channels;
+    }
+
+    public function toFcm(object $notifiable): FcmMessage
+    {
+        return new FcmMessage(
+            __('Liquidación acreditada'),
+            $this->message(),
+            ['settlement_id' => $this->settlement->id, 'net_amount' => (float) $this->settlement->net_amount],
+        );
     }
 
     public function toArray(object $notifiable): array

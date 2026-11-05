@@ -2,10 +2,7 @@
 
 namespace App\Http\Resources\V1;
 
-use App\Notifications\OrderStatusUpdatedNotification;
-use App\Notifications\SellerNewOrderNotification;
-use App\Notifications\SellerSettledNotification;
-use App\Notifications\ShopStatusUpdatedNotification;
+use App\Support\NotificationTypes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Arr;
@@ -22,21 +19,13 @@ use Illuminate\Support\Arr;
  */
 class NotificationResource extends JsonResource
 {
-    /** Clase de la notificación → clave para la app. */
-    public const TYPES = [
-        OrderStatusUpdatedNotification::class => 'order_status_updated',
-        SellerNewOrderNotification::class => 'seller_new_order',
-        SellerSettledNotification::class => 'seller_settled',
-        ShopStatusUpdatedNotification::class => 'shop_status_updated',
-    ];
-
     public function toArray(Request $request): array
     {
         $data = (array) $this->data;
 
         return [
             'id' => $this->id,
-            'type' => self::TYPES[$this->type] ?? 'other',
+            'type' => NotificationTypes::for($this->type),
             'message' => isset($data['message']) ? (string) $data['message'] : null,
             'payload' => (object) Arr::except($data, 'message'),
             'read' => $this->read_at !== null,

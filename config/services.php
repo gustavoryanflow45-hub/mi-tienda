@@ -13,6 +13,14 @@
 //   # No hay variable de ambiente: si es de prueba o real lo decide la
 //   # aplicación de PayPhone a la que pertenece el token.
 //
+//   FCM_CREDENTIALS=storage/app/private/firebase-credentials.json
+//                                       # JSON de la cuenta de servicio de Firebase (Configuración del
+//                                       # proyecto → Cuentas de servicio → Generar clave privada). Ruta
+//                                       # absoluta o relativa al proyecto; NUNCA dentro de public/ ni en git.
+//                                       # Vacío = no se envían push (todo lo demás funciona igual).
+//   FCM_ENABLED=true                    # false para apagar los push sin quitar las credenciales
+//   FCM_ANDROID_CHANNEL=general         # canal de notificaciones que crea la app Android
+//
 // Tras editar .env: php artisan config:clear (y config:cache solo en deploy).
 
 return [
@@ -26,6 +34,17 @@ return [
     'payphone' => [
         'token'    => env('PAYPHONE_TOKEN'),
         'store_id' => env('PAYPHONE_STORE_ID'),
+    ],
+
+    // Push a las apps (App\Notifications\Channels\FcmChannel, App\Services\Push\FcmClient).
+    'fcm' => [
+        'credentials'     => env('FCM_CREDENTIALS'),
+        'enabled'         => (bool) env('FCM_ENABLED', true),
+        'android_channel' => env('FCM_ANDROID_CHANNEL', 'general'),
+        // Idioma de los textos del push: el por defecto de la tienda. No se lee
+        // de config('app.locale') al enviar porque app()->setLocale() (el
+        // selector de idioma de la petición) la reescribe.
+        'locale'          => env('APP_LOCALE', 'es'),
     ],
 
 ];
