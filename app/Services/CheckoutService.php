@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Address;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\User;
@@ -22,6 +23,18 @@ class CheckoutService
 
     /** Clave de sesión con los datos de envío capturados en el checkout. */
     public const SHIPPING_SESSION_KEY = 'checkout_shipping';
+
+    /** Reglas de los datos de envío: el checkout web y la API piden lo mismo. */
+    public const SHIPPING_RULES = [
+        'full_name' => ['required', 'string', 'max:255'],
+        'phone' => ['required', 'string', 'max:30'],
+        'email' => ['required', 'email', 'max:255'],
+        'address' => ['required', 'string', 'max:255'],
+        'city' => ['required', 'string', 'max:100'],
+        'state' => ['nullable', 'string', 'max:100'],
+        'country' => ['nullable', 'string', 'max:100'],
+        'postal_code' => ['nullable', 'string', 'max:20'],
+    ];
 
     /** Ítems del carrito del usuario, con su producto cargado. */
     public function items(User $user): Collection
@@ -63,18 +76,38 @@ class CheckoutService
      */
     public function shippingSnapshot(User $user): array
     {
-        return array_merge(
-            $user->shippingSnapshot(),
-            $this->filled((array) session(self::SHIPPING_SESSION_KEY, [])),
-        );
+        return $this->shippingFrom($user, (array) session(self::SHIPPING_SESSION_KEY, []));
     }
 
     /**
-     * Pedido pendiente listo para cobrar, creado a partir del carrito actual.
-     * Reutiliza el de la sesión si sigue sin pagarse, para no acumular uno por
-     * cada intento de pago. Devuelve null si el carrito está vacío.
+     * Pedido pendiente listo para cobrar, creado a partir del carrito actual
+     * (checkout web). Reutiliza el de la sesión si sigue sin pagarse, para no
+     * acumular uno por cada intento de pago. Devuelve null si el carrito está
+     * vacío.
      */
     public function pendingOrderFor(User $user): ?Order
+    {
+        $order = $this->syncPendingOrder(
+            $user,
+            $this->reusableOrderFor($user),
+            $this->shippingSnapshot($user),
+            session()->getId(),
+        );
+
+        if ($order) {
+            session([self::ORDER_SESSION_KEY => $order->id]);
+        }
+
+        return $order;
+    }
+
+    /**
+     * Crea el pedido pendiente a partir del carrito, o pone al día $reuse
+     * (totales, líneas y envío) si sigue siendo del usuario y sin pagar. Es
+     * el núcleo de pendingOrderFor() sin sesión: la API dice qué pedido
+     * reutilizar y con qué datos de envío. Null si el carrito está vacío.
+     */
+    public function syncPendingOrder(User $user, ?Order $reuse, array $shipping, ?string $sessionId = null): ?Order
     {
         $items = $this->items($user);
 
@@ -83,7 +116,7 @@ class CheckoutService
         }
 
         $totals = $this->totals($items);
-        $order = $this->reusableOrderFor($user);
+        $order = $reuse && $reuse->user_id === $user->id && ! $reuse->isPaid() ? $reuse : null;
 
         if ($order) {
             $order->update([
@@ -91,13 +124,13 @@ class CheckoutService
                 'shipping_total' => $totals['shipping'],
                 'tax_amount' => $totals['tax'],
                 'grand_total' => $totals['grand_total'],
-                'shipping_address' => $this->shippingSnapshot($user),
+                'shipping_address' => $shipping,
             ]);
             $order->orderDetails()->delete();
         } else {
             $order = Order::create([
                 'user_id' => $user->id,
-                'session_id' => session()->getId(),
+                'session_id' => $sessionId,
                 'code' => 'ORD-'.date('Ymd').'-'.strtoupper(substr(uniqid(), -6)),
                 'status' => 'pendiente',
                 'payment_status' => 'unpaid',
@@ -106,7 +139,7 @@ class CheckoutService
                 'shipping_total' => $totals['shipping'],
                 'tax_amount' => $totals['tax'],
                 'grand_total' => $totals['grand_total'],
-                'shipping_address' => $this->shippingSnapshot($user),
+                'shipping_address' => $shipping,
             ]);
         }
 
@@ -126,9 +159,38 @@ class CheckoutService
             ]);
         }
 
-        session([self::ORDER_SESSION_KEY => $order->id]);
-
         return $order;
+    }
+
+    /** Datos de envío del perfil con lo que el comprador acaba de escribir encima. */
+    public function shippingFrom(User $user, array $input): array
+    {
+        return array_merge($user->shippingSnapshot(), $this->filled($input));
+    }
+
+    /** Guarda los datos de envío como dirección por defecto para futuras compras. */
+    public function rememberShipping(User $user, array $data): void
+    {
+        Address::updateOrCreate(['user_id' => $user->id, 'is_default' => 1], $data);
+    }
+
+    /**
+     * El pago quedó confirmado por la pasarela: marca el pedido pagado
+     * (Order::markPaid, que no hace nada si ya lo estaba) y vacía el carrito
+     * del comprador. Lo llaman el webhook y la vuelta de Stripe, la vuelta de
+     * PayPhone y la API.
+     */
+    public function completePayment(Order $order, string $gateway, string $reference): void
+    {
+        $order->markPaid($gateway, $reference);
+
+        Cart::query()
+            ->when(
+                $order->user_id,
+                fn ($q) => $q->where('user_id', $order->user_id),
+                fn ($q) => $q->where('session_id', $order->session_id),
+            )
+            ->delete();
     }
 
     /** Pedido de la sesión, solo si es de este usuario y sigue sin pagarse. */

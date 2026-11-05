@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\CheckoutController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\HomeController;
+use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProductController;
 use Illuminate\Support\Facades\Route;
 
@@ -45,5 +48,34 @@ Route::middleware(['auth:sanctum', 'api.active'])->group(function () {
         Route::get('/devices', [DeviceController::class, 'index'])->name('devices.index');
         Route::delete('/devices', [DeviceController::class, 'destroyAll'])->name('devices.destroy-all');
         Route::delete('/devices/{id}', [DeviceController::class, 'destroy'])->whereNumber('id')->name('devices.destroy');
+    });
+
+    // ── Carrito ──────────────────────────────────────────────────
+    // El mismo de la web (tabla carts) y las mismas reglas (CartService).
+    // 'throttle:cart' comparte contador con el carrito web.
+    Route::prefix('cart')->name('cart.')->middleware(['abilities:cart:write', 'throttle:cart'])->group(function () {
+        Route::get('/', [CartController::class, 'show'])->name('show');
+        Route::delete('/', [CartController::class, 'clear'])->name('clear');
+        Route::post('/items', [CartController::class, 'store'])->name('items.store');
+        Route::patch('/items/{item}', [CartController::class, 'update'])->whereNumber('item')->name('items.update');
+        Route::delete('/items/{item}', [CartController::class, 'destroy'])->whereNumber('item')->name('items.destroy');
+    });
+
+    // ── Checkout y pagos ─────────────────────────────────────────
+    // Crear el pedido lleva 'throttle:checkout' e iniciar un cobro
+    // 'throttle:payments', con los mismos contadores que la web (frenan el
+    // uso de la API para probar tarjetas robadas). Confirmar no se limita:
+    // registrar un pago ya hecho no debe bloquearse nunca.
+    Route::prefix('checkout')->name('checkout.')->middleware('abilities:checkout:write')->group(function () {
+        Route::get('/', [CheckoutController::class, 'show'])->name('show');
+        Route::post('/orders', [CheckoutController::class, 'store'])->middleware('throttle:checkout')->name('orders.store');
+
+        Route::prefix('orders/{order}')->whereNumber('order')->name('orders.')->group(function () {
+            Route::get('/', [CheckoutController::class, 'order'])->name('show');
+            Route::post('/stripe', [PaymentController::class, 'stripe'])->middleware('throttle:payments')->name('stripe');
+            Route::post('/stripe/confirm', [PaymentController::class, 'stripeConfirm'])->name('stripe.confirm');
+            Route::post('/payphone', [PaymentController::class, 'payphone'])->middleware('throttle:payments')->name('payphone');
+            Route::post('/payphone/confirm', [PaymentController::class, 'payphoneConfirm'])->name('payphone.confirm');
+        });
     });
 });

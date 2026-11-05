@@ -13,10 +13,17 @@
 |                     sesión activa no caduca; un dispositivo olvidado sí.
 | API_MAX_DEVICES     Dispositivos con sesión abierta a la vez por cuenta.
 |                     Al pasarse, el login cierra la sesión más antigua.
+| API_APP_PAYMENT_RETURN_URL
+|                     A dónde vuelve un pago de PayPhone iniciado en la app,
+|                     tras confirmarlo el servidor: un esquema propio de la
+|                     app que su navegador in-app intercepta para cerrarse
+|                     (se le añade ?status=…&order=…).
 */
 
 return [
     'token_ttl_days' => (int) env('API_TOKEN_TTL_DAYS', 30),
 
     'max_devices' => (int) env('API_MAX_DEVICES', 10),
+
+    'app_payment_return_url' => env('API_APP_PAYMENT_RETURN_URL', 'mitienda://payment-result'),
 ];

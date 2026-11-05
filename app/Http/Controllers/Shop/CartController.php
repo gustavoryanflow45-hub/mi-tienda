@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Shop;
 
+use App\Exceptions\BusinessRuleException;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Cart;
 use App\Models\Product;
-use App\Models\ProductStock;
+use App\Services\CartService;
 use App\Services\CheckoutService;
 
 class CartController extends Controller
 {
-    public function __construct(private CheckoutService $checkout)
+    public function __construct(private CheckoutService $checkout, private CartService $cart)
     {
         $this->middleware('auth');
     }
@@ -44,15 +45,7 @@ class CartController extends Controller
 
     public function index()
     {
-        $cartItems = $this->getCartQuery()->with(['product.stocks', 'product.category'])->get();
-
-        $cartItems->each(function ($item) {
-            $stock = $item->variation
-                ? $item->product->stocks->where('variant', $item->variation)->first()
-                : $item->product->stocks->first();
-            $item->available_stock = $stock ? $stock->qty : 999;
-        });
-
+        $cartItems = $this->cart->items(auth()->user());
         $totals = $this->checkout->totals($cartItems);
 
         return view('cart.index', [
@@ -92,69 +85,12 @@ class CartController extends Controller
             'quantity'   => 'nullable|integer|min:1',
         ]);
 
-        // Solo productos a la venta: publicados por su vendedor y no
-        // desactivados por el panel (Product::scopeActive).
-        $product  = Product::active()->findOrFail($request->product_id);
-        $quantity = $request->quantity ?? 1;
-        $variant  = $request->variation ?? null;
-
-        $stock = $variant
-            ? ProductStock::where('product_id', $product->id)->where('variant', $variant)->first()
-            : ProductStock::where('product_id', $product->id)->whereNull('variant')->first();
-
-        // Un producto con variantes exige una combinación que exista. Antes,
-        // una variación desconocida dejaba $stock en null y las validaciones
-        // de abajo se saltaban enteras: se agregaba a precio base y sin tope.
-        if ($product->load('stocks')->hasVariants() && ! $stock) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => $variant
-                    ? __('Esa combinación no está disponible.')
-                    : __('Elige talla y color antes de agregar al carrito.'),
-            ]);
-        }
-
-        // Validar stock disponible
-        if (! $stock || $stock->qty <= 0) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => __('Producto agotado.'),
-            ]);
-        }
-
-        if ($quantity > $stock->qty) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => __('Solo hay :max unidades en stock', ['max' => $stock->qty]),
-            ]);
-        }
-
-        // Product::finalPrice(): la misma regla de descuento que la ficha y la API.
-        $price = $product->finalPrice($stock ? (float) $stock->price : null);
-
-        $existing = $this->getCartQuery()
-            ->where('product_id', $product->id)
-            ->where('variation', $variant)
-            ->first();
-
-        if ($existing) {
-            $newQty = $existing->quantity + $quantity;
-            if ($stock && $newQty > $stock->qty) {
-                $newQty = $stock->qty;
-            }
-            $existing->update(['quantity' => $newQty]);
-        } else {
-            Cart::create([
-                'user_id'          => auth()->id(),
-                'temp_user_id'     => null,
-                'product_id'       => $product->id,
-                'product_stock_id' => $stock?->id,
-                'variation'        => $variant,
-                'quantity'         => $quantity,
-                'price'            => $price,
-                'tax'              => 0,
-                'shipping_cost'    => $product->shipping_cost ?? 0,
-            ]);
+        // Reglas en CartService (las mismas que la API): solo productos a la
+        // venta, una combinación existente y sin pasar del stock.
+        try {
+            $this->cart->add(auth()->user(), (int) $request->product_id, $request->variation, (int) ($request->quantity ?? 1));
+        } catch (BusinessRuleException $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
         }
 
         return response()->json($this->summaryPayload() + [
@@ -220,14 +156,7 @@ class CartController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
         }
 
-        $stock = $item->variation
-            ? ProductStock::where('product_id', $item->product_id)->where('variant', $item->variation)->first()
-            : ProductStock::where('product_id', $item->product_id)->first();
-
-        $maxQty   = $stock ? $stock->qty : 999;
-        $quantity = min($request->quantity, $maxQty);
-
-        $item->update(['quantity' => $quantity]);
+        $quantity = $this->cart->setQuantity($item, (int) $request->quantity)->quantity;
 
         return response()->json($this->summaryPayload() + [
             'status'     => 'success',

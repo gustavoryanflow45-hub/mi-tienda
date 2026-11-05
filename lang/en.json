@@ -740,5 +740,8 @@
     "Recurso no encontrado.": "Resource not found.",
     "Método no permitido.": "Method not allowed.",
     "Demasiadas peticiones. Espera un momento.": "Too many requests. Please wait a moment.",
-    "Error en la petición.": "Request error."
+    "Error en la petición.": "Request error.",
+    "Tu carrito está vacío.": "Your cart is empty.",
+    "Este pedido ya está pagado.": "This order is already paid.",
+    "No pudimos confirmar el pago todavía. Si se te cobró, se registrará en unos minutos.": "We could not confirm the payment yet. If you were charged, it will be recorded within a few minutes."
 }

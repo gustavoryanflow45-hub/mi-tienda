@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Exceptions\BusinessRuleException;
+use App\Exceptions\PaymentInProgressException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -59,6 +60,7 @@ class ApiExceptions
             $e instanceof ThrottleRequestsException => self::json(
                 __('Demasiadas peticiones. Espera un momento.'), 'too_many_requests', 429, [], $e->getHeaders()
             ),
+            $e instanceof PaymentInProgressException => self::json($e->getMessage(), 'payment_in_progress', 409),
             $e instanceof BusinessRuleException => self::json($e->getMessage(), 'business_rule', 422),
             $e instanceof HttpExceptionInterface => self::json(
                 $e->getMessage() ?: __('Error en la petición.'), 'http_error', $e->getStatusCode(), [], $e->getHeaders()
