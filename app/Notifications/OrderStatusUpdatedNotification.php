@@ -3,6 +3,9 @@
 namespace App\Notifications;
 
 use App\Models\Order;
+use App\Models\User;
+use App\Notifications\Channels\FcmChannel;
+use App\Services\Push\FcmMessage;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -18,7 +21,17 @@ class OrderStatusUpdatedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        // Push a la app del comprador (si tiene sesión abierta en ella).
+        return $notifiable instanceof User ? ['database', FcmChannel::class] : ['database'];
+    }
+
+    public function toFcm(object $notifiable): FcmMessage
+    {
+        return new FcmMessage(
+            __('Tu pedido #:code', ['code' => $this->order->code]),
+            $this->statusMessage(),
+            ['order_id' => $this->order->id, 'order_code' => $this->order->code, 'status' => $this->status],
+        );
     }
 
     public function toArray(object $notifiable): array

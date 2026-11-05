@@ -3,6 +3,9 @@
 namespace App\Notifications;
 
 use App\Models\Shop;
+use App\Models\User;
+use App\Notifications\Channels\FcmChannel;
+use App\Services\Push\FcmMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -21,7 +24,19 @@ class ShopStatusUpdatedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database', 'mail'];
+
+        // Push a la app del vendedor (si tiene sesión abierta en ella).
+        return $notifiable instanceof User ? [...$channels, FcmChannel::class] : $channels;
+    }
+
+    public function toFcm(object $notifiable): FcmMessage
+    {
+        return new FcmMessage(
+            $this->isApproved() ? __('Tu tienda fue aprobada') : __('Tu tienda no fue aprobada'),
+            $this->message(),
+            ['shop_id' => $this->shop->id, 'status' => $this->status, 'approved' => $this->isApproved()],
+        );
     }
 
     public function toArray(object $notifiable): array

@@ -754,5 +754,11 @@
     "Se acredita": "Credited",
     "Cubierto por ventas liquidadas": "Covered by settled sales",
     "El saldo se descuenta al enviar la solicitud; queda pendiente de aprobación y se devuelve si se rechaza.": "The balance is deducted when you submit the request; it stays pending approval and is refunded if rejected.",
-    "El monto debe ser mayor que la comisión de red (:fee).": "The amount must be greater than the network fee (:fee)."
+    "El monto debe ser mayor que la comisión de red (:fee).": "The amount must be greater than the network fee (:fee).",
+    "Tu pedido #:code": "Your order #:code",
+    "Nueva venta": "New sale",
+    "Nuevo pedido #:code recibido.": "New order #:code received.",
+    "Liquidación acreditada": "Settlement credited",
+    "Tu tienda fue aprobada": "Your shop was approved",
+    "Tu tienda no fue aprobada": "Your shop was not approved"
 }
