@@ -89,6 +89,29 @@ class ApiRoutesTest extends TestCase
         $this->assertContains('throttle:checkout', $routes->getByName('api.v1.checkout.orders.store')->gatherMiddleware());
     }
 
+    public function test_profile_orders_and_seller_routes_carry_their_abilities(): void
+    {
+        foreach ($this->apiRoutes() as $route) {
+            $name = (string) $route->getName();
+            $middleware = $route->gatherMiddleware();
+
+            if (str_starts_with($name, 'api.v1.profile.')) {
+                $this->assertNotEmpty(array_intersect(['abilities:profile:read', 'abilities:profile:write'], $middleware), $name);
+            }
+
+            if (str_starts_with($name, 'api.v1.orders.')) {
+                $this->assertContains('abilities:orders:read', $middleware, $name);
+            }
+
+            // Toda ruta de vendedor: una habilidad seller:* y, en cada
+            // petición, la tienda aprobada (api.seller).
+            if (str_starts_with($name, 'api.v1.seller.')) {
+                $this->assertNotEmpty(array_intersect(['abilities:seller:products', 'abilities:seller:orders'], $middleware), $name);
+                $this->assertContains('api.seller', $middleware, "{$name} sin api.seller");
+            }
+        }
+    }
+
     public function test_panel_accounts_cannot_hold_api_tokens(): void
     {
         $this->assertFalse(method_exists(Admin::class, 'createToken'));

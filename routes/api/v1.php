@@ -7,8 +7,11 @@ use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\CheckoutController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\HomeController;
+use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\Seller;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -76,6 +79,44 @@ Route::middleware(['auth:sanctum', 'api.active'])->group(function () {
             Route::post('/stripe/confirm', [PaymentController::class, 'stripeConfirm'])->name('stripe.confirm');
             Route::post('/payphone', [PaymentController::class, 'payphone'])->middleware('throttle:payments')->name('payphone');
             Route::post('/payphone/confirm', [PaymentController::class, 'payphoneConfirm'])->name('payphone.confirm');
+        });
+    });
+
+    // ── Perfil ───────────────────────────────────────────────────
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [ProfileController::class, 'show'])->middleware('abilities:profile:read')->name('show');
+        Route::middleware('abilities:profile:write')->group(function () {
+            Route::patch('/', [ProfileController::class, 'update'])->name('update');
+            Route::post('/avatar', [ProfileController::class, 'avatar'])->name('avatar');
+            Route::put('/password', [ProfileController::class, 'password'])->middleware('throttle:api-auth')->name('password');
+        });
+    });
+
+    // ── Pedidos del comprador ────────────────────────────────────
+    Route::prefix('orders')->name('orders.')->middleware('abilities:orders:read')->group(function () {
+        Route::get('/', [OrderController::class, 'index'])->name('index');
+        Route::get('/{order}', [OrderController::class, 'show'])->whereNumber('order')->name('show');
+    });
+
+    // ── Vendedor ─────────────────────────────────────────────────
+    // Tras la habilidad, 'api.seller' vuelve a comprobar en cada petición que
+    // la tienda siga aprobada: seller:* solo se recalcula al rotar el token.
+    Route::prefix('seller')->name('seller.')->group(function () {
+        Route::middleware(['abilities:seller:products', 'api.seller'])->prefix('products')->name('products.')->group(function () {
+            Route::get('/options', [Seller\ProductController::class, 'options'])->name('options');
+            Route::get('/', [Seller\ProductController::class, 'index'])->name('index');
+            Route::post('/', [Seller\ProductController::class, 'store'])->name('store');
+            Route::get('/{product}', [Seller\ProductController::class, 'show'])->whereNumber('product')->name('show');
+            Route::put('/{product}', [Seller\ProductController::class, 'update'])->whereNumber('product')->name('update');
+            Route::post('/{product}/toggle-published', [Seller\ProductController::class, 'togglePublished'])->whereNumber('product')->name('toggle-published');
+        });
+
+        Route::middleware(['abilities:seller:orders', 'api.seller'])->group(function () {
+            Route::get('/dashboard', Seller\DashboardController::class)->name('dashboard');
+            Route::get('/orders', [Seller\OrderController::class, 'index'])->name('orders.index');
+            Route::get('/orders/{order}', [Seller\OrderController::class, 'show'])->whereNumber('order')->name('orders.show');
+            Route::post('/orders/{order}/confirm', [Seller\OrderController::class, 'confirm'])->whereNumber('order')->name('orders.confirm');
+            Route::post('/orders/{order}/send-to-warehouse', [Seller\OrderController::class, 'sendToWarehouse'])->whereNumber('order')->name('orders.send-to-warehouse');
         });
     });
 });

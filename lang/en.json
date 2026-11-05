@@ -743,5 +743,6 @@
     "Error en la petición.": "Request error.",
     "Tu carrito está vacío.": "Your cart is empty.",
     "Este pedido ya está pagado.": "This order is already paid.",
-    "No pudimos confirmar el pago todavía. Si se te cobró, se registrará en unos minutos.": "We could not confirm the payment yet. If you were charged, it will be recorded within a few minutes."
+    "No pudimos confirmar el pago todavía. Si se te cobró, se registrará en unos minutos.": "We could not confirm the payment yet. If you were charged, it will be recorded within a few minutes.",
+    "Tu tienda no está aprobada. No puedes usar el panel de vendedor.": "Your shop is not approved. You cannot use the seller panel."
 }
