@@ -275,7 +275,7 @@
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center" style="gap:10px;">
-                                        @if($order->delivery_status === 'warehouse')
+                                        @if($order->delivery_status === 'warehouse' && auth()->user()->can('warehouse.operate'))
                                             <form method="POST" action="{{ route('admin.warehouse.dispatch', $order->id) }}"
                                                   onsubmit="return confirm({{ json_encode(__('¿Despachar el pedido #:code? El cliente será notificado de que va en camino.', ['code' => $order->code])) }})">
                                                 @csrf
@@ -283,7 +283,7 @@
                                                     <i class="las la-shipping-fast"></i> {{ __('Despachar') }}
                                                 </button>
                                             </form>
-                                        @elseif($order->delivery_status === 'on_the_way')
+                                        @elseif($order->delivery_status === 'on_the_way' && auth()->user()->can('warehouse.operate'))
                                             <form method="POST" action="{{ route('admin.warehouse.deliver', $order->id) }}"
                                                   onsubmit="return confirm({{ json_encode(__('¿Marcar el pedido #:code como entregado?', ['code' => $order->code])) }})">
                                                 @csrf
@@ -292,7 +292,7 @@
                                                 </button>
                                             </form>
                                         @endif
-                                        <a href="{{ route('orders.show', $order->id) }}" class="btn-view">
+                                        <a href="{{ route('admin.orders.show', $order->id) }}" class="btn-view">
                                             {{ __('Ver') }} <i class="las la-arrow-right"></i>
                                         </a>
                                     </div>

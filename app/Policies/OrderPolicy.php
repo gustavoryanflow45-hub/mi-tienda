@@ -23,7 +23,9 @@ class OrderPolicy
     public function view(User|Admin $actor, Order $order): Response
     {
         if ($actor instanceof Admin) {
-            return Response::allow();
+            return $actor->checkPermissionTo('orders.view') || $actor->checkPermissionTo('warehouse.view')
+                ? Response::allow()
+                : Response::deny();
         }
 
         return $this->isBuyer($actor, $order) || $this->sellsIn($actor, $order)

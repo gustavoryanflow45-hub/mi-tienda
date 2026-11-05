@@ -15,7 +15,9 @@ class ShopPolicy
 {
     public function view(User|Admin $actor, Shop $shop): bool
     {
-        return $actor instanceof Admin || $this->owns($actor, $shop);
+        return $actor instanceof Admin
+            ? $actor->checkPermissionTo('shops.view')
+            : $this->owns($actor, $shop);
     }
 
     public function update(User|Admin $actor, Shop $shop): bool
@@ -27,12 +29,12 @@ class ShopPolicy
     // false en vez de lanzar un TypeError.
     public function approve(User|Admin $actor, Shop $shop): bool
     {
-        return $actor instanceof Admin;
+        return $actor instanceof Admin && $actor->checkPermissionTo('shops.decide');
     }
 
     public function reject(User|Admin $actor, Shop $shop): bool
     {
-        return $actor instanceof Admin;
+        return $actor instanceof Admin && $actor->checkPermissionTo('shops.decide');
     }
 
     protected function owns(User $user, Shop $shop): bool

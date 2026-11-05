@@ -8,14 +8,17 @@ use App\Models\User;
 
 /**
  * Un vendedor solo gestiona sus propios productos (products.added_by). Una
- * cuenta del panel (Admin, guard 'admin') los modera todos desde /admin;
+ * cuenta del panel (Admin, guard 'admin') los modera todos desde /admin si
+ * su rol tiene el permiso (products.edit, products.moderate);
  * ningún User de la tienda tiene ese poder, sea cual sea su user_type.
  */
 class ProductPolicy
 {
     public function update(User|Admin $actor, Product $product): bool
     {
-        return $actor instanceof Admin || $this->owns($actor, $product);
+        return $actor instanceof Admin
+            ? $actor->checkPermissionTo('products.edit')
+            : $this->owns($actor, $product);
     }
 
     /** Publicar / despublicar (Seller\ProductController@togglePublished): solo su vendedor. */
@@ -27,7 +30,7 @@ class ProductPolicy
     /** Aprobar / desactivar (products.approved): solo el panel. */
     public function moderate(User|Admin $actor, Product $product): bool
     {
-        return $actor instanceof Admin;
+        return $actor instanceof Admin && $actor->checkPermissionTo('products.moderate');
     }
 
     protected function owns(User $user, Product $product): bool

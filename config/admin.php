@@ -22,7 +22,11 @@ use Illuminate\Support\Str;
 |                     petición admin que no llegue por ADMIN_DOMAIN. Con el
 |                     flag activo y sin dominio, el panel queda cerrado.
 | ADMIN_REQUIRE_2FA   Exige el segundo factor (TOTP) antes de entrar.
-| ADMIN_SESSION_COOKIE Nombre de la cookie de sesión en el host admin.
+| ADMIN_SESSION_COOKIE Nombre de la cookie de sesión del panel.
+| ADMIN_ALLOWED_IPS   IPs o rangos CIDR (separados por comas) desde los que se
+|                     puede abrir el panel, login incluido; el resto recibe
+|                     404. Vacío = sin restricción. Detrás de un proxy hay
+|                     que configurar trustProxies (ver RestrictAdminIp).
 |
 | Tras cambiar ADMIN_DOMAIN o ADMIN_PATH: php artisan config:clear y
 | php artisan route:clear (route:cache hornea dominio y prefijo en las rutas).
@@ -36,6 +40,8 @@ return [
     'enforce_host' => (bool) env('ADMIN_ENFORCE_HOST', false),
 
     'require_two_factor' => (bool) env('ADMIN_REQUIRE_2FA', true),
+
+    'allowed_ips' => array_values(array_filter(array_map('trim', explode(',', (string) env('ADMIN_ALLOWED_IPS', ''))))),
 
     'session_cookie' => env(
         'ADMIN_SESSION_COOKIE',

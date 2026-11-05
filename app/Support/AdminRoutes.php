@@ -6,7 +6,8 @@ use Illuminate\Support\Facades\Route;
 
 /**
  * Registra routes/admin.php: grupo 'web', nombres 'admin.', prefijo
- * ADMIN_PATH y, con ADMIN_DOMAIN, ligado a ese host.
+ * ADMIN_PATH y, con ADMIN_DOMAIN, ligado a ese host. La lista blanca de IPs
+ * (RestrictAdminIp) va al principio del grupo 'web', en bootstrap/app.php.
  *
  * Es el único sitio que lo hace: bootstrap/app.php lo llama al cargar las
  * rutas y los tests que cambian config('admin.*') lo vuelven a llamar.

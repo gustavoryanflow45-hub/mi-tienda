@@ -68,8 +68,12 @@
                                 @include('admin.products.partials.status', ['product' => $product])
                             </td>
                             <td class="text-right text-nowrap">
-                                <a href="{{ route('admin.products.edit', $product->id) }}" class="btn btn-light btn-sm" title="{{ __('Editar') }}"><i class="las la-pen"></i></a>
-                                @include('admin.products.partials.moderate', ['product' => $product, 'compact' => true])
+                                @can('products.edit')
+                                    <a href="{{ route('admin.products.edit', $product->id) }}" class="btn btn-light btn-sm" title="{{ __('Editar') }}"><i class="las la-pen"></i></a>
+                                @endcan
+                                @can('products.moderate')
+                                    @include('admin.products.partials.moderate', ['product' => $product, 'compact' => true])
+                                @endcan
                             </td>
                         </tr>
                     @empty

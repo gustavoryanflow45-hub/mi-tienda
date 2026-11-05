@@ -10,7 +10,8 @@ use Illuminate\View\View;
 
 /**
  * Datos de la barra de layouts/admin: quién está dentro, si ya puede usar
- * el panel (pasó el segundo factor) y los contadores de la navegación.
+ * el panel (pasó el segundo factor) y los contadores de la navegación, solo
+ * de las secciones que su rol puede ver.
  *
  * Antes el contador de tiendas pendientes vivía en la barra lateral del
  * dashboard de la tienda; ahora solo existe dentro del panel.
@@ -30,8 +31,8 @@ class AdminNavComposer
             'admin' => $admin,
             'ready' => $ready,
             // Shop::status 0 = pendiente (Admin\ShopController::PENDING).
-            'pending_shops' => $ready ? Shop::where('status', 0)->count() : 0,
-            'arrivals' => $ready
+            'pending_shops' => $ready && $admin->checkPermissionTo('shops.view') ? Shop::where('status', 0)->count() : 0,
+            'arrivals' => $ready && $admin->checkPermissionTo('warehouse.view')
                 ? $admin->unreadNotifications()->where('type', OrderArrivedWarehouseNotification::class)->count()
                 : 0,
         ]);

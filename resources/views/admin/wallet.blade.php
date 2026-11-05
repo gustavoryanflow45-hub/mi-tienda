@@ -440,7 +440,7 @@
                                 {{ $r->created_at->format('d/m/Y H:i') }}
                             </td>
                             <td data-label="{{ __('Acciones') }}">
-                                @if($r->approval == 0)
+                                @if($r->approval == 0 && auth()->user()->can('wallet.decide'))
                                 <div style="display:flex;gap:6px;">
                                     <form method="POST"
                                           action="{{ route('admin.wallet.approve', $r->id) }}"
@@ -585,7 +585,7 @@
                                 {{ $w->created_at->format('d/m/Y H:i') }}
                             </td>
                             <td data-label="{{ __('Acciones') }}">
-                                @if($w->status == 'pending')
+                                @if($w->status == 'pending' && auth()->user()->can('wallet.decide'))
                                 <div style="display:flex;gap:6px;">
                                     <form method="POST"
                                           action="{{ route('admin.wallet.withdrawal.approve', $w->id) }}"
