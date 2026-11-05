@@ -729,5 +729,16 @@
     "El producto «:name» ya estaba desactivado.": "Product “:name” was already disabled.",
     "Producto «:name» desactivado: ya no se muestra en la tienda ni se puede añadir al carrito.": "Product “:name” disabled: it is no longer shown in the shop and cannot be added to the cart.",
     "Solo lectura": "Read only",
-    "Tu cuenta no tiene ningún rol en el panel. Pide a un super-admin que te asigne uno.": "Your account has no role in the panel. Ask a super-admin to assign you one."
+    "Tu cuenta no tiene ningún rol en el panel. Pide a un super-admin que te asigne uno.": "Your account has no role in the panel. Ask a super-admin to assign you one.",
+    "Cuenta creada. Te enviamos un enlace para verificar tu correo; después podrás iniciar sesión.": "Account created. We sent you a link to verify your email; after that you can sign in.",
+    "Esta cuenta está bloqueada. Contacta con soporte.": "This account is blocked. Contact support.",
+    "Verifica tu correo antes de iniciar sesión. Puedes pedir otro enlace.": "Verify your email before signing in. You can request another link.",
+    "Si la cuenta existe y no está verificada, te enviamos un nuevo enlace.": "If the account exists and is not verified, we sent you a new link.",
+    "Los datos enviados no son válidos.": "The submitted data is invalid.",
+    "No autenticado. Inicia sesión de nuevo.": "Unauthenticated. Please sign in again.",
+    "No tienes permiso para hacer esto.": "You are not allowed to do this.",
+    "Recurso no encontrado.": "Resource not found.",
+    "Método no permitido.": "Method not allowed.",
+    "Demasiadas peticiones. Espera un momento.": "Too many requests. Please wait a moment.",
+    "Error en la petición.": "Request error."
 }

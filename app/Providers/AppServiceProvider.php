@@ -35,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configurePaymentRateLimiting();
         $this->configureStorefrontRateLimiting();
         $this->configureAccountRateLimiting();
+        $this->configureApiRateLimiting();
 
         // Barra del panel (layouts/admin): admin, 2FA y contadores.
         View::composer('layouts.admin', AdminNavComposer::class);
@@ -48,6 +49,24 @@ class AppServiceProvider extends ServiceProvider
      * el flash 'error' global. Los límites por hora frenan las altas masivas
      * sin estorbar a varias personas detrás de la misma IP.
      */
+    /**
+     * API móvil. 'api' va en todo /api/v1: 60/min por usuario con token o
+     * por IP sin él. 'api-auth' en login, alta, reenvío de verificación y
+     * contraseña olvidada: la misma forma que 'login' de la web (por
+     * correo+IP y por IP), para que no sirvan de diccionario. El 429 lo pinta
+     * App\Support\ApiExceptions (code too_many_requests, con Retry-After).
+     */
+    protected function configureApiRateLimiting(): void
+    {
+        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)
+            ->by($request->user() ? 'user:'.$request->user()->id : 'ip:'.$request->ip()));
+
+        RateLimiter::for('api-auth', fn (Request $request) => [
+            Limit::perMinute(5)->by('email:'.Str::lower((string) $request->input('email')).'|'.$request->ip()),
+            Limit::perMinute(20)->by('ip:'.$request->ip()),
+        ]);
+    }
+
     protected function configureAccountRateLimiting(): void
     {
         $tooMany = fn (?string $field) => function (Request $request, array $headers) use ($field) {

@@ -3,11 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Notifications\VerifyEmailNotification;
+use App\Services\CustomerRegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 
 class RegisterController extends Controller
 {
@@ -16,7 +14,7 @@ class RegisterController extends Controller
         return view('auth.register');
     }
 
-    public function register(Request $request)
+    public function register(Request $request, CustomerRegistrationService $registration)
     {
         $request->validate([
             'first_name' => 'required|string|max:255',
@@ -25,18 +23,14 @@ class RegisterController extends Controller
             'password'   => 'required|min:6|confirmed',
         ]);
 
-        // user_type no es fillable (ver User::$fillable): se asigna aparte
-        // para que nunca pueda llegar desde el request.
-        $user = new User([
+        // Misma alta que la API (CustomerRegistrationService): user_type
+        // se asigna allí, nunca desde el request.
+        $user = $registration->register([
             'name'     => $request->first_name . ' ' . $request->last_name,
             'email'    => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => $request->password,
             'phone'    => $request->phone,
         ]);
-        $user->user_type = 'customer';
-        $user->save();
-
-        $user->notify(new VerifyEmailNotification());
 
         Auth::login($user);
         return redirect('/');

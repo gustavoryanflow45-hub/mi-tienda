@@ -22,7 +22,7 @@ class PasswordResetController extends Controller
      * Respuesta única al pedir el enlace, exista o no la cuenta: si dijera
      * "ese correo no está registrado" serviría para enumerar usuarios.
      */
-    private const SENT_MESSAGE = 'Si existe una cuenta con ese correo, recibirás el enlace en breve.';
+    public const SENT_MESSAGE = 'Si existe una cuenta con ese correo, recibirás el enlace en breve.';
 
     /** GET /password/reset — formulario para pedir el enlace. */
     public function request()

@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        // API móvil: /api/v1 (routes/api.php → routes/api/v1.php). Sin panel admin.
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function () {
@@ -44,6 +46,13 @@ return Application::configure(basePath: dirname(__DIR__))
             ? route('admin.login')
             : route('login'));
 
+        // El idioma de la API se fija antes que la autenticación, para que un
+        // 401 también salga en el idioma de Accept-Language.
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            prepend: \App\Http\Middleware\SetApiLocale::class,
+        );
+
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'admin.2fa' => \App\Http\Middleware\EnsureAdminTwoFactor::class,
@@ -52,8 +61,13 @@ return Application::configure(basePath: dirname(__DIR__))
             // spatie/laravel-permission, para los roles del panel (guard 'admin').
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            // API móvil (Sanctum): habilidades del token y cuenta no bloqueada.
+            'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
+            'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
+            'api.active' => \App\Http\Middleware\EnsureApiUserIsActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // /api/*: siempre JSON con { message, code } (App\Support\ApiExceptions).
+        \App\Support\ApiExceptions::register($exceptions);
     })->create();
