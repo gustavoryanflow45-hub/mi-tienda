@@ -50,9 +50,34 @@ class ApiTokenService
     {
         return DB::transaction(function () use ($user, $current) {
             $deviceId = $current->device_id ?? 'legacy-'.$current->id;
+            // El token push es del dispositivo, no de la sesión: pasa al token nuevo.
+            $push = $current->only(['push_token', 'push_platform', 'push_token_updated_at']);
             $current->delete();
 
-            return $this->issue($user, $deviceId, $current->name);
+            $token = $this->issue($user, $deviceId, $current->name);
+            $token->accessToken->forceFill($push)->save();
+
+            return $token;
+        });
+    }
+
+    /**
+     * Registra el token FCM del dispositivo en su sesión. Un mismo token no
+     * puede quedar en dos sesiones (otra cuenta que se abrió antes en ese
+     * móvil): se quita de las demás, de cualquier usuario.
+     */
+    public function registerPushToken(PersonalAccessToken $current, string $pushToken, string $platform): void
+    {
+        DB::transaction(function () use ($current, $pushToken, $platform) {
+            PersonalAccessToken::where('push_token', $pushToken)
+                ->whereKeyNot($current->getKey())
+                ->update(['push_token' => null, 'push_platform' => null, 'push_token_updated_at' => null]);
+
+            $current->forceFill([
+                'push_token' => $pushToken,
+                'push_platform' => $platform,
+                'push_token_updated_at' => now(),
+            ])->save();
         });
     }
 

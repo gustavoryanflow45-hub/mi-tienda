@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\SellerSettlement;
 use App\Models\WalletRecharge;
 use App\Models\WalletWithdrawal;
-use App\Services\SettlementService;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,16 +26,14 @@ class WalletController extends Controller
      | VISTA USUARIO
     ───────────────────────────────────────── */
 
-    public function index(SettlementService $settlementService)
+    public function index()
     {
         $recharges = WalletRecharge::where('user_id', Auth::id())->latest()->get();
         $withdrawals = WalletWithdrawal::where('user_id', Auth::id())->latest()->get();
         // Liquidaciones de ventas acreditadas por el admin (solo vendedores las tienen).
         $settlements = SellerSettlement::where('seller_id', Auth::id())->latest('settled_at')->get();
-        // Parte del saldo que se retira sin aprobación: ya la aprobó el admin al liquidar.
-        $withdrawable = $settlementService->withdrawableFor(Auth::user());
 
-        return view('users.wallet', compact('recharges', 'withdrawals', 'settlements', 'withdrawable'));
+        return view('users.wallet', compact('recharges', 'withdrawals', 'settlements'));
     }
 
     /* ─────────────────────────────────────────
@@ -71,10 +68,9 @@ class WalletController extends Controller
         ]);
 
         // Sin saldo suficiente lanza una ValidationException sobre 'amount'.
-        $withdrawal = $wallet->requestWithdrawal($request->user(), $data);
+        // Todo retiro queda pendiente hasta que el panel lo apruebe.
+        $wallet->requestWithdrawal($request->user(), $data);
 
-        return back()->with('success', $withdrawal->from_settlement
-            ? __('Retiro aprobado: proviene de ventas ya liquidadas, no necesita otra aprobación.')
-            : __('Solicitud de retiro enviada. Está pendiente de aprobación.'));
+        return back()->with('success', __('Solicitud de retiro enviada. Está pendiente de aprobación.'));
     }
 }

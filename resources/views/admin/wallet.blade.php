@@ -401,6 +401,13 @@
                             </td>
                             <td data-label="{{ __('Monto') }}">
                                 <strong>${{ number_format($r->amount, 2) }}</strong>
+                                @if((float) $r->fee > 0)
+                                    {{-- Pedida desde la app: al aprobarla se acredita el monto menos la comisión de red. --}}
+                                    <div style="color:var(--muted);font-size:.75rem;">
+                                        {{ __('Comisión de red') }} ${{ number_format($r->fee, 2) }} ·
+                                        {{ __('Se acredita') }} <strong>${{ number_format($r->netAmount(), 2) }}</strong>
+                                    </div>
+                                @endif
                             </td>
                             <td data-label="{{ __('TX ID') }}">
                                 @if($r->transaction_id)
@@ -551,6 +558,13 @@
                                 <strong style="color:var(--red);">
                                     ${{ number_format($w->amount, 2) }}
                                 </strong>
+                                @if((float) $w->fee > 0)
+                                    {{-- Pedido desde la app: se transfiere el monto menos la comisión de red. --}}
+                                    <div style="color:var(--muted);font-size:.75rem;">
+                                        {{ __('Comisión de red') }} ${{ number_format($w->fee, 2) }} ·
+                                        {{ __('Transferir') }} <strong>${{ number_format($w->netAmount(), 2) }}</strong>
+                                    </div>
+                                @endif
                             </td>
                             <td data-label="{{ __('Nombre') }}">{{ $w->full_name }}</td>
                             <td data-label="{{ __('Red/Banco') }}">
@@ -566,11 +580,6 @@
                                     <span class="badge-pill badge-approved">
                                         <i class="las la-check"></i> {{ __('Aprobado') }}
                                     </span>
-                                    @if($w->from_settlement)
-                                        <span class="badge-pill badge-approved" title="{{ __('Cubierto por ventas liquidadas: aprobado automáticamente al solicitarlo') }}">
-                                            <i class="las la-bolt"></i> {{ __('Liquidación') }}
-                                        </span>
-                                    @endif
                                 @elseif($w->status == 'pending')
                                     <span class="badge-pill badge-pending">
                                         <i class="las la-clock"></i> {{ __('Pendiente') }}
@@ -578,6 +587,12 @@
                                 @else
                                     <span class="badge-pill badge-rejected">
                                         <i class="las la-times"></i> {{ __('Rechazado') }}
+                                    </span>
+                                @endif
+                                @if($w->from_settlement)
+                                    {{-- Dato para decidir: el saldo viene de ventas ya liquidadas. --}}
+                                    <span class="badge-pill badge-approved" title="{{ __('Cubierto por ventas liquidadas') }}">
+                                        <i class="las la-bolt"></i> {{ __('Liquidación') }}
                                     </span>
                                 @endif
                             </td>
@@ -589,7 +604,7 @@
                                 <div style="display:flex;gap:6px;">
                                     <form method="POST"
                                           action="{{ route('admin.wallet.withdrawal.approve', $w->id) }}"
-                                          onsubmit="return confirm({{ json_encode(__('¿Confirmar retiro de $:amount?', ['amount' => number_format($w->amount, 2)])) }})">
+                                          onsubmit="return confirm({{ json_encode(__('¿Confirmar retiro de $:amount?', ['amount' => number_format($w->netAmount(), 2)])) }})">
                                         @csrf
                                         <button type="submit" class="btn-approve">
                                             <i class="las la-check"></i> {{ __('Aprobar') }}

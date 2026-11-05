@@ -156,13 +156,6 @@
                         ${{ number_format(auth()->user()->balance ?? 0, 2) }}
                     </div>
                     <div class="balance-label">{{ __('Saldo de la billetera') }}</div>
-                    @if(($withdrawable ?? 0) > 0)
-                        <div class="balance-label" style="margin-top:6px;font-size:.8rem;opacity:.9;">
-                            <i class="las la-bolt"></i>
-                            {{ __('Retirable sin aprobación (ventas liquidadas):') }}
-                            <strong>${{ number_format($withdrawable, 2) }}</strong>
-                        </div>
-                    @endif
                 </div>
 
                 {{-- Offline Recharge --}}
@@ -490,11 +483,9 @@
                         <label class="mb-1" style="font-size:.9rem;">{{ __('Cantidad') }} <span class="text-danger">*</span></label>
                         <input type="number" name="amount" class="form-control" min="1" step="0.01" required
                                placeholder="{{ __('Cantidad') }}" style="border-radius:8px;">
-                        @if(($withdrawable ?? 0) > 0)
-                            <small class="text-muted d-block mt-1">
-                                {{ __('Hasta') }} ${{ number_format($withdrawable, 2) }} {{ __('se aprueba al instante (ventas liquidadas); el resto queda pendiente de aprobación.') }}
-                            </small>
-                        @endif
+                        <small class="text-muted d-block mt-1">
+                            {{ __('El saldo se descuenta al enviar la solicitud; queda pendiente de aprobación y se devuelve si se rechaza.') }}
+                        </small>
                     </div>
 
                     <div class="form-group mb-3">

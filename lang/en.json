@@ -744,5 +744,15 @@
     "Tu carrito está vacío.": "Your cart is empty.",
     "Este pedido ya está pagado.": "This order is already paid.",
     "No pudimos confirmar el pago todavía. Si se te cobró, se registrará en unos minutos.": "We could not confirm the payment yet. If you were charged, it will be recorded within a few minutes.",
-    "Tu tienda no está aprobada. No puedes usar el panel de vendedor.": "Your shop is not approved. You cannot use the seller panel."
+    "Tu tienda no está aprobada. No puedes usar el panel de vendedor.": "Your shop is not approved. You cannot use the seller panel.",
+    "El retiro mínimo es de :amount.": "The minimum withdrawal is :amount.",
+    "Falta la cabecera Idempotency-Key (8 a 100 caracteres: letras, números, - o _).": "The Idempotency-Key header is missing (8 to 100 characters: letters, digits, - or _).",
+    "Esta solicitud ya se está procesando. Espera unos segundos.": "This request is already being processed. Please wait a few seconds.",
+    "Esa Idempotency-Key ya se usó con otros datos. Genera una nueva para cada solicitud.": "That Idempotency-Key was already used with different data. Generate a new one for each request.",
+    "Comisión de red": "Network fee",
+    "Transferir": "Transfer",
+    "Se acredita": "Credited",
+    "Cubierto por ventas liquidadas": "Covered by settled sales",
+    "El saldo se descuenta al enviar la solicitud; queda pendiente de aprobación y se devuelve si se rechaza.": "The balance is deducted when you submit the request; it stays pending approval and is refunded if rejected.",
+    "El monto debe ser mayor que la comisión de red (:fee).": "The amount must be greater than the network fee (:fee)."
 }

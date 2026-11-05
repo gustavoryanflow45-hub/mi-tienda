@@ -4,9 +4,14 @@ namespace Tests\Feature\Api\V1;
 
 use App\Models\Category;
 use App\Models\ProductStock;
+use App\Models\SellerSettlement;
 use App\Models\User;
+use App\Models\WalletRecharge;
+use App\Models\WalletWithdrawal;
+use App\Notifications\OrderStatusUpdatedNotification;
 use App\Support\ApiAbilities;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
@@ -212,6 +217,42 @@ class OpenApiSpecTest extends TestCase
         $customer = $this->makeCustomer();
         $this->bearer($customer);
         $this->check($this->getJson('/api/v1/seller/dashboard'), 'GET', '/seller/dashboard', 403);
+    }
+
+    public function test_wallet_and_notification_responses_match_the_spec(): void
+    {
+        $seller = $this->makeSeller();
+        $seller->forceFill(['balance' => 50])->save();
+        SellerSettlement::create([
+            'seller_id' => $seller->id, 'total_sales' => 40, 'commission_rate' => 0.25,
+            'commission' => 10, 'net_amount' => 30, 'lines_count' => 1, 'settled_at' => now(),
+        ]);
+        $seller->notify(new OrderStatusUpdatedNotification($this->makePendingOrder($seller, $this->makeSeller()), 'confirmed'));
+
+        $this->bearer($seller);
+
+        $this->check($this->getJson('/api/v1/wallet'), 'GET', '/wallet');
+        $this->check($this->withHeader('Idempotency-Key', 'spec-recharge-1')->post('/api/v1/wallet/recharges', [
+            'amount' => 10, 'network' => 'TRC20', 'transaction_id' => 'tx',
+            'payment_proof' => UploadedFile::fake()->create('comprobante.pdf', 50, 'application/pdf'),
+        ], ['Accept' => 'application/json']), 'POST', '/wallet/recharges', 201);
+        $this->check($this->getJson('/api/v1/wallet/recharges'), 'GET', '/wallet/recharges');
+        $bank = ['full_name' => 'Ana Pérez', 'bank_name' => 'Banco', 'account_number' => '12345'];
+        $this->check($this->withHeader('Idempotency-Key', 'spec-withdraw-1')->postJson('/api/v1/wallet/withdrawals', ['amount' => 20] + $bank), 'POST', '/wallet/withdrawals', 201);
+        $this->check($this->withHeader('Idempotency-Key', 'spec-withdraw-2')->postJson('/api/v1/wallet/withdrawals', ['amount' => 999] + $bank), 'POST', '/wallet/withdrawals', 422);
+        $this->check($this->withHeader('Idempotency-Key', 'x')->postJson('/api/v1/wallet/withdrawals', ['amount' => 1] + $bank), 'POST', '/wallet/withdrawals', 400);
+        $this->check($this->getJson('/api/v1/wallet/withdrawals'), 'GET', '/wallet/withdrawals');
+        $this->check($this->getJson('/api/v1/wallet/movements'), 'GET', '/wallet/movements');
+        $this->check($this->getJson('/api/v1/wallet/recharges/'.WalletRecharge::value('id')), 'GET', '/wallet/recharges/{recharge}');
+        $this->check($this->getJson('/api/v1/wallet/withdrawals/'.WalletWithdrawal::value('id')), 'GET', '/wallet/withdrawals/{withdrawal}');
+        $this->check($this->putJson('/api/v1/auth/push-token', ['token' => str_repeat('f', 40), 'platform' => 'android']), 'PUT', '/auth/push-token');
+        $this->check($this->getJson('/api/v1/auth/devices'), 'GET', '/auth/devices');
+        $this->check($this->getJson('/api/v1/wallet/settlements'), 'GET', '/wallet/settlements');
+
+        $list = $this->getJson('/api/v1/notifications');
+        $this->check($list, 'GET', '/notifications');
+        $this->check($this->getJson('/api/v1/notifications/unread-count'), 'GET', '/notifications/unread-count');
+        $this->check($this->postJson('/api/v1/notifications/'.$list->json('data.0.id').'/read'), 'POST', '/notifications/{notification}/read');
     }
 
     // ── Utilidades ──────────────────────────────────────────────

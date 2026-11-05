@@ -66,6 +66,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
             'api.active' => \App\Http\Middleware\EnsureApiUserIsActive::class,
             'api.seller' => \App\Http\Middleware\EnsureApiSellerShopApproved::class,
+            'api.idempotent' => \App\Http\Middleware\EnsureIdempotentRequest::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

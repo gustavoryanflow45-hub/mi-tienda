@@ -7,11 +7,13 @@ use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\CheckoutController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\HomeController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\Seller;
+use App\Http\Controllers\Api\V1\WalletController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -51,6 +53,10 @@ Route::middleware(['auth:sanctum', 'api.active'])->group(function () {
         Route::get('/devices', [DeviceController::class, 'index'])->name('devices.index');
         Route::delete('/devices', [DeviceController::class, 'destroyAll'])->name('devices.destroy-all');
         Route::delete('/devices/{id}', [DeviceController::class, 'destroy'])->whereNumber('id')->name('devices.destroy');
+
+        // Token push (FCM) de este dispositivo; el envío aún no existe.
+        Route::put('/push-token', [DeviceController::class, 'registerPushToken'])->name('push-token.update');
+        Route::delete('/push-token', [DeviceController::class, 'unregisterPushToken'])->name('push-token.destroy');
     });
 
     // ── Carrito ──────────────────────────────────────────────────
@@ -96,6 +102,41 @@ Route::middleware(['auth:sanctum', 'api.active'])->group(function () {
     Route::prefix('orders')->name('orders.')->middleware('abilities:orders:read')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
         Route::get('/{order}', [OrderController::class, 'show'])->whereNumber('order')->name('show');
+    });
+
+    // ── Billetera ────────────────────────────────────────────────
+    // Solicitar recargas y retiros lleva 'throttle:api-wallet' (mueve dinero
+    // y sube comprobantes) y 'api.idempotent' (cabecera Idempotency-Key: un
+    // reintento o un doble toque no crea dos solicitudes). Aprobar o
+    // rechazar es solo del panel: no hay rutas para eso aquí.
+    Route::prefix('wallet')->name('wallet.')->group(function () {
+        Route::middleware('abilities:wallet:read')->group(function () {
+            Route::get('/', [WalletController::class, 'show'])->name('show');
+            Route::get('/movements', [WalletController::class, 'movements'])->name('movements.index');
+            Route::get('/recharges', [WalletController::class, 'recharges'])->name('recharges.index');
+            Route::get('/recharges/{recharge}', [WalletController::class, 'showRecharge'])->whereNumber('recharge')->name('recharges.show');
+            Route::get('/withdrawals', [WalletController::class, 'withdrawals'])->name('withdrawals.index');
+            Route::get('/withdrawals/{withdrawal}', [WalletController::class, 'showWithdrawal'])->whereNumber('withdrawal')->name('withdrawals.show');
+            Route::get('/settlements', [WalletController::class, 'settlements'])->name('settlements.index');
+        });
+
+        Route::middleware(['abilities:wallet:write', 'throttle:api-wallet', 'api.idempotent'])->group(function () {
+            Route::post('/recharges', [WalletController::class, 'recharge'])->name('recharges.store');
+            Route::post('/withdrawals', [WalletController::class, 'withdraw'])->name('withdrawals.store');
+        });
+    });
+
+    // ── Notificaciones ───────────────────────────────────────────
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::middleware('abilities:profile:read')->group(function () {
+            Route::get('/', [NotificationController::class, 'index'])->name('index');
+            Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');
+        });
+
+        Route::middleware('abilities:profile:write')->group(function () {
+            Route::post('/read-all', [NotificationController::class, 'markAllRead'])->name('read-all');
+            Route::post('/{notification}/read', [NotificationController::class, 'markRead'])->whereUuid('notification')->name('read');
+        });
     });
 
     // ── Vendedor ─────────────────────────────────────────────────
