@@ -1,0 +1,1621 @@
+openapi: 3.1.0
+info:
+  title: Mi Tienda — API móvil v1
+  version: 1.0.0
+  summary: API para las apps de compradores y vendedores (Flutter).
+  description: |
+    Contrato de `/api/v1`. La guía en prosa (flujos, decisiones, notas para
+    Flutter) es `docs/api/v1.md`; este archivo es la referencia de máquina:
+    sirve para generar el cliente (p. ej. `openapi-generator` con `dart-dio`)
+    o para abrirlo en Swagger UI / Redoc.
+
+    `tests/Feature/Api/V1/OpenApiSpecTest.php` falla si una ruta de la API
+    falta aquí (o sobra), si la seguridad o las habilidades no coinciden con
+    las de la ruta, o si una respuesta real deja de cumplir su esquema.
+
+    **Errores**: siempre `{ message, code }` (+ `errors` en
+    `validation_failed`). La app decide por `code`; `message` va traducido
+    según `Accept-Language` (`es` por defecto, `en`).
+
+    **Habilidades**: cada operación con token lista en `x-abilities` las que
+    exige el token (ver `/auth/login`). Las de vendedor además exigen la
+    tienda aprobada en cada petición (`403 shop_not_approved`).
+servers:
+  - url: http://127.0.0.1:8000/api/v1
+    description: Local (php artisan serve)
+  - url: https://{host}/api/v1
+    description: Producción
+    variables:
+      host:
+        default: example.com
+tags:
+  - name: Auth
+  - name: Catálogo
+  - name: Carrito
+  - name: Checkout
+  - name: Pagos
+  - name: Perfil
+  - name: Pedidos
+  - name: Vendedor
+
+security:
+  - bearer: []
+
+paths:
+  # ── Auth ──────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      tags: [Auth]
+      operationId: register
+      summary: Alta de comprador (sin token; hay que verificar el correo)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, password_confirmation]
+              properties:
+                name: { type: string, maxLength: 255 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8, description: 'Letras y números.' }
+                password_confirmation: { type: string }
+                phone: { type: [string, 'null'], maxLength: 20 }
+      responses:
+        '201':
+          description: Cuenta creada. Sin token.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, message]
+                properties:
+                  data: { $ref: '#/components/schemas/User' }
+                  message: { type: string }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Login; un token por dispositivo
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, device_id, device_name]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+                device_id:
+                  type: string
+                  maxLength: 100
+                  pattern: '^[A-Za-z0-9._:-]+$'
+                  description: UUID estable generado por la app al instalarse.
+                device_name: { type: string, maxLength: 100 }
+      responses:
+        '200':
+          description: Token emitido.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/Token' }
+        '401':
+          description: '`invalid_credentials` (igual exista o no el correo).'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '403':
+          description: '`email_not_verified` o `account_disabled`.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/email/resend:
+    post:
+      tags: [Auth]
+      operationId: resendVerification
+      summary: Reenvía el correo de verificación (misma respuesta exista o no)
+      security: []
+      requestBody:
+        $ref: '#/components/requestBodies/Email'
+      responses:
+        '202': { $ref: '#/components/responses/Message' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/password/forgot:
+    post:
+      tags: [Auth]
+      operationId: forgotPassword
+      summary: Envía el enlace para elegir contraseña nueva (abre la web)
+      security: []
+      requestBody:
+        $ref: '#/components/requestBodies/Email'
+      responses:
+        '202': { $ref: '#/components/responses/Message' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      operationId: me
+      summary: Usuario del token y habilidades del token actual
+      x-abilities: ['profile:read']
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: '#/components/schemas/User' }
+                  meta:
+                    type: object
+                    required: [abilities]
+                    properties:
+                      abilities: { type: array, items: { type: string } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /auth/token/rotate:
+    post:
+      tags: [Auth]
+      operationId: rotateToken
+      summary: Token nuevo para este dispositivo; el anterior muere en el acto
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/Token' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Revoca el token de este dispositivo
+      responses:
+        '204': { description: 'Sin contenido.' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+  /auth/devices:
+    get:
+      tags: [Auth]
+      operationId: listDevices
+      summary: Sesiones abiertas de la cuenta
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Device' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    delete:
+      tags: [Auth]
+      operationId: revokeOtherDevices
+      summary: Cierra todas las demás sesiones (con include_current=1, también esta)
+      parameters:
+        - name: include_current
+          in: query
+          schema: { type: boolean }
+      responses:
+        '204': { description: 'Sin contenido.' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+  /auth/devices/{id}:
+    delete:
+      tags: [Auth]
+      operationId: revokeDevice
+      summary: Cierra la sesión de un dispositivo
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204': { description: 'Sin contenido.' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Catálogo ──────────────────────────────────────────────────────
+  /home:
+    get:
+      tags: [Catálogo]
+      operationId: home
+      summary: Portada (banners y tres secciones de hasta 12 productos)
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [banners, featured, new, best_selling]
+                    properties:
+                      banners: { type: array, items: { $ref: '#/components/schemas/Banner' } }
+                      featured: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
+                      new: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
+                      best_selling: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
+
+  /brands:
+    get:
+      tags: [Catálogo]
+      operationId: listBrands
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Brand' } }
+
+  /categories:
+    get:
+      tags: [Catálogo]
+      operationId: listCategories
+      summary: Árbol de categorías activas (raíces con sus children)
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Category' } }
+
+  /categories/{slug}:
+    get:
+      tags: [Catálogo]
+      operationId: showCategory
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/Category' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /products:
+    get:
+      tags: [Catálogo]
+      operationId: listProducts
+      summary: Productos a la venta, paginados
+      security: []
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: category, in: query, description: 'Slug; incluye subcategorías.', schema: { type: string } }
+        - { name: brand, in: query, schema: { type: integer } }
+        - { name: min_price, in: query, schema: { type: number, minimum: 0 } }
+        - { name: max_price, in: query, schema: { type: number, minimum: 0 } }
+        - { name: featured, in: query, schema: { type: boolean } }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [newest, price_asc, price_desc, popular, rating], default: newest }
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Paginated'
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /products/{product}:
+    get:
+      tags: [Catálogo]
+      operationId: showProduct
+      summary: Ficha (por slug o por id)
+      security: []
+      parameters:
+        - name: product
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/ProductDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Carrito ───────────────────────────────────────────────────────
+  /cart:
+    get:
+      tags: [Carrito]
+      operationId: showCart
+      x-abilities: ['cart:write']
+      responses:
+        '200': { $ref: '#/components/responses/Cart' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+    delete:
+      tags: [Carrito]
+      operationId: clearCart
+      x-abilities: ['cart:write']
+      responses:
+        '204': { description: 'Carrito vacío.' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /cart/items:
+    post:
+      tags: [Carrito]
+      operationId: addCartItem
+      summary: Añade una combinación (suma si la línea ya existe, con tope en el stock)
+      x-abilities: ['cart:write']
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id]
+              properties:
+                product_id: { type: integer }
+                variation:
+                  type: [string, 'null']
+                  description: '`variants.combinations[].variation` de la ficha; "" sin variantes.'
+                quantity: { type: integer, minimum: 1, maximum: 999, default: 1 }
+      responses:
+        '201': { $ref: '#/components/responses/Cart' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /cart/items/{item}:
+    parameters:
+      - { name: item, in: path, required: true, schema: { type: integer } }
+    patch:
+      tags: [Carrito]
+      operationId: updateCartItem
+      summary: Cambia la cantidad (limitada al stock)
+      x-abilities: ['cart:write']
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties:
+                quantity: { type: integer, minimum: 1, maximum: 999 }
+      responses:
+        '200': { $ref: '#/components/responses/Cart' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+    delete:
+      tags: [Carrito]
+      operationId: removeCartItem
+      x-abilities: ['cart:write']
+      responses:
+        '200': { $ref: '#/components/responses/Cart' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Checkout ──────────────────────────────────────────────────────
+  /checkout:
+    get:
+      tags: [Checkout]
+      operationId: checkoutSummary
+      summary: Resumen, envío del perfil y pasarela sugerida (no crea nada)
+      x-abilities: ['checkout:write']
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [items, totals, currency, shipping, payment]
+                    properties:
+                      items: { type: array, items: { $ref: '#/components/schemas/CartItem' } }
+                      totals: { $ref: '#/components/schemas/Totals' }
+                      currency: { type: string, const: USD }
+                      shipping: { $ref: '#/components/schemas/ShippingAddress' }
+                      payment:
+                        type: object
+                        required: [suggested_gateway, country, gateways, stripe_publishable_key]
+                        properties:
+                          suggested_gateway: { $ref: '#/components/schemas/Gateway' }
+                          country: { type: [string, 'null'], description: 'ISO 3166-1 alfa-2 por IP.' }
+                          gateways: { type: array, items: { $ref: '#/components/schemas/Gateway' } }
+                          stripe_publishable_key: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /checkout/orders:
+    post:
+      tags: [Checkout]
+      operationId: createOrder
+      summary: Crea (o pone al día, con order_id) el pedido pendiente
+      x-abilities: ['checkout:write']
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/ShippingInput'
+                - type: object
+                  properties:
+                    order_id: { type: [integer, 'null'], description: 'Pedido propio sin pagar a reutilizar.' }
+      responses:
+        '200': { $ref: '#/components/responses/Order' }
+        '201': { $ref: '#/components/responses/Order' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /checkout/orders/{order}:
+    get:
+      tags: [Checkout]
+      operationId: checkoutOrder
+      summary: Estado del pedido tras pagar
+      x-abilities: ['checkout:write']
+      parameters:
+        - $ref: '#/components/parameters/Order'
+      responses:
+        '200': { $ref: '#/components/responses/Order' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /checkout/orders/{order}/stripe:
+    post:
+      tags: [Pagos]
+      operationId: stripeIntent
+      summary: PaymentIntent para la PaymentSheet de flutter_stripe
+      description: Antes vuelve a sincronizar el pedido con el carrito.
+      x-abilities: ['checkout:write']
+      parameters:
+        - $ref: '#/components/parameters/Order'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [client_secret, payment_intent_id, publishable_key, amount, currency, order]
+                    properties:
+                      client_secret: { type: string }
+                      payment_intent_id: { type: string }
+                      publishable_key: { type: [string, 'null'] }
+                      amount: { type: integer, description: 'En centavos.' }
+                      currency: { type: string, const: usd }
+                      order: { $ref: '#/components/schemas/Order' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: '`payment_in_progress`: ya hay un cobro en curso o hecho.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /checkout/orders/{order}/stripe/confirm:
+    post:
+      tags: [Pagos]
+      operationId: stripeConfirm
+      summary: Verifica el pago en Stripe (sin esperar al webhook)
+      x-abilities: ['checkout:write']
+      parameters:
+        - $ref: '#/components/parameters/Order'
+      responses:
+        '200': { $ref: '#/components/responses/Order' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /checkout/orders/{order}/payphone:
+    post:
+      tags: [Pagos]
+      operationId: payphoneStart
+      summary: URL de pago de PayPhone para un navegador in-app
+      description: Antes vuelve a sincronizar el pedido con el carrito.
+      x-abilities: ['checkout:write']
+      parameters:
+        - $ref: '#/components/parameters/Order'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                method: { type: string, enum: [card, app], default: card }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [redirect_url, client_transaction_id, return_url, order]
+                    properties:
+                      redirect_url: { type: string, format: uri }
+                      client_transaction_id: { type: string, pattern: '^GA\d+-[A-Z0-9]{10}$' }
+                      return_url:
+                        type: string
+                        description: Esquema de la app al que vuelve el navegador (`?status=…&order=…`).
+                      order: { $ref: '#/components/schemas/Order' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '503':
+          description: '`http_error`: PayPhone sin configurar en el servidor.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /checkout/orders/{order}/payphone/confirm:
+    post:
+      tags: [Pagos]
+      operationId: payphoneConfirm
+      summary: Confirma una transacción de PayPhone de este pedido
+      x-abilities: ['checkout:write']
+      parameters:
+        - $ref: '#/components/parameters/Order'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, client_transaction_id]
+              properties:
+                id: { type: integer, description: '`id` de la URL de vuelta de PayPhone.' }
+                client_transaction_id: { type: string, maxLength: 50 }
+      responses:
+        '200': { $ref: '#/components/responses/Order' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  # ── Perfil ────────────────────────────────────────────────────────
+  /profile:
+    get:
+      tags: [Perfil]
+      operationId: showProfile
+      x-abilities: ['profile:read']
+      responses:
+        '200': { $ref: '#/components/responses/User' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    patch:
+      tags: [Perfil]
+      operationId: updateProfile
+      summary: Nombre y teléfono (el correo no se cambia desde la app)
+      x-abilities: ['profile:write']
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 255 }
+                phone: { type: [string, 'null'], maxLength: 20 }
+      responses:
+        '200': { $ref: '#/components/responses/User' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /profile/avatar:
+    post:
+      tags: [Perfil]
+      operationId: uploadAvatar
+      x-abilities: ['profile:write']
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [avatar]
+              properties:
+                avatar: { type: string, format: binary, description: 'jpg, png o webp.' }
+      responses:
+        '200': { $ref: '#/components/responses/User' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /profile/password:
+    put:
+      tags: [Perfil]
+      operationId: changePassword
+      summary: Cambia la contraseña y cierra los demás dispositivos
+      x-abilities: ['profile:write']
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, password, password_confirmation]
+              properties:
+                current_password: { type: string }
+                password: { type: string, minLength: 8, description: 'Letras y números.' }
+                password_confirmation: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  # ── Pedidos del comprador ─────────────────────────────────────────
+  /orders:
+    get:
+      tags: [Pedidos]
+      operationId: listOrders
+      x-abilities: ['orders:read']
+      parameters:
+        - { name: payment_status, in: query, schema: { type: string, enum: [paid, unpaid] } }
+        - $ref: '#/components/parameters/DeliveryStatus'
+        - { name: code, in: query, schema: { type: string, maxLength: 50 } }
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Paginated'
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/Order' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /orders/{order}:
+    get:
+      tags: [Pedidos]
+      operationId: showOrder
+      x-abilities: ['orders:read']
+      parameters:
+        - $ref: '#/components/parameters/Order'
+      responses:
+        '200': { $ref: '#/components/responses/Order' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Vendedor ──────────────────────────────────────────────────────
+  /seller/dashboard:
+    get:
+      tags: [Vendedor]
+      operationId: sellerDashboard
+      x-abilities: ['seller:orders']
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/SellerDashboard' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/SellerForbidden' }
+
+  /seller/products/options:
+    get:
+      tags: [Vendedor]
+      operationId: sellerProductOptions
+      summary: Categorías, marcas, tipos de talla y colores para el formulario
+      x-abilities: ['seller:products']
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/SellerProductOptions' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/SellerForbidden' }
+
+  /seller/products:
+    get:
+      tags: [Vendedor]
+      operationId: sellerListProducts
+      x-abilities: ['seller:products']
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Paginated'
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/SellerProduct' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/SellerForbidden' }
+    post:
+      tags: [Vendedor]
+      operationId: sellerCreateProduct
+      x-abilities: ['seller:products']
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/SellerProductInput'
+                - type: object
+                  required: [name, category_id, unit_price, unit, thumbnail, stocks]
+      responses:
+        '201': { $ref: '#/components/responses/SellerProduct' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/SellerForbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /seller/products/{product}:
+    parameters:
+      - { name: product, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Vendedor]
+      operationId: sellerShowProduct
+      x-abilities: ['seller:products']
+      responses:
+        '200': { $ref: '#/components/responses/SellerProduct' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/SellerForbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Vendedor]
+      operationId: sellerUpdateProduct
+      summary: Edición; lo que no se manda se conserva
+      description: |
+        Con imágenes, `multipart/form-data` enviado como **POST con
+        `_method=PUT`** (PHP no lee archivos en un PUT). `stocks`, si llega,
+        reemplaza todas las combinaciones; `photos[]` reemplaza todas las fotos.
+      x-abilities: ['seller:products']
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SellerProductInput' }
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/SellerProductInput'
+                - type: object
+                  properties:
+                    _method: { type: string, const: PUT }
+      responses:
+        '200': { $ref: '#/components/responses/SellerProduct' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/SellerForbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /seller/products/{product}/toggle-published:
+    post:
+      tags: [Vendedor]
+      operationId: sellerTogglePublished
+      x-abilities: ['seller:products']
+      parameters:
+        - { name: product, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: '#/components/responses/SellerProduct' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/SellerForbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /seller/orders:
+    get:
+      tags: [Vendedor]
+      operationId: sellerListOrders
+      summary: Ventas pagadas con líneas del vendedor
+      x-abilities: ['seller:orders']
+      parameters:
+        - $ref: '#/components/parameters/DeliveryStatus'
+        - { name: code, in: query, schema: { type: string, maxLength: 50 } }
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Paginated'
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/SellerOrder' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/SellerForbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /seller/orders/{order}:
+    get:
+      tags: [Vendedor]
+      operationId: sellerShowOrder
+      x-abilities: ['seller:orders']
+      parameters:
+        - $ref: '#/components/parameters/Order'
+      responses:
+        '200': { $ref: '#/components/responses/SellerOrder' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/SellerForbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /seller/orders/{order}/confirm:
+    post:
+      tags: [Vendedor]
+      operationId: sellerConfirmOrder
+      summary: pending → confirmed
+      x-abilities: ['seller:orders']
+      parameters:
+        - $ref: '#/components/parameters/Order'
+      responses:
+        '200': { $ref: '#/components/responses/SellerOrder' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/SellerForbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /seller/orders/{order}/send-to-warehouse:
+    post:
+      tags: [Vendedor]
+      operationId: sellerSendToWarehouse
+      summary: confirmed → warehouse
+      x-abilities: ['seller:orders']
+      parameters:
+        - $ref: '#/components/parameters/Order'
+      responses:
+        '200': { $ref: '#/components/responses/SellerOrder' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/SellerForbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      description: 'Token de Sanctum de `/auth/login` (`Authorization: Bearer 12|…`).'
+
+  parameters:
+    Id: { name: id, in: path, required: true, schema: { type: integer } }
+    Order: { name: order, in: path, required: true, schema: { type: integer } }
+    Page: { name: page, in: query, schema: { type: integer, minimum: 1 } }
+    PerPage: { name: per_page, in: query, schema: { type: integer, minimum: 1, maximum: 50 } }
+    DeliveryStatus:
+      name: delivery_status
+      in: query
+      schema: { $ref: '#/components/schemas/DeliveryStatus' }
+
+  requestBodies:
+    Email:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email]
+            properties:
+              email: { type: string, format: email }
+
+  responses:
+    Message:
+      description: Acción sin recurso.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [message]
+            properties:
+              message: { type: string }
+    Unauthenticated:
+      description: '`unauthenticated`: sin token, revocado o caducado.'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: '`forbidden` (falta la habilidad) o `account_disabled`.'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    SellerForbidden:
+      description: '`forbidden`, `account_disabled` o `shop_not_approved`.'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: '`not_found` (inexistente o ajeno).'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unprocessable:
+      description: '`validation_failed` (con `errors`) o `business_rule`.'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ValidationError' }
+    TooManyRequests:
+      description: '`too_many_requests`; esperar `Retry-After` segundos.'
+      headers:
+        Retry-After:
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    User:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: { $ref: '#/components/schemas/User' }
+    Cart:
+      description: El carrito completo.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/CartEnvelope' }
+    Order:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: { $ref: '#/components/schemas/Order' }
+    SellerProduct:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: { $ref: '#/components/schemas/SellerProduct' }
+    SellerOrder:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: { $ref: '#/components/schemas/SellerOrder' }
+
+  schemas:
+    # ── Comunes ──
+    Error:
+      type: object
+      required: [message, code]
+      properties:
+        message: { type: string, description: 'Traducido; para mostrar.' }
+        code:
+          type: string
+          enum:
+            - unauthenticated
+            - invalid_credentials
+            - email_not_verified
+            - account_disabled
+            - forbidden
+            - shop_not_approved
+            - not_found
+            - method_not_allowed
+            - payment_in_progress
+            - validation_failed
+            - business_rule
+            - too_many_requests
+            - http_error
+    ValidationError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            errors:
+              type: object
+              additionalProperties: { type: array, items: { type: string } }
+    Paginated:
+      type: object
+      required: [data, links, meta]
+      properties:
+        data: { type: array }
+        links:
+          type: object
+          required: [first, last, prev, next]
+          properties:
+            first: { type: [string, 'null'] }
+            last: { type: [string, 'null'] }
+            prev: { type: [string, 'null'] }
+            next: { type: [string, 'null'] }
+        meta:
+          type: object
+          required: [current_page, last_page, per_page, total]
+          properties:
+            current_page: { type: integer }
+            from: { type: [integer, 'null'] }
+            last_page: { type: integer }
+            path: { type: string }
+            per_page: { type: integer }
+            to: { type: [integer, 'null'] }
+            total: { type: integer }
+    DateTime: { type: string, format: date-time }
+    NullableDateTime: { type: [string, 'null'], format: date-time }
+    Gateway: { type: string, enum: [stripe, payphone] }
+    DeliveryStatus: { type: string, enum: [pending, confirmed, warehouse, on_the_way, delivered] }
+
+    # ── Cuenta ──
+    User:
+      type: object
+      required: [id, name, email, phone, avatar_url, type, email_verified, balance, shop, created_at]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: [string, 'null'] }
+        avatar_url: { type: [string, 'null'] }
+        type: { type: string, enum: [customer, seller] }
+        email_verified: { type: boolean }
+        balance: { type: number }
+        shop:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [id, name, status]
+              properties:
+                id: { type: integer }
+                name: { type: string }
+                status: { type: string, enum: [pending, approved, rejected] }
+        created_at: { $ref: '#/components/schemas/NullableDateTime' }
+    Token:
+      type: object
+      required: [token, token_type, expires_at, abilities, device, user]
+      properties:
+        token: { type: string, description: 'Guardar en almacenamiento seguro.' }
+        token_type: { type: string, const: Bearer }
+        expires_at: { $ref: '#/components/schemas/NullableDateTime' }
+        abilities: { type: array, items: { type: string } }
+        device:
+          type: object
+          required: [id, device_id, device_name]
+          properties:
+            id: { type: integer }
+            device_id: { type: [string, 'null'] }
+            device_name: { type: string }
+        user: { $ref: '#/components/schemas/User' }
+    Device:
+      type: object
+      required: [id, device_id, device_name, abilities, current, last_used_at, created_at, expires_at]
+      properties:
+        id: { type: integer }
+        device_id: { type: [string, 'null'] }
+        device_name: { type: string }
+        abilities: { type: array, items: { type: string } }
+        current: { type: boolean }
+        last_used_at: { $ref: '#/components/schemas/NullableDateTime' }
+        created_at: { $ref: '#/components/schemas/NullableDateTime' }
+        expires_at: { $ref: '#/components/schemas/NullableDateTime' }
+
+    # ── Catálogo ──
+    Banner:
+      type: object
+      required: [id, title, image_url, link]
+      properties:
+        id: { type: integer }
+        title: { type: [string, 'null'] }
+        image_url: { type: string }
+        link: { type: [string, 'null'] }
+    Brand:
+      type: object
+      required: [id, name, slug, logo_url]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: [string, 'null'] }
+        logo_url: { type: [string, 'null'] }
+    Category:
+      type: object
+      required: [id, name, slug, parent_id, icon_url, banner_url]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        parent_id: { type: [integer, 'null'] }
+        icon_url: { type: [string, 'null'] }
+        banner_url: { type: [string, 'null'] }
+        children:
+          type: array
+          description: Subcategorías activas (en el árbol y en `/categories/{slug}`).
+          items: { $ref: '#/components/schemas/Category' }
+        parent:
+          description: Solo en `/categories/{slug}`; null en una raíz.
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/Category'
+    Discount:
+      type: object
+      required: [type, value]
+      properties:
+        type: { type: string, enum: [percent, amount] }
+        value: { type: number }
+    ProductCard:
+      type: object
+      required: [id, slug, name, thumbnail_url, price, original_price, discount, unit, rating, in_stock, has_variants, category, brand]
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        name: { type: string }
+        thumbnail_url: { type: string }
+        price: { type: number, description: 'Lo que se cobra (con descuento).' }
+        original_price: { type: number }
+        discount:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/Discount'
+        unit: { type: [string, 'null'] }
+        rating: { type: number }
+        in_stock: { type: boolean }
+        has_variants: { type: boolean, description: 'Hay que elegir combinación antes de añadir.' }
+        category:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [id, name, slug]
+              properties:
+                id: { type: integer }
+                name: { type: string }
+                slug: { type: string }
+        brand:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [id, name]
+              properties:
+                id: { type: integer }
+                name: { type: string }
+    Color:
+      type: object
+      required: [key, label, hex]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        hex: { type: [string, 'null'] }
+    Combination:
+      type: object
+      required: [variation, size, color, price, original_price, qty, available]
+      properties:
+        variation: { type: string, description: 'Clave para `POST /cart/items`; "" sin variantes.' }
+        size: { type: [string, 'null'] }
+        color: { type: [string, 'null'] }
+        price: { type: number }
+        original_price: { type: number }
+        qty: { type: integer }
+        available: { type: boolean }
+    ProductDetail:
+      allOf:
+        - $ref: '#/components/schemas/ProductCard'
+        - type: object
+          required: [photos, short_description, description, min_qty, shipping_cost, shop, variants]
+          properties:
+            photos: { type: array, items: { type: string } }
+            short_description: { type: [string, 'null'] }
+            description: { type: [string, 'null'], description: 'Texto plano.' }
+            min_qty: { type: integer }
+            shipping_cost: { type: number }
+            shop:
+              oneOf:
+                - type: 'null'
+                - type: object
+                  required: [id, name]
+                  properties:
+                    id: { type: integer }
+                    name: { type: string }
+            variants:
+              type: object
+              required: [size_label, sizes, colors, combinations]
+              properties:
+                size_label: { type: string }
+                sizes: { type: array, items: { type: string } }
+                colors: { type: array, items: { $ref: '#/components/schemas/Color' } }
+                combinations: { type: array, items: { $ref: '#/components/schemas/Combination' } }
+            related: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
+
+    # ── Carrito y pedidos ──
+    Variant:
+      oneOf:
+        - type: 'null'
+        - type: object
+          required: [text, size, size_label, color, color_label, color_hex]
+          properties:
+            text: { type: string, description: 'Para mostrar: "Talla US 9 · Negro".' }
+            size: { type: [string, 'null'] }
+            size_label: { type: [string, 'null'] }
+            color: { type: [string, 'null'] }
+            color_label: { type: [string, 'null'] }
+            color_hex: { type: [string, 'null'] }
+    Totals:
+      type: object
+      required: [subtotal, shipping, tax, grand_total]
+      properties:
+        subtotal: { type: number }
+        shipping: { type: number }
+        tax: { type: number }
+        grand_total: { type: number }
+    CartItem:
+      type: object
+      required: [id, product, variation, variant, price, quantity, line_total, shipping_cost, available_qty]
+      properties:
+        id: { type: integer }
+        product:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [id, slug, name, thumbnail_url, on_sale]
+              properties:
+                id: { type: integer }
+                slug: { type: string }
+                name: { type: string }
+                thumbnail_url: { type: string }
+                on_sale: { type: boolean, description: 'false = despublicado o vetado tras añadirlo.' }
+        variation: { type: string }
+        variant: { $ref: '#/components/schemas/Variant' }
+        price: { type: number, description: 'Unitario fijado al añadir.' }
+        quantity: { type: integer }
+        line_total: { type: number }
+        shipping_cost: { type: number }
+        available_qty: { type: integer }
+    CartEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [items, count, totals, currency]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/CartItem' } }
+            count: { type: integer }
+            totals: { $ref: '#/components/schemas/Totals' }
+            currency: { type: string, const: USD }
+        message: { type: string }
+    ShippingInput:
+      type: object
+      required: [full_name, phone, email, address, city]
+      properties:
+        full_name: { type: string, maxLength: 255 }
+        phone: { type: string, maxLength: 30 }
+        email: { type: string, format: email, maxLength: 255 }
+        address: { type: string, maxLength: 255 }
+        city: { type: string, maxLength: 100 }
+        state: { type: [string, 'null'], maxLength: 100 }
+        country: { type: [string, 'null'], maxLength: 100 }
+        postal_code: { type: [string, 'null'], maxLength: 20 }
+    ShippingAddress:
+      type: object
+      description: Snapshot de envío; los campos que falten pueden no venir o venir en null.
+      properties:
+        full_name: { type: [string, 'null'] }
+        phone: { type: [string, 'null'] }
+        email: { type: [string, 'null'] }
+        address: { type: [string, 'null'] }
+        city: { type: [string, 'null'] }
+        state: { type: [string, 'null'] }
+        country: { type: [string, 'null'] }
+        postal_code: { type: [string, 'null'] }
+    OrderItem:
+      type: object
+      required: [id, product_id, name, thumbnail_url, variation, variant, price, quantity, line_total, shipping_cost]
+      properties:
+        id: { type: integer }
+        product_id: { type: [integer, 'null'] }
+        name: { type: string }
+        thumbnail_url: { type: string }
+        variation: { type: string }
+        variant: { $ref: '#/components/schemas/Variant' }
+        price: { type: number }
+        quantity: { type: integer }
+        line_total: { type: number }
+        shipping_cost: { type: number }
+    Tracking:
+      type: object
+      required: [confirmed_at, warehouse_at, dispatched_at, delivered_at]
+      properties:
+        confirmed_at: { $ref: '#/components/schemas/NullableDateTime' }
+        warehouse_at: { $ref: '#/components/schemas/NullableDateTime' }
+        dispatched_at: { $ref: '#/components/schemas/NullableDateTime' }
+        delivered_at: { $ref: '#/components/schemas/NullableDateTime' }
+    Order:
+      type: object
+      required: [id, code, payment_status, payment_status_label, payment_gateway, delivery_status, delivery_status_label, currency, totals, shipping_address, items, tracking, created_at, paid_at]
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        payment_status: { type: string, enum: [paid, unpaid, partial] }
+        payment_status_label: { type: string }
+        payment_gateway: { type: [string, 'null'], enum: [stripe, payphone, kushki, null] }
+        delivery_status: { $ref: '#/components/schemas/DeliveryStatus' }
+        delivery_status_label: { type: string }
+        currency: { type: string, const: USD }
+        totals: { $ref: '#/components/schemas/Totals' }
+        shipping_address: { $ref: '#/components/schemas/ShippingAddress' }
+        items: { type: array, items: { $ref: '#/components/schemas/OrderItem' } }
+        tracking: { $ref: '#/components/schemas/Tracking' }
+        created_at: { $ref: '#/components/schemas/NullableDateTime' }
+        paid_at: { $ref: '#/components/schemas/NullableDateTime' }
+
+    # ── Vendedor ──
+    SellerDashboard:
+      type: object
+      required: [shop, currency, products, pending_orders, delivered_orders, current_cycle, last_settlement, balance]
+      properties:
+        shop:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: integer }
+            name: { type: string }
+        currency: { type: string, const: USD }
+        products: { type: integer }
+        pending_orders: { type: integer, description: 'Pagados y sin confirmar.' }
+        delivered_orders: { type: integer }
+        current_cycle:
+          type: object
+          description: Líneas pagadas, entregadas y sin liquidar.
+          required: [total_sales, commission_rate, commission, net_amount, lines]
+          properties:
+            total_sales: { type: number }
+            commission_rate: { type: number }
+            commission: { type: number }
+            net_amount: { type: number }
+            lines: { type: integer }
+        last_settlement:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [net_amount, settled_at]
+              properties:
+                net_amount: { type: number }
+                settled_at: { $ref: '#/components/schemas/NullableDateTime' }
+        balance: { type: number }
+    SellerProductOptions:
+      type: object
+      required: [categories, brands, variant_types, colors, max_upload_kb, max_photos]
+      properties:
+        categories:
+          type: array
+          items:
+            type: object
+            required: [id, name, parent_id, variant_type]
+            properties:
+              id: { type: integer }
+              name: { type: string }
+              parent_id: { type: [integer, 'null'] }
+              variant_type: { type: string }
+        brands:
+          type: array
+          items:
+            type: object
+            required: [id, name]
+            properties:
+              id: { type: integer }
+              name: { type: string }
+        variant_types:
+          type: array
+          items:
+            type: object
+            required: [key, label, size_label, sizes]
+            properties:
+              key: { type: string }
+              label: { type: string }
+              size_label: { type: [string, 'null'] }
+              sizes: { type: array, items: { type: string } }
+        colors: { type: array, items: { $ref: '#/components/schemas/Color' } }
+        max_upload_kb: { type: integer }
+        max_photos: { type: integer }
+    SellerProduct:
+      type: object
+      required: [id, slug, name, category, brand_id, unit_price, purchase_price, discount, discount_type, final_price, unit, variant_type, size_label, short_description, description, min_qty, low_stock_qty, shipping_cost, published, approved, on_sale, thumbnail_url, photos, stocks, total_qty, created_at]
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        name: { type: string }
+        category:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [id, name]
+              properties:
+                id: { type: integer }
+                name: { type: string }
+        brand_id: { type: [integer, 'null'] }
+        unit_price: { type: number }
+        purchase_price: { type: [number, 'null'] }
+        discount: { type: number }
+        discount_type: { type: string, enum: [percent, amount] }
+        final_price: { type: number }
+        unit: { type: [string, 'null'] }
+        variant_type: { type: [string, 'null'], description: 'null = el de la categoría.' }
+        size_label: { type: [string, 'null'] }
+        short_description: { type: [string, 'null'] }
+        description: { type: [string, 'null'], description: 'HTML del vendedor.' }
+        min_qty: { type: integer }
+        low_stock_qty: { type: integer }
+        shipping_cost: { type: number }
+        published: { type: boolean, description: 'Decisión del vendedor.' }
+        approved: { type: boolean, description: 'false = desactivado por moderación.' }
+        on_sale: { type: boolean }
+        thumbnail_url: { type: string }
+        photos: { type: array, items: { type: string } }
+        stocks:
+          type: array
+          items:
+            type: object
+            required: [id, variation, size, color, price, qty, sku]
+            properties:
+              id: { type: integer }
+              variation: { type: string }
+              size: { type: [string, 'null'] }
+              color: { type: [string, 'null'] }
+              price: { type: number }
+              qty: { type: integer }
+              sku: { type: [string, 'null'] }
+        total_qty: { type: integer }
+        created_at: { $ref: '#/components/schemas/NullableDateTime' }
+    SellerProductInput:
+      type: object
+      description: Campos del formulario web; cualquier otro (added_by, approved…) se ignora.
+      properties:
+        name: { type: string, maxLength: 255 }
+        category_id: { type: integer }
+        brand_id: { type: [integer, 'null'] }
+        unit_price: { type: number, minimum: 0 }
+        purchase_price: { type: [number, 'null'], minimum: 0 }
+        discount: { type: number, minimum: 0 }
+        discount_type: { type: string, enum: [percent, amount] }
+        unit: { type: string, maxLength: 50 }
+        variant_type: { type: [string, 'null'], description: 'Clave de `variant_types`.' }
+        short_description: { type: [string, 'null'] }
+        description: { type: [string, 'null'] }
+        min_qty: { type: integer, minimum: 1 }
+        low_stock_qty: { type: integer, minimum: 0 }
+        shipping_cost: { type: number, minimum: 0 }
+        published: { type: boolean }
+        featured: { type: boolean }
+        todays_deal: { type: boolean }
+        thumbnail: { type: string, format: binary }
+        photos: { type: array, maxItems: 5, items: { type: string, format: binary } }
+        stocks:
+          type: array
+          minItems: 1
+          description: Una fila por combinación talla × color (en multipart, `stocks[0][size]`…).
+          items:
+            type: object
+            required: [price, qty]
+            properties:
+              size: { type: [string, 'null'] }
+              color: { type: [string, 'null'] }
+              price: { type: number, minimum: 0 }
+              qty: { type: integer, minimum: 0 }
+              sku: { type: [string, 'null'] }
+    SellerOrder:
+      type: object
+      required: [id, code, payment_status, payment_status_label, delivery_status, delivery_status_label, actions, currency, seller_total, items, buyer, shipping_address, tracking, created_at, paid_at]
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        payment_status: { type: string, enum: [paid] }
+        payment_status_label: { type: string }
+        delivery_status: { $ref: '#/components/schemas/DeliveryStatus' }
+        delivery_status_label: { type: string }
+        actions:
+          type: object
+          required: [confirm, send_to_warehouse]
+          properties:
+            confirm: { type: boolean }
+            send_to_warehouse: { type: boolean }
+        currency: { type: string, const: USD }
+        seller_total: { type: number, description: 'Solo las líneas de este vendedor.' }
+        items: { type: array, items: { $ref: '#/components/schemas/OrderItem' } }
+        buyer:
+          type: object
+          required: [name, email, phone]
+          properties:
+            name: { type: [string, 'null'] }
+            email: { type: [string, 'null'] }
+            phone: { type: [string, 'null'] }
+        shipping_address: { $ref: '#/components/schemas/ShippingAddress' }
+        tracking: { $ref: '#/components/schemas/Tracking' }
+        created_at: { $ref: '#/components/schemas/NullableDateTime' }
+        paid_at: { $ref: '#/components/schemas/NullableDateTime' }
