@@ -3,19 +3,17 @@
 namespace App\Http\Controllers\Shop;
 
 use App\Http\Controllers\Controller;
-use App\Models\Address;
-use App\Models\Cart;
 use App\Models\Order;
 use App\Services\CheckoutService;
 use App\Services\GeolocationService;
-use App\Services\Payments\StripeService;
+use App\Services\Payments\StripeCheckout;
 use Illuminate\Http\Request;
 
 class CheckoutController extends Controller
 {
     public function __construct(
         private GeolocationService $geo,
-        private StripeService $stripe,
+        private StripeCheckout $stripe,
         private CheckoutService $checkout,
     ) {}
 
@@ -66,16 +64,7 @@ class CheckoutController extends Controller
             return response()->json(['message' => __('Debes iniciar sesión.')], 401);
         }
 
-        $data = $request->validate([
-            'full_name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:30'],
-            'email' => ['required', 'email', 'max:255'],
-            'address' => ['required', 'string', 'max:255'],
-            'city' => ['required', 'string', 'max:100'],
-            'state' => ['nullable', 'string', 'max:100'],
-            'country' => ['nullable', 'string', 'max:100'],
-            'postal_code' => ['nullable', 'string', 'max:20'],
-        ]);
+        $data = $request->validate(CheckoutService::SHIPPING_RULES);
 
         session([CheckoutService::SHIPPING_SESSION_KEY => $data]);
 
@@ -83,10 +72,7 @@ class CheckoutController extends Controller
         $this->checkout->reusableOrderFor($request->user())
             ?->update(['shipping_address' => $data]);
 
-        Address::updateOrCreate(
-            ['user_id' => auth()->id(), 'is_default' => 1],
-            $data,
-        );
+        $this->checkout->rememberShipping($request->user(), $data);
 
         return response()->json(['status' => 'ok']);
     }
@@ -106,18 +92,7 @@ class CheckoutController extends Controller
         $intentId = $request->query('payment_intent');
         if ($intentId && ! $order->isPaid()) {
             try {
-                $intent = $this->stripe->retrieveIntent($intentId);
-                if ($intent->status === 'succeeded' && (string) ($intent->metadata['order_id'] ?? '') === (string) $order->id) {
-                    $order->markPaid('stripe', $intent->id);
-
-                    Cart::query()
-                        ->when(
-                            $order->user_id,
-                            fn ($q) => $q->where('user_id', $order->user_id),
-                            fn ($q) => $q->where('session_id', $order->session_id),
-                        )
-                        ->delete();
-                }
+                $this->stripe->verify($order, $intentId);
             } catch (\Throwable) {
                 // Webhook will handle it if intent retrieve fails
             }

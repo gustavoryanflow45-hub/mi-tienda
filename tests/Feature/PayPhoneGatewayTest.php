@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\Payments\PayPhoneController;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Services\CheckoutService;
+use App\Services\Payments\PayPhoneCheckout;
 use App\Services\Payments\PayPhoneService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request as HttpRequest;
@@ -167,7 +167,7 @@ class PayPhoneGatewayTest extends TestCase
         Notification::fake();
         $customer = $this->makeCustomer();
         $order = $this->makePendingOrder($customer, $this->makeSeller(), 115.00);
-        $txId = PayPhoneController::transactionIdFor($order);
+        $txId = PayPhoneCheckout::transactionIdFor($order);
         $this->fakeConfirm($this->approved($order, $txId));
 
         $this->actingAs($customer)
@@ -189,7 +189,7 @@ class PayPhoneGatewayTest extends TestCase
     {
         $customer = $this->makeCustomer();
         $order = $this->makePendingOrder($customer, $this->makeSeller());
-        $txId = PayPhoneController::transactionIdFor($order);
+        $txId = PayPhoneCheckout::transactionIdFor($order);
         $this->fakeConfirm($this->approved($order, $txId, [
             'statusCode' => PayPhoneService::STATUS_CANCELED,
             'transactionStatus' => 'Canceled',
@@ -208,7 +208,7 @@ class PayPhoneGatewayTest extends TestCase
     {
         $customer = $this->makeCustomer();
         $order = $this->makePendingOrder($customer, $this->makeSeller(), 100.00);
-        $txId = PayPhoneController::transactionIdFor($order);
+        $txId = PayPhoneCheckout::transactionIdFor($order);
         $this->fakeConfirm($this->approved($order, $txId, ['amount' => 100]));
 
         $this->actingAs($customer)
@@ -226,7 +226,7 @@ class PayPhoneGatewayTest extends TestCase
         $this->fakeConfirm(['message' => 'error'], 500);
 
         $this->actingAs($customer)
-            ->get('/payments/payphone/return?id=1&clientTransactionId='.PayPhoneController::transactionIdFor($order))
+            ->get('/payments/payphone/return?id=1&clientTransactionId='.PayPhoneCheckout::transactionIdFor($order))
             ->assertRedirect(route('checkout'))
             ->assertSessionHas('error');
 
@@ -249,7 +249,7 @@ class PayPhoneGatewayTest extends TestCase
     {
         Notification::fake();
         $order = $this->makePendingOrder($this->makeCustomer(), $this->makeSeller());
-        $txId = PayPhoneController::transactionIdFor($order);
+        $txId = PayPhoneCheckout::transactionIdFor($order);
         $this->fakeConfirm($this->approved($order, $txId));
 
         $this->get('/payments/payphone/return?id=1&clientTransactionId='.$txId)
@@ -268,7 +268,7 @@ class PayPhoneGatewayTest extends TestCase
         Http::fake();
 
         $this->actingAs($customer)
-            ->get('/payments/payphone/return?id=1&clientTransactionId='.PayPhoneController::transactionIdFor($order))
+            ->get('/payments/payphone/return?id=1&clientTransactionId='.PayPhoneCheckout::transactionIdFor($order))
             ->assertRedirect(route('checkout.success', $order));
 
         Http::assertNothingSent();

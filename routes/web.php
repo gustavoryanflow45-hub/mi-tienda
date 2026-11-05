@@ -81,6 +81,7 @@ Route::post('/payments/payphone/prepare', [PayPhoneController::class, 'prepare']
 // el cobro, así que no exige sesión ni lleva límite (ver PayPhoneController).
 Route::get('/payments/payphone/return', [PayPhoneController::class, 'handleReturn'])->name('payments.payphone.return');
 Route::get('/payments/payphone/cancel', [PayPhoneController::class, 'cancel'])->name('payments.payphone.cancel');
+Route::get('/payments/payphone/app/cancel', [PayPhoneController::class, 'appCancel'])->name('payments.payphone.app-cancel');
 Route::post('/webhooks/stripe', [StripeController::class, 'webhook']);
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
 

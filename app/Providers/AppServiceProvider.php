@@ -5,8 +5,11 @@ namespace App\Providers;
 use App\Services\GeolocationService;
 use App\Services\Payments\PayPhoneService;
 use App\Services\Payments\StripeService;
+use App\Support\ApiExceptions;
 use App\View\Composers\AdminNavComposer;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
@@ -67,6 +70,16 @@ class AppServiceProvider extends ServiceProvider
         ]);
     }
 
+    /**
+     * Los límites 'cart', 'checkout' y 'payments' los comparten la web y la
+     * API (mismo contador: la app no duplica el cupo). Bajo /api el 429 lleva
+     * el formato de la API (code too_many_requests).
+     */
+    protected static function apiTooMany(array $headers): JsonResponse
+    {
+        return ApiExceptions::render(new ThrottleRequestsException('', null, $headers));
+    }
+
     protected function configureAccountRateLimiting(): void
     {
         $tooMany = fn (?string $field) => function (Request $request, array $headers) use ($field) {
@@ -122,6 +135,10 @@ class AppServiceProvider extends ServiceProvider
     protected function configureStorefrontRateLimiting(): void
     {
         $tooMany = function (Request $request, array $headers) {
+            if ($request->is('api/*')) {
+                return self::apiTooMany($headers);
+            }
+
             $message = __('Demasiadas peticiones. Espera :seconds segundos y vuelve a probar.', [
                 'seconds' => $headers['Retry-After'] ?? 60,
             ]);
@@ -156,12 +173,14 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configurePaymentRateLimiting(): void
     {
-        $tooMany = fn (Request $request, array $headers) => response()->json([
-            'status' => 'error',
-            'message' => __('Demasiados intentos de pago. Espera :seconds segundos y vuelve a probar.', [
-                'seconds' => $headers['Retry-After'] ?? 60,
-            ]),
-        ], 429, $headers);
+        $tooMany = fn (Request $request, array $headers) => $request->is('api/*')
+            ? self::apiTooMany($headers)
+            : response()->json([
+                'status' => 'error',
+                'message' => __('Demasiados intentos de pago. Espera :seconds segundos y vuelve a probar.', [
+                    'seconds' => $headers['Retry-After'] ?? 60,
+                ]),
+            ], 429, $headers);
 
         RateLimiter::for('payments', fn (Request $request) => [
             Limit::perMinute(10)->by('user:'.($request->user()?->id ?? $request->ip()))->response($tooMany),

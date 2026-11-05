@@ -62,6 +62,33 @@ class ApiRoutesTest extends TestCase
         }
     }
 
+    public function test_cart_checkout_and_payment_routes_carry_their_abilities_and_limits(): void
+    {
+        foreach ($this->apiRoutes() as $route) {
+            $name = (string) $route->getName();
+            $middleware = $route->gatherMiddleware();
+
+            if (str_starts_with($name, 'api.v1.cart.')) {
+                $this->assertContains('abilities:cart:write', $middleware, "{$name} sin abilities:cart:write");
+                $this->assertContains('throttle:cart', $middleware, "{$name} sin throttle:cart");
+            }
+
+            if (str_starts_with($name, 'api.v1.checkout.')) {
+                $this->assertContains('abilities:checkout:write', $middleware, "{$name} sin abilities:checkout:write");
+            }
+        }
+
+        // Iniciar un cobro comparte el límite de la web; confirmarlo no se limita.
+        $routes = $this->app['router']->getRoutes();
+        foreach (['api.v1.checkout.orders.stripe', 'api.v1.checkout.orders.payphone'] as $name) {
+            $this->assertContains('throttle:payments', $routes->getByName($name)->gatherMiddleware(), $name);
+        }
+        foreach (['api.v1.checkout.orders.stripe.confirm', 'api.v1.checkout.orders.payphone.confirm'] as $name) {
+            $this->assertNotContains('throttle:payments', $routes->getByName($name)->gatherMiddleware(), $name);
+        }
+        $this->assertContains('throttle:checkout', $routes->getByName('api.v1.checkout.orders.store')->gatherMiddleware());
+    }
+
     public function test_panel_accounts_cannot_hold_api_tokens(): void
     {
         $this->assertFalse(method_exists(Admin::class, 'createToken'));
