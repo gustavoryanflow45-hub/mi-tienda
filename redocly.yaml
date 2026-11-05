@@ -1,0 +1,16 @@
+# Configuración de Redocly CLI para docs/api/openapi.yaml.
+#
+#   npx @redocly/cli lint
+#
+# Reglas `recommended` salvo info-license: la API es privada (solo la usan
+# las apps de la tienda) y no tiene una licencia que declarar. Si algún día
+# se publica para terceros, quitar esa excepción y añadir info.license.
+apis:
+  mi-tienda@v1:
+    root: docs/api/openapi.yaml
+
+extends:
+  - recommended
+
+rules:
+  info-license: off

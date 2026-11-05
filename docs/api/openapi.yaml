@@ -30,15 +30,25 @@ servers:
         default: example.com
 tags:
   - name: Auth
+    description: 'Alta, login por dispositivo, rotación de token, sesiones y token push.'
   - name: Catálogo
+    description: 'Portada, categorías, marcas y productos a la venta (público, sin token).'
   - name: Carrito
+    description: 'El carrito del usuario: el mismo de la web, con las mismas reglas.'
   - name: Checkout
+    description: 'Resumen y pedido pendiente antes de pagar.'
   - name: Pagos
+    description: 'Cobro de un pedido con Stripe (PaymentSheet) o PayPhone (navegador in-app).'
   - name: Perfil
+    description: 'Datos, foto y contraseña del usuario.'
   - name: Pedidos
+    description: 'Pedidos del comprador y su seguimiento.'
   - name: Vendedor
+    description: 'Panel del vendedor con la tienda aprobada: resumen, productos y ventas.'
   - name: Billetera
+    description: 'Saldo, recargas, retiros y liquidaciones; todo lo aprueba el panel.'
   - name: Notificaciones
+    description: 'Avisos del usuario (los mismos que llegan por push).'
 
 security:
   - bearer: []
@@ -304,10 +314,12 @@ paths:
                       new: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
                       best_selling: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
 
+        '429': { $ref: '#/components/responses/TooManyRequests' }
   /brands:
     get:
       tags: [Catálogo]
       operationId: listBrands
+      summary: 'Marcas activas'
       security: []
       responses:
         '200':
@@ -320,6 +332,7 @@ paths:
                 properties:
                   data: { type: array, items: { $ref: '#/components/schemas/Brand' } }
 
+        '429': { $ref: '#/components/responses/TooManyRequests' }
   /categories:
     get:
       tags: [Catálogo]
@@ -337,10 +350,12 @@ paths:
                 properties:
                   data: { type: array, items: { $ref: '#/components/schemas/Category' } }
 
+        '429': { $ref: '#/components/responses/TooManyRequests' }
   /categories/{slug}:
     get:
       tags: [Catálogo]
       operationId: showCategory
+      summary: 'Una categoría con sus subcategorías y su padre'
       security: []
       parameters:
         - name: slug
@@ -418,6 +433,7 @@ paths:
     get:
       tags: [Carrito]
       operationId: showCart
+      summary: 'Carrito del usuario'
       x-abilities: ['cart:write']
       responses:
         '200': { $ref: '#/components/responses/Cart' }
@@ -427,6 +443,7 @@ paths:
     delete:
       tags: [Carrito]
       operationId: clearCart
+      summary: 'Vacía el carrito'
       x-abilities: ['cart:write']
       responses:
         '204': { description: 'Carrito vacío.' }
@@ -485,6 +502,7 @@ paths:
     delete:
       tags: [Carrito]
       operationId: removeCartItem
+      summary: 'Quita una línea del carrito'
       x-abilities: ['cart:write']
       responses:
         '200': { $ref: '#/components/responses/Cart' }
@@ -696,6 +714,7 @@ paths:
     get:
       tags: [Perfil]
       operationId: showProfile
+      summary: 'Perfil del usuario del token'
       x-abilities: ['profile:read']
       responses:
         '200': { $ref: '#/components/responses/User' }
@@ -725,6 +744,7 @@ paths:
     post:
       tags: [Perfil]
       operationId: uploadAvatar
+      summary: 'Sube la foto de perfil'
       x-abilities: ['profile:write']
       requestBody:
         required: true
@@ -770,6 +790,7 @@ paths:
     get:
       tags: [Pedidos]
       operationId: listOrders
+      summary: 'Pedidos del comprador, paginados'
       x-abilities: ['orders:read']
       parameters:
         - { name: payment_status, in: query, schema: { type: string, enum: [paid, unpaid] } }
@@ -796,6 +817,7 @@ paths:
     get:
       tags: [Pedidos]
       operationId: showOrder
+      summary: 'Un pedido del comprador con su seguimiento'
       x-abilities: ['orders:read']
       parameters:
         - $ref: '#/components/parameters/Order'
@@ -810,6 +832,7 @@ paths:
     get:
       tags: [Vendedor]
       operationId: sellerDashboard
+      summary: 'Resumen del vendedor: ventas del ciclo, pendientes y última liquidación'
       x-abilities: ['seller:orders']
       responses:
         '200':
@@ -847,6 +870,7 @@ paths:
     get:
       tags: [Vendedor]
       operationId: sellerListProducts
+      summary: 'Productos del vendedor, paginados'
       x-abilities: ['seller:products']
       parameters:
         - { name: q, in: query, schema: { type: string, maxLength: 100 } }
@@ -868,6 +892,7 @@ paths:
     post:
       tags: [Vendedor]
       operationId: sellerCreateProduct
+      summary: 'Crea un producto con sus combinaciones e imágenes'
       x-abilities: ['seller:products']
       requestBody:
         required: true
@@ -890,6 +915,7 @@ paths:
     get:
       tags: [Vendedor]
       operationId: sellerShowProduct
+      summary: 'Un producto del vendedor con su stock'
       x-abilities: ['seller:products']
       responses:
         '200': { $ref: '#/components/responses/SellerProduct' }
@@ -928,6 +954,7 @@ paths:
     post:
       tags: [Vendedor]
       operationId: sellerTogglePublished
+      summary: 'Publica o despublica un producto'
       x-abilities: ['seller:products']
       parameters:
         - { name: product, in: path, required: true, schema: { type: integer } }
@@ -967,6 +994,7 @@ paths:
     get:
       tags: [Vendedor]
       operationId: sellerShowOrder
+      summary: 'Una venta: las líneas del vendedor y los datos del comprador'
       x-abilities: ['seller:orders']
       parameters:
         - $ref: '#/components/parameters/Order'
@@ -1097,6 +1125,7 @@ paths:
     get:
       tags: [Billetera]
       operationId: listRecharges
+      summary: 'Solicitudes de recarga, paginadas'
       x-abilities: ['wallet:read']
       parameters:
         - $ref: '#/components/parameters/PerPage'
@@ -1158,6 +1187,7 @@ paths:
     get:
       tags: [Billetera]
       operationId: listWithdrawals
+      summary: 'Solicitudes de retiro, paginadas'
       x-abilities: ['wallet:read']
       parameters:
         - $ref: '#/components/parameters/PerPage'
@@ -1275,6 +1305,7 @@ paths:
     get:
       tags: [Notificaciones]
       operationId: unreadNotificationsCount
+      summary: 'Número de avisos sin leer'
       x-abilities: ['profile:read']
       responses:
         '200':
@@ -1297,6 +1328,7 @@ paths:
     post:
       tags: [Notificaciones]
       operationId: markAllNotificationsRead
+      summary: 'Marca todos los avisos como leídos'
       x-abilities: ['profile:write']
       responses:
         '204': { description: 'Sin contenido.' }
@@ -1307,6 +1339,7 @@ paths:
     post:
       tags: [Notificaciones]
       operationId: markNotificationRead
+      summary: 'Marca un aviso como leído'
       x-abilities: ['profile:write']
       parameters:
         - { name: notification, in: path, required: true, schema: { type: string, format: uuid } }
@@ -1516,7 +1549,6 @@ components:
             per_page: { type: integer }
             to: { type: [integer, 'null'] }
             total: { type: integer }
-    DateTime: { type: string, format: date-time }
     NullableDateTime: { type: [string, 'null'], format: date-time }
     Gateway: { type: string, enum: [stripe, payphone] }
     DeliveryStatus: { type: string, enum: [pending, confirmed, warehouse, on_the_way, delivered] }
