@@ -7,10 +7,13 @@ use App\Notifications\SellerNewOrderNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    // HasApiTokens: tokens de la API móvil, uno por dispositivo (ApiTokenService).
+    // Admin no lo usa: las cuentas del panel no tienen tokens.
+    use HasApiTokens, HasFactory, Notifiable;
 
     // ── Campos asignables masivamente ───────────────────────────
     //
