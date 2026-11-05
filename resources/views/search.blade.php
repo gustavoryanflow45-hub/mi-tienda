@@ -74,12 +74,7 @@
             <div class="products-grid">
                 @foreach($products as $product)
                     @php
-                        $finalPrice = $product->unit_price;
-                        if ($product->discount > 0) {
-                            $finalPrice = $product->discount_type === 'percent'
-                                ? $product->unit_price * (1 - $product->discount / 100)
-                                : $product->unit_price - $product->discount;
-                        }
+                        $finalPrice = $product->finalPrice();
                     @endphp
                     <a href="{{ url('/product/' . $product->slug) }}" class="product-card">
                         @if($product->thumbnail)

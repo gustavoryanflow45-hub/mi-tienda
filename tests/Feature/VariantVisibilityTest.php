@@ -224,9 +224,18 @@ class VariantVisibilityTest extends TestCase
         $product = $this->makeShoe($this->makeSeller());
 
         $this->assertSame(
-            ['9-negro' => ['qty' => 5, 'price' => 59.90]],
+            ['9-negro' => ['qty' => 5, 'price' => 59.90, 'original_price' => 59.90]],
             $product->stockMap(),
         );
+
+        // Con descuento, el selector enseña lo que cobrará el carrito.
+        $product->forceFill(['discount' => 10, 'discount_type' => 'percent'])->save();
+        $this->assertSame(
+            ['9-negro' => ['qty' => 5, 'price' => 53.91, 'original_price' => 59.90]],
+            $product->fresh()->load('stocks')->stockMap(),
+        );
+        $product->forceFill(['discount' => 0])->save();
+        $product = $product->fresh()->load('stocks');
 
         $this->actingAs($this->makeCustomer())
             ->post(route('cart.modal'), ['id' => $product->id])

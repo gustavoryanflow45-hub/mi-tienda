@@ -23,6 +23,8 @@ class ApiRoutesTest extends TestCase
     protected const PUBLIC = [
         'api.v1.auth.register', 'api.v1.auth.login',
         'api.v1.auth.email.resend', 'api.v1.auth.password.forgot',
+        'api.v1.home', 'api.v1.brands.index', 'api.v1.categories.index', 'api.v1.categories.show',
+        'api.v1.products.index', 'api.v1.products.show',
     ];
 
     /** @return Route[] */

@@ -346,9 +346,7 @@
                                     <div class="product-card-price">
                                         @if($product->discount > 0)
                                             @php
-                                                $finalPrice = $product->discount_type === 'percent'
-                                                    ? $product->unit_price * (1 - $product->discount / 100)
-                                                    : $product->unit_price - $product->discount;
+                                                $finalPrice = $product->finalPrice();
                                             @endphp
                                             ${{ number_format($finalPrice, 2) }}
                                             <small style="text-decoration:line-through; color:#bbb; font-weight:400; font-size:.75rem;">

@@ -2,7 +2,10 @@
 
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\HomeController;
+use App\Http\Controllers\Api\V1\ProductController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,6 +24,15 @@ Route::prefix('auth')->name('auth.')->middleware('throttle:api-auth')->group(fun
     Route::post('/email/resend', [AccountController::class, 'resendVerification'])->name('email.resend');
     Route::post('/password/forgot', [AccountController::class, 'forgotPassword'])->name('password.forgot');
 });
+
+// ── Catálogo (público, sin token) ────────────────────────────────
+// Solo productos a la venta (Product::scopeActive), como en la web.
+Route::get('/home', [HomeController::class, 'index'])->name('home');
+Route::get('/brands', [HomeController::class, 'brands'])->name('brands.index');
+Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+Route::get('/categories/{slug}', [CategoryController::class, 'show'])->name('categories.show');
+Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
 // ── Con token ────────────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'api.active'])->group(function () {

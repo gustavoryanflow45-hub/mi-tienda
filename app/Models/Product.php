@@ -140,8 +140,12 @@ class Product extends Model
     }
 
     /**
-     * Mapa combinación -> {qty, price}, para que el selector de variantes
-     * del cliente sepa qué desactivar sin pedir nada al servidor.
+     * Mapa combinación -> {qty, price, original_price}, para que el selector
+     * de variantes del cliente sepa qué desactivar sin pedir nada al servidor.
+     *
+     * price es lo que se cobra (finalPrice(): con el descuento del producto);
+     * antes era el precio bruto de la fila y el selector enseñaba un precio
+     * más alto que el que luego cobraba el carrito.
      *
      * Lo consumen la ficha de producto y el modal rápido de la tarjeta, que
      * son el mismo selector en dos tamaños: si cada uno lo armara por su
@@ -151,8 +155,9 @@ class Product extends Model
     {
         return $this->stocks->mapWithKeys(fn ($stock) => [
             ProductStock::buildVariant($stock->size, $stock->color) => [
-                'qty'   => (int) $stock->qty,
-                'price' => (float) $stock->price,
+                'qty'            => (int) $stock->qty,
+                'price'          => $this->finalPrice((float) $stock->price),
+                'original_price' => round((float) $stock->price, 2),
             ],
         ])->all();
     }
@@ -170,11 +175,28 @@ class Product extends Model
         return $this->availableSizes() !== [] || $this->availableColors() !== [];
     }
 
+    /**
+     * Precio a cobrar: $base (el de una combinación, products_stocks.price)
+     * o el precio del producto, con su descuento aplicado. Es la única regla
+     * del descuento: la usan el carrito, la ficha y la API. Nunca negativo.
+     */
+    public function finalPrice(?float $base = null): float
+    {
+        $price = $base ?? (float) $this->unit_price;
+
+        if ($this->discount <= 0) {
+            return round($price, 2);
+        }
+
+        $price = $this->discount_type === 'percent'
+            ? $price * (1 - $this->discount / 100)
+            : $price - $this->discount;
+
+        return round(max(0, $price), 2);
+    }
+
     public function getDiscountedPriceAttribute(): float
     {
-        if ($this->discount <= 0) return (float) $this->unit_price;
-        if ($this->discount_type === 'percent')
-            return $this->unit_price - ($this->unit_price * $this->discount / 100);
-        return max(0, $this->unit_price - $this->discount);
+        return $this->finalPrice();
     }
 }

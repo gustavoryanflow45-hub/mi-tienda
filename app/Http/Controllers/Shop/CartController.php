@@ -129,13 +129,8 @@ class CartController extends Controller
             ]);
         }
 
-        $price = $stock ? $stock->price : $product->unit_price;
-
-        if ($product->discount > 0) {
-            $price = $product->discount_type === 'percent'
-                ? $price * (1 - $product->discount / 100)
-                : $price - $product->discount;
-        }
+        // Product::finalPrice(): la misma regla de descuento que la ficha y la API.
+        $price = $product->finalPrice($stock ? (float) $stock->price : null);
 
         $existing = $this->getCartQuery()
             ->where('product_id', $product->id)
