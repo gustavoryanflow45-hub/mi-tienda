@@ -37,6 +37,8 @@ tags:
   - name: Perfil
   - name: Pedidos
   - name: Vendedor
+  - name: Billetera
+  - name: Notificaciones
 
 security:
   - bearer: []
@@ -236,6 +238,46 @@ paths:
         '204': { description: 'Sin contenido.' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '404': { $ref: '#/components/responses/NotFound' }
+
+  /auth/push-token:
+    put:
+      tags: [Auth]
+      operationId: registerPushToken
+      summary: Registra el token FCM de este dispositivo (el envío aún no existe)
+      description: |
+        Llamar tras el login y cada vez que FCM rote el token. Vive en la
+        sesión del dispositivo: cerrar sesión o revocarlo lo borra, y rotar el
+        token de acceso lo conserva. Un mismo token FCM se quita de cualquier
+        otra sesión (otra cuenta abierta antes en ese móvil).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, platform]
+              properties:
+                token: { type: string, minLength: 20, maxLength: 255 }
+                platform: { type: string, enum: [android, ios] }
+      responses:
+        '200':
+          description: La sesión de este dispositivo.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/Device' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+    delete:
+      tags: [Auth]
+      operationId: unregisterPushToken
+      summary: Quita el token FCM de este dispositivo (la sesión sigue abierta)
+      responses:
+        '204': { description: 'Sin contenido.' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
 
   # ── Catálogo ──────────────────────────────────────────────────────
   /home:
@@ -964,6 +1006,324 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/Unprocessable' }
 
+  # ── Billetera ─────────────────────────────────────────────────────
+  /wallet:
+    get:
+      tags: [Billetera]
+      operationId: walletSummary
+      summary: Saldo, comisión de red de la app y solicitudes pendientes
+      x-abilities: ['wallet:read']
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/WalletSummary' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /wallet/movements:
+    get:
+      tags: [Billetera]
+      operationId: listWalletMovements
+      summary: Recargas, retiros y liquidaciones en una sola lista
+      x-abilities: ['wallet:read']
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Paginated'
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/WalletMovement' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /wallet/recharges/{recharge}:
+    get:
+      tags: [Billetera]
+      operationId: showRecharge
+      summary: Estado de una solicitud de recarga
+      x-abilities: ['wallet:read']
+      parameters:
+        - { name: recharge, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/WalletRecharge' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /wallet/withdrawals/{withdrawal}:
+    get:
+      tags: [Billetera]
+      operationId: showWithdrawal
+      summary: Estado de una solicitud de retiro
+      x-abilities: ['wallet:read']
+      parameters:
+        - { name: withdrawal, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/WalletWithdrawal' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /wallet/recharges:
+    get:
+      tags: [Billetera]
+      operationId: listRecharges
+      x-abilities: ['wallet:read']
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Paginated'
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/WalletRecharge' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Billetera]
+      operationId: requestRecharge
+      summary: Solicita una recarga (queda pendiente hasta que el panel la apruebe)
+      x-abilities: ['wallet:write']
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [amount, network, transaction_id, payment_proof]
+              properties:
+                amount: { type: number, maximum: 100000, description: 'Mayor que `network_fee`; se acredita amount − network_fee.' }
+                network: { type: string, enum: [BEP20, TRC20, ERC20] }
+                transaction_id: { type: string, maxLength: 255, description: 'Hash de la transferencia.' }
+                payment_proof:
+                  type: string
+                  format: binary
+                  description: 'Comprobante: jpg, png, webp o pdf, hasta `max_upload_kb` de GET /wallet.'
+      responses:
+        '201':
+          description: Solicitud creada.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, message]
+                properties:
+                  data: { $ref: '#/components/schemas/WalletRecharge' }
+                  message: { type: string }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '400': { $ref: '#/components/responses/IdempotencyKeyRequired' }
+        '409': { $ref: '#/components/responses/RequestInProgress' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /wallet/withdrawals:
+    get:
+      tags: [Billetera]
+      operationId: listWithdrawals
+      x-abilities: ['wallet:read']
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Paginated'
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/WalletWithdrawal' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Billetera]
+      operationId: requestWithdrawal
+      summary: Solicita un retiro (descuenta el saldo en el acto)
+      description: |
+        Queda siempre `pending` hasta que el panel lo apruebe. Descuenta
+        `amount` del saldo al solicitarlo; aprobado, el admin transfiere
+        `net_amount` (`amount` − comisión de red); rechazado, `amount` vuelve
+        entero al saldo. Saldo insuficiente, bajo el mínimo o sin superar la
+        comisión → `422 validation_failed` en `amount`.
+      x-abilities: ['wallet:write']
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, full_name, bank_name, account_number]
+              properties:
+                amount: { type: number, description: 'Desde `min_withdrawal` de GET /wallet (y mayor que `network_fee`), hasta el saldo.' }
+                full_name: { type: string, minLength: 3, maxLength: 255 }
+                bank_name: { type: string, minLength: 2, maxLength: 255 }
+                account_number: { type: string, pattern: '^[A-Za-z0-9 -]{4,34}$', description: 'Cuenta local o IBAN.' }
+      responses:
+        '201':
+          description: Solicitud creada.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, message]
+                properties:
+                  data: { $ref: '#/components/schemas/WalletWithdrawal' }
+                  message: { type: string }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '400': { $ref: '#/components/responses/IdempotencyKeyRequired' }
+        '409': { $ref: '#/components/responses/RequestInProgress' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /wallet/settlements:
+    get:
+      tags: [Billetera]
+      operationId: listSettlements
+      summary: Liquidaciones de ventas acreditadas (vendedores)
+      x-abilities: ['wallet:read']
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Paginated'
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/Settlement' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ── Notificaciones ────────────────────────────────────────────────
+  /notifications:
+    get:
+      tags: [Notificaciones]
+      operationId: listNotifications
+      summary: Avisos del usuario, del más nuevo al más viejo (no los marca leídos)
+      x-abilities: ['profile:read']
+      parameters:
+        - { name: unread, in: query, description: 'true = solo los no leídos.', schema: { type: boolean } }
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Paginated'
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/Notification' } }
+                      meta:
+                        type: object
+                        required: [unread_count]
+                        properties:
+                          unread_count: { type: integer, description: 'No leídas en total (con o sin el filtro).' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /notifications/unread-count:
+    get:
+      tags: [Notificaciones]
+      operationId: unreadNotificationsCount
+      x-abilities: ['profile:read']
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [count]
+                    properties:
+                      count: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /notifications/read-all:
+    post:
+      tags: [Notificaciones]
+      operationId: markAllNotificationsRead
+      x-abilities: ['profile:write']
+      responses:
+        '204': { description: 'Sin contenido.' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /notifications/{notification}/read:
+    post:
+      tags: [Notificaciones]
+      operationId: markNotificationRead
+      x-abilities: ['profile:write']
+      parameters:
+        - { name: notification, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/Notification' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
 components:
   securitySchemes:
     bearer:
@@ -973,6 +1333,17 @@ components:
 
   parameters:
     Id: { name: id, in: path, required: true, schema: { type: integer } }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        UUID que la app genera por cada envío del formulario y repite al
+        reintentar. Misma clave y mismo cuerpo → se devuelve la respuesta del
+        primer envío (cabecera `Idempotent-Replayed: true`) sin crear otra
+        solicitud; misma clave con otro cuerpo → `422 idempotency_key_reused`.
+        Vale 24 h; un error no se guarda (se puede reintentar con la misma).
+      schema: { type: string, pattern: '^[A-Za-z0-9_-]{8,100}$' }
     Order: { name: order, in: path, required: true, schema: { type: integer } }
     Page: { name: page, in: query, schema: { type: integer, minimum: 1 } }
     PerPage: { name: per_page, in: query, schema: { type: integer, minimum: 1, maximum: 50 } }
@@ -1023,10 +1394,20 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
     Unprocessable:
-      description: '`validation_failed` (con `errors`) o `business_rule`.'
+      description: '`validation_failed` (con `errors`), `business_rule` o `idempotency_key_reused`.'
       content:
         application/json:
           schema: { $ref: '#/components/schemas/ValidationError' }
+    IdempotencyKeyRequired:
+      description: '`idempotency_key_required`: falta la cabecera Idempotency-Key o no es válida.'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RequestInProgress:
+      description: '`request_in_progress`: otra petición con la misma Idempotency-Key se está procesando.'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
     TooManyRequests:
       description: '`too_many_requests`; esperar `Retry-After` segundos.'
       headers:
@@ -1096,6 +1477,9 @@ components:
             - not_found
             - method_not_allowed
             - payment_in_progress
+            - idempotency_key_required
+            - idempotency_key_reused
+            - request_in_progress
             - validation_failed
             - business_rule
             - too_many_requests
@@ -1178,7 +1562,7 @@ components:
         user: { $ref: '#/components/schemas/User' }
     Device:
       type: object
-      required: [id, device_id, device_name, abilities, current, last_used_at, created_at, expires_at]
+      required: [id, device_id, device_name, abilities, current, last_used_at, created_at, expires_at, push_enabled, push_platform]
       properties:
         id: { type: integer }
         device_id: { type: [string, 'null'] }
@@ -1188,6 +1572,8 @@ components:
         last_used_at: { $ref: '#/components/schemas/NullableDateTime' }
         created_at: { $ref: '#/components/schemas/NullableDateTime' }
         expires_at: { $ref: '#/components/schemas/NullableDateTime' }
+        push_enabled: { type: boolean, description: 'Hay un token FCM registrado (nunca se devuelve).' }
+        push_platform: { type: [string, 'null'], enum: [android, ios, null] }
 
     # ── Catálogo ──
     Banner:
@@ -1619,3 +2005,83 @@ components:
         tracking: { $ref: '#/components/schemas/Tracking' }
         created_at: { $ref: '#/components/schemas/NullableDateTime' }
         paid_at: { $ref: '#/components/schemas/NullableDateTime' }
+
+    # ── Billetera y notificaciones ──
+    WalletSummary:
+      type: object
+      required: [balance, currency, network_fee, pending_recharges, pending_withdrawals, min_withdrawal, recharge_networks, max_upload_kb]
+      properties:
+        balance: { type: number }
+        currency: { type: string, const: USD }
+        network_fee: { type: number, description: 'Comisión de red de cada recarga y retiro de la app.' }
+        pending_recharges: { type: integer }
+        pending_withdrawals: { type: integer }
+        min_withdrawal: { type: number }
+        recharge_networks: { type: array, items: { type: string } }
+        max_upload_kb: { type: integer }
+    WalletStatus: { type: string, enum: [pending, approved, rejected] }
+    WalletRecharge:
+      type: object
+      required: [id, amount, fee, net_amount, network, transaction_id, has_proof, status, created_at]
+      properties:
+        id: { type: integer }
+        amount: { type: number, description: 'Lo transferido por el usuario.' }
+        fee: { type: number, description: 'Comisión de red (0 si se pidió en la web).' }
+        net_amount: { type: number, description: 'Lo que se acredita al aprobarse: amount − fee.' }
+        network: { type: [string, 'null'] }
+        transaction_id: { type: [string, 'null'] }
+        has_proof: { type: boolean }
+        status: { $ref: '#/components/schemas/WalletStatus' }
+        created_at: { $ref: '#/components/schemas/NullableDateTime' }
+    WalletWithdrawal:
+      type: object
+      required: [id, amount, fee, net_amount, full_name, bank_name, account_last4, status, from_settlement, created_at]
+      properties:
+        id: { type: integer }
+        amount: { type: number, description: 'Lo descontado del saldo.' }
+        fee: { type: number, description: 'Comisión de red (0 si se pidió en la web).' }
+        net_amount: { type: number, description: 'Lo que el admin transfiere al aprobarlo: amount − fee.' }
+        full_name: { type: string }
+        bank_name: { type: string }
+        account_last4: { type: string, description: 'La cuenta nunca se devuelve entera.' }
+        status: { $ref: '#/components/schemas/WalletStatus' }
+        from_settlement: { type: boolean, description: 'true = lo cubren ventas ya liquidadas (dato para el admin; igual espera su aprobación).' }
+        created_at: { $ref: '#/components/schemas/NullableDateTime' }
+    WalletMovement:
+      type: object
+      required: [type, id, amount, status, occurred_at]
+      properties:
+        type: { type: string, enum: [recharge, withdrawal, settlement] }
+        id: { type: integer, description: 'Id en su tipo: lleva a /wallet/recharges/{id} o /wallet/withdrawals/{id}.' }
+        amount: { type: number, description: 'Con signo: + suma al saldo, − resta. En una recarga, ya sin la comisión.' }
+        status: { $ref: '#/components/schemas/WalletStatus' }
+        occurred_at: { $ref: '#/components/schemas/NullableDateTime' }
+    Settlement:
+      type: object
+      required: [id, total_sales, commission_rate, commission, net_amount, lines, settled_at]
+      properties:
+        id: { type: integer }
+        total_sales: { type: number }
+        commission_rate: { type: number }
+        commission: { type: number }
+        net_amount: { type: number, description: 'Acreditado al saldo.' }
+        lines: { type: integer }
+        settled_at: { $ref: '#/components/schemas/NullableDateTime' }
+    Notification:
+      type: object
+      required: [id, type, message, payload, read, read_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        type:
+          type: string
+          enum: [order_status_updated, seller_new_order, seller_settled, shop_status_updated, other]
+          description: |
+            order_status_updated → payload.order_id, order_code, status;
+            seller_new_order → payload.order_id, order_code, total;
+            seller_settled → payload.settlement_id, total_sales, commission, net_amount;
+            shop_status_updated → payload.shop_id, shop_name, status, approved.
+        message: { type: [string, 'null'], description: 'Texto guardado al crearse, en el idioma por defecto de la tienda.' }
+        payload: { type: object, description: 'Ids y datos para navegar; según `type`.' }
+        read: { type: boolean }
+        read_at: { $ref: '#/components/schemas/NullableDateTime' }
+        created_at: { $ref: '#/components/schemas/NullableDateTime' }

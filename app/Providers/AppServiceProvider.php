@@ -64,6 +64,11 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)
             ->by($request->user() ? 'user:'.$request->user()->id : 'ip:'.$request->ip()));
 
+        // Solicitar recargas y retiros: 10/min por usuario (suben comprobantes
+        // y descuentan saldo); de sobra para un uso real.
+        RateLimiter::for('api-wallet', fn (Request $request) => Limit::perMinute(10)
+            ->by('user:'.($request->user()?->id ?? $request->ip())));
+
         RateLimiter::for('api-auth', fn (Request $request) => [
             Limit::perMinute(5)->by('email:'.Str::lower((string) $request->input('email')).'|'.$request->ip()),
             Limit::perMinute(20)->by('ip:'.$request->ip()),

@@ -24,6 +24,9 @@ class DeviceResource extends JsonResource
             'last_used_at' => $this->last_used_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
             'expires_at' => $this->expires_at?->toIso8601String(),
+            // Avisos push registrados en este dispositivo (nunca el token FCM).
+            'push_enabled' => filled($this->push_token),
+            'push_platform' => $this->push_platform,
         ];
     }
 }

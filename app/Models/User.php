@@ -152,6 +152,24 @@ class User extends Authenticatable
     }
 
     /**
+     * Tokens FCM de los dispositivos con la sesión de la app abierta (y sin
+     * caducar). Es lo que leerá un canal de notificaciones push cuando se
+     * implemente el envío; hoy solo se registran (PUT /api/v1/auth/push-token).
+     *
+     * @return list<string>
+     */
+    public function routeNotificationForFcm(): array
+    {
+        return $this->tokens()
+            ->whereNotNull('push_token')
+            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+            ->pluck('push_token')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
      * Datos de envío del usuario para copiar al pedido:
      * dirección por defecto (o la más reciente) con el perfil como respaldo.
      */

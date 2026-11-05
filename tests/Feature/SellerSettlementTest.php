@@ -271,7 +271,7 @@ class SellerSettlementTest extends TestCase
      * Lo liquidado ya lo aprobó el admin: el retiro que lo cubre sale aprobado
      * al instante. Lo que exceda (saldo recargado) sigue pendiente.
      */
-    public function test_withdrawals_covered_by_settlements_need_no_second_approval(): void
+    public function test_every_withdrawal_waits_for_the_admin_even_if_settlements_cover_it(): void
     {
         $admin = $this->makeAdmin();
         $seller = $this->makeVerifiedSeller();
@@ -289,30 +289,35 @@ class SellerSettlementTest extends TestCase
             'account_number' => 'TEkbFw2Gc6JAgZtKPb9KcmuyvojVCTtk',
         ];
 
-        $this->actingAs($seller)->get('/wallet')->assertSee('$75.00');
+        // La web ya no promete retiros al instante.
+        $this->actingAs($seller)->get('/wallet')->assertDontSee('Retirable sin aprobación');
 
-        // 60 ≤ 75 liquidados → aprobado sin pasar por el admin.
+        // 60 ≤ 75 liquidados: igual queda pendiente; from_settlement solo informa al admin.
         $this->actingAs($seller)->post('/wallet/withdraw', $payload + ['amount' => 60])
-            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'aprobado'));
-        $this->assertDatabaseHas('wallet_withdrawals', ['user_id' => $seller->id, 'amount' => 60, 'status' => 'approved', 'from_settlement' => true]);
+            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'pendiente'));
+        $this->assertDatabaseHas('wallet_withdrawals', ['user_id' => $seller->id, 'amount' => 60, 'status' => 'pending', 'from_settlement' => true]);
+        // El saldo se descuenta al solicitarlo, sin comisión en la web.
         $this->assertSame('65.00', $seller->fresh()->balance);
+        $this->assertDatabaseHas('wallet_withdrawals', ['user_id' => $seller->id, 'amount' => 60, 'fee' => 0]);
 
-        // Quedan 15 liquidados; 40 los excede → pendiente, como siempre.
+        // 40 excede lo liquidado que queda: pendiente y sin la marca.
         $this->actingAs($seller)->post('/wallet/withdraw', $payload + ['amount' => 40])
             ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'pendiente'));
         $this->assertDatabaseHas('wallet_withdrawals', ['user_id' => $seller->id, 'amount' => 40, 'status' => 'pending', 'from_settlement' => false]);
         $this->assertSame('25.00', $seller->fresh()->balance);
 
-        // Los 15 restantes de liquidación siguen retirables al instante.
-        $this->actingAs($seller)->post('/wallet/withdraw', $payload + ['amount' => 15])
-            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'aprobado'));
-        $this->assertSame('10.00', $seller->fresh()->balance);
+        // El panel ve la marca "Liquidación" para decidir.
+        $this->actingAsAdmin($admin)->get('/admin/wallet')->assertOk()->assertSee('Liquidación');
 
-        // Un cliente sin liquidaciones sigue pasando por aprobación.
-        $customer->forceFill(['balance' => 30.00])->save();
-        $this->actingAs($customer)->post('/wallet/withdraw', $payload + ['amount' => 20])
-            ->assertSessionHas('success', fn ($msg) => str_contains($msg, 'pendiente'));
-        $this->assertDatabaseHas('wallet_withdrawals', ['user_id' => $customer->id, 'status' => 'pending', 'from_settlement' => false]);
+        // Aprobarlo no mueve saldo (ya se descontó); rechazarlo lo devuelve entero.
+        $first = \App\Models\WalletWithdrawal::where('user_id', $seller->id)->where('amount', 60)->firstOrFail();
+        $second = \App\Models\WalletWithdrawal::where('user_id', $seller->id)->where('amount', 40)->firstOrFail();
+        $this->actingAsAdmin($admin)->post("/admin/wallet/withdrawal/approve/{$first->id}");
+        $this->assertSame('25.00', $seller->fresh()->balance);
+        $this->actingAsAdmin($admin)->post("/admin/wallet/withdrawal/reject/{$second->id}");
+        $this->assertSame('65.00', $seller->fresh()->balance);
+        $this->assertSame('approved', $first->fresh()->status);
+        $this->assertSame('rejected', $second->fresh()->status);
     }
 
     public function test_settling_with_nothing_pending_records_nothing(): void

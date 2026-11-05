@@ -31,15 +31,26 @@ class WalletService
      | Lado del usuario
     ───────────────────────────────────────── */
 
-    /** @param  array{amount: numeric, network: string, transaction_id: string}  $data */
-    public function requestRecharge(User $user, array $data, ?UploadedFile $proof = null): WalletRecharge
+    /**
+     * Solicita una recarga; queda pendiente hasta que el panel la apruebe.
+     * $fee es la comisión de red (la cobra la app: wallet.app_network_fee):
+     * al aprobarse se acredita amount − fee.
+     *
+     * @param  array{amount: numeric, network: string, transaction_id: string}  $data
+     *
+     * @throws ValidationException si el monto no supera la comisión.
+     */
+    public function requestRecharge(User $user, array $data, ?UploadedFile $proof = null, float $fee = 0): WalletRecharge
     {
+        $this->assertCoversFee((float) $data['amount'], $fee);
+
         // Un PDF pasa sin tocar; una foto del comprobante se reduce.
         $proofPath = $proof ? $this->images->store($proof, 'wallet/proofs', 'payment_proof') : null;
 
         return WalletRecharge::create([
             'user_id' => $user->id,
             'amount' => $data['amount'],
+            'fee' => $fee,
             'network' => $data['network'],
             'transaction_id' => $data['transaction_id'],
             'payment_proof' => $proofPath,
@@ -48,34 +59,48 @@ class WalletService
     }
 
     /**
-     * Solicita un retiro y descuenta el saldo en el acto (se devuelve si se
-     * rechaza). Si el monto cabe en lo que viene de liquidaciones, el admin
-     * ya lo aprobó al liquidar: sale aprobado sin segunda revisión. Lo que
-     * exceda (saldo recargado) queda pendiente.
+     * Solicita un retiro: descuenta amount del saldo en el acto, con la fila
+     * del usuario bloqueada (dos solicitudes a la vez no pueden gastar el
+     * mismo saldo), y queda SIEMPRE pendiente hasta que el panel lo apruebe;
+     * si lo rechaza, amount vuelve al saldo. Al aprobarlo el admin transfiere
+     * amount − fee ($fee: comisión de red de la app, wallet.app_network_fee).
+     *
+     * from_settlement solo informa al admin de que el monto lo cubren ventas
+     * ya liquidadas; ya no aprueba nada por sí mismo.
      *
      * @param  array{amount: numeric, full_name: string, bank_name: string, account_number: string}  $data
      *
-     * @throws ValidationException si el saldo no alcanza.
+     * @throws ValidationException si el monto es menor que wallet.min_withdrawal,
+     *                             no supera la comisión o el saldo no alcanza.
      */
-    public function requestWithdrawal(User $user, array $data): WalletWithdrawal
+    public function requestWithdrawal(User $user, array $data, float $fee = 0): WalletWithdrawal
     {
-        return DB::transaction(function () use ($user, $data) {
+        $minimum = (float) config('wallet.min_withdrawal', 1);
+
+        if ((float) $data['amount'] < $minimum) {
+            throw ValidationException::withMessages(['amount' => __('El retiro mínimo es de :amount.', [
+                'amount' => number_format($minimum, 2),
+            ])]);
+        }
+
+        $this->assertCoversFee((float) $data['amount'], $fee);
+
+        return DB::transaction(function () use ($user, $data, $fee) {
             $balance = (float) User::whereKey($user->id)->lockForUpdate()->value('balance');
 
             if ((float) $data['amount'] > $balance) {
                 throw ValidationException::withMessages(['amount' => __('Saldo insuficiente.')]);
             }
 
-            $fromSettlement = (float) $data['amount'] <= $this->settlements->withdrawableFor($user);
-
             $withdrawal = WalletWithdrawal::create([
                 'user_id' => $user->id,
                 'amount' => $data['amount'],
+                'fee' => $fee,
                 'full_name' => $data['full_name'],
                 'bank_name' => $data['bank_name'],
                 'account_number' => $data['account_number'],
-                'status' => $fromSettlement ? 'approved' : 'pending',
-                'from_settlement' => $fromSettlement,
+                'status' => 'pending',
+                'from_settlement' => (float) $data['amount'] <= $this->settlements->withdrawableFor($user),
             ]);
 
             User::whereKey($user->id)->decrement('balance', $data['amount']);
@@ -84,11 +109,21 @@ class WalletService
         });
     }
 
+    /** Una solicitud con comisión tiene que dejar algo después de cobrarla. */
+    protected function assertCoversFee(float $amount, float $fee): void
+    {
+        if ($fee > 0 && $amount <= $fee) {
+            throw ValidationException::withMessages(['amount' => __('El monto debe ser mayor que la comisión de red (:fee).', [
+                'fee' => number_format($fee, 2),
+            ])]);
+        }
+    }
+
     /* ─────────────────────────────────────────
      | Revisión (panel)
     ───────────────────────────────────────── */
 
-    /** Aprueba la recarga y suma su importe al saldo del usuario. */
+    /** Aprueba la recarga y suma su importe, menos su comisión, al saldo del usuario. */
     public function approveRecharge(WalletRecharge $recharge, Admin $admin): WalletRecharge
     {
         $recharge = DB::transaction(function () use ($recharge) {
@@ -99,12 +134,14 @@ class WalletService
             }
 
             $locked->update(['approval' => 1]);
-            User::whereKey($locked->user_id)->increment('balance', $locked->amount);
+            User::whereKey($locked->user_id)->increment('balance', $locked->netAmount());
 
             return $locked;
         });
 
-        $this->audit->record('wallet.recharge.approved', $recharge, ['user_id' => $recharge->user_id, 'amount' => (float) $recharge->amount], $admin);
+        $this->audit->record('wallet.recharge.approved', $recharge, [
+            'user_id' => $recharge->user_id, 'amount' => (float) $recharge->amount, 'fee' => (float) $recharge->fee,
+        ], $admin);
 
         return $recharge;
     }
@@ -123,12 +160,17 @@ class WalletService
             return $locked;
         });
 
-        $this->audit->record('wallet.recharge.rejected', $recharge, ['user_id' => $recharge->user_id, 'amount' => (float) $recharge->amount], $admin);
+        $this->audit->record('wallet.recharge.rejected', $recharge, [
+            'user_id' => $recharge->user_id, 'amount' => (float) $recharge->amount, 'fee' => (float) $recharge->fee,
+        ], $admin);
 
         return $recharge;
     }
 
-    /** Solo cambia el estado: el saldo ya se descontó al solicitarlo. */
+    /**
+     * Solo cambia el estado: el saldo ya se descontó al solicitarlo. El admin
+     * transfiere aparte (fuera del sistema) amount − fee.
+     */
     public function approveWithdrawal(WalletWithdrawal $withdrawal, Admin $admin): WalletWithdrawal
     {
         $withdrawal = DB::transaction(function () use ($withdrawal) {
@@ -138,12 +180,14 @@ class WalletService
             return $locked;
         });
 
-        $this->audit->record('wallet.withdrawal.approved', $withdrawal, ['user_id' => $withdrawal->user_id, 'amount' => (float) $withdrawal->amount], $admin);
+        $this->audit->record('wallet.withdrawal.approved', $withdrawal, [
+            'user_id' => $withdrawal->user_id, 'amount' => (float) $withdrawal->amount, 'fee' => (float) $withdrawal->fee,
+        ], $admin);
 
         return $withdrawal;
     }
 
-    /** Rechaza el retiro y devuelve el importe al saldo del usuario. */
+    /** Rechaza el retiro y devuelve el importe completo (sin comisión: no hubo transferencia). */
     public function rejectWithdrawal(WalletWithdrawal $withdrawal, Admin $admin): WalletWithdrawal
     {
         $withdrawal = DB::transaction(function () use ($withdrawal) {
@@ -154,7 +198,9 @@ class WalletService
             return $locked;
         });
 
-        $this->audit->record('wallet.withdrawal.rejected', $withdrawal, ['user_id' => $withdrawal->user_id, 'amount' => (float) $withdrawal->amount], $admin);
+        $this->audit->record('wallet.withdrawal.rejected', $withdrawal, [
+            'user_id' => $withdrawal->user_id, 'amount' => (float) $withdrawal->amount, 'fee' => (float) $withdrawal->fee,
+        ], $admin);
 
         return $withdrawal;
     }

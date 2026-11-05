@@ -23,6 +23,8 @@ class ApiAbilities
         'cart:write',
         'checkout:write',
         'orders:read',
+        'wallet:read',
+        'wallet:write',
     ];
 
     public const SELLER = [

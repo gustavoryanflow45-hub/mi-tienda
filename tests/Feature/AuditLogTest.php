@@ -122,7 +122,7 @@ class AuditLogTest extends TestCase
         foreach (['wallet.recharge.approved', 'wallet.withdrawal.rejected'] as $action) {
             $log = $this->lastLog($action);
             $this->assertNotNull($log, $action);
-            $this->assertSame(['user_id', 'amount'], array_keys($log->meta));
+            $this->assertSame(['user_id', 'amount', 'fee'], array_keys($log->meta));
         }
 
         $all = AdminAuditLog::all()->toJson();
