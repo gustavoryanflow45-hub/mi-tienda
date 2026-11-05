@@ -7,11 +7,14 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\IpUtils;
 
 /**
- * Lista blanca de IPs del panel (alias 'admin.ip', en todo routes/admin.php,
- * login incluido). ADMIN_ALLOWED_IPS acepta IPs y rangos CIDR separados por
- * comas ("203.0.113.7,10.0.0.0/8,2001:db8::/32"); vacío = sin restricción.
+ * Lista blanca de IPs del panel: toda ruta admin.*, login incluido.
+ * ADMIN_ALLOWED_IPS acepta IPs y rangos CIDR separados por comas
+ * ("203.0.113.7,10.0.0.0/8,2001:db8::/32"); vacío = sin restricción.
  *
  * Fuera de la lista responde 404, no 403: no confirma que ahí hay un panel.
+ * Va el primero del grupo 'web' (bootstrap/app.php), antes de StartSession y
+ * de VerifyCsrfToken: si corriera después, un POST sin token devolvería 419
+ * (delatando la ruta) y cada intento abriría una sesión.
  *
  * La IP es $request->ip(). Detrás de un proxy o de Cloudflare hay que
  * declararlos en trustProxies (bootstrap/app.php) o todas las peticiones
@@ -24,7 +27,9 @@ class RestrictAdminIp
     {
         $allowed = config('admin.allowed_ips');
 
-        if ($allowed && ! IpUtils::checkIp((string) $request->ip(), $allowed)) {
+        if ($allowed
+            && $request->route()?->named('admin.*')
+            && ! IpUtils::checkIp((string) $request->ip(), $allowed)) {
             abort(404);
         }
 

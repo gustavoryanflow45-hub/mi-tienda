@@ -30,8 +30,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetLocale::class,
         ]);
 
-        // Antes de StartSession: en el host admin cambia la cookie de sesión.
+        // Antes de StartSession y del CSRF: la lista blanca de IPs del panel
+        // (una IP fuera de ella recibe 404 sin sesión ni 419 que delate la
+        // ruta) y, en el host admin, la cookie de sesión propia.
         $middleware->web(prepend: [
+            \App\Http\Middleware\RestrictAdminIp::class,
             \App\Http\Middleware\IsolateAdminHost::class,
         ]);
 
@@ -44,7 +47,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'admin.2fa' => \App\Http\Middleware\EnsureAdminTwoFactor::class,
-            'admin.ip' => \App\Http\Middleware\RestrictAdminIp::class,
             'shop.approved' => \App\Http\Middleware\EnsureShopApproved::class,
             'seller' => \App\Http\Middleware\EnsureUserIsSeller::class,
             // spatie/laravel-permission, para los roles del panel (guard 'admin').

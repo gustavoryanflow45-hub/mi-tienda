@@ -5,9 +5,9 @@ namespace App\Support;
 use Illuminate\Support\Facades\Route;
 
 /**
- * Registra routes/admin.php: grupo 'web', lista blanca de IPs ('admin.ip'),
- * nombres 'admin.', prefijo ADMIN_PATH y, con ADMIN_DOMAIN, ligado a ese
- * host.
+ * Registra routes/admin.php: grupo 'web', nombres 'admin.', prefijo
+ * ADMIN_PATH y, con ADMIN_DOMAIN, ligado a ese host. La lista blanca de IPs
+ * (RestrictAdminIp) va al principio del grupo 'web', en bootstrap/app.php.
  *
  * Es el único sitio que lo hace: bootstrap/app.php lo llama al cargar las
  * rutas y los tests que cambian config('admin.*') lo vuelven a llamar.
@@ -27,7 +27,7 @@ class AdminRoutes
 
     public static function register(): void
     {
-        $routes = Route::middleware(['web', 'admin.ip'])->name('admin.');
+        $routes = Route::middleware('web')->name('admin.');
 
         if ($prefix = self::prefix()) {
             $routes->prefix($prefix);

@@ -206,6 +206,10 @@ class AdminRolesTest extends TestCase
 
         $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.20'])->get('/admin/login')->assertNotFound();
         $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.20'])->post('/admin/login', ['email' => 'x@y.z', 'password' => 'x'])->assertNotFound();
+
+        // Corta antes de la sesión: ni cookie de sesión ni token CSRF para una IP bloqueada.
+        $blocked = $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.20'])->get('/admin/login');
+        $this->assertEmpty($blocked->headers->getCookies());
         // Antes de iniciar sesión: el login redirige a quien ya está dentro.
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.7'])->get('/admin/login')->assertOk();
 
