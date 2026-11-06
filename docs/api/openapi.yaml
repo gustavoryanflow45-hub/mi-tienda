@@ -6,8 +6,9 @@ info:
   description: |
     Contrato de `/api/v1`. La guía en prosa (flujos, decisiones, notas para
     Flutter) es `docs/api/v1.md`; este archivo es la referencia de máquina:
-    sirve para generar el cliente (p. ej. `openapi-generator` con `dart-dio`)
-    o para abrirlo en Swagger UI / Redoc.
+    de él se genera el cliente Dart de `clients/dart/mi_tienda_api`
+    (`swagger_parser`; ver "Cliente Dart" en `v1.md`), y se puede abrir en
+    Swagger UI / Redoc.
 
     `tests/Feature/Api/V1/OpenApiSpecTest.php` falla si una ruta de la API
     falta aquí (o sobra), si la seguridad o las habilidades no coinciden con
