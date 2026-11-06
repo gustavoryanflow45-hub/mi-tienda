@@ -31,7 +31,8 @@ servers:
 tags:
   - name: Auth
     description: 'Alta, login por dispositivo, rotación de token, sesiones y token push.'
-  - name: Catálogo
+  - name: Catalogo
+    x-displayName: Catálogo
     description: 'Portada, categorías, marcas y productos a la venta (público, sin token).'
   - name: Carrito
     description: 'El carrito del usuario: el mismo de la web, con las mismas reglas.'
@@ -175,11 +176,7 @@ paths:
                 required: [data, meta]
                 properties:
                   data: { $ref: '#/components/schemas/User' }
-                  meta:
-                    type: object
-                    required: [abilities]
-                    properties:
-                      abilities: { type: array, items: { type: string } }
+                  meta: { $ref: '#/components/schemas/TokenAbilities' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
@@ -292,7 +289,7 @@ paths:
   # ── Catálogo ──────────────────────────────────────────────────────
   /home:
     get:
-      tags: [Catálogo]
+      tags: [Catalogo]
       operationId: home
       summary: Portada (banners y tres secciones de hasta 12 productos)
       security: []
@@ -305,19 +302,11 @@ paths:
                 type: object
                 required: [data]
                 properties:
-                  data:
-                    type: object
-                    required: [banners, featured, new, best_selling]
-                    properties:
-                      banners: { type: array, items: { $ref: '#/components/schemas/Banner' } }
-                      featured: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
-                      new: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
-                      best_selling: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
-
+                  data: { $ref: '#/components/schemas/HomeFeed' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /brands:
     get:
-      tags: [Catálogo]
+      tags: [Catalogo]
       operationId: listBrands
       summary: 'Marcas activas'
       security: []
@@ -335,7 +324,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /categories:
     get:
-      tags: [Catálogo]
+      tags: [Catalogo]
       operationId: listCategories
       summary: Árbol de categorías activas (raíces con sus children)
       security: []
@@ -353,7 +342,7 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
   /categories/{slug}:
     get:
-      tags: [Catálogo]
+      tags: [Catalogo]
       operationId: showCategory
       summary: 'Una categoría con sus subcategorías y su padre'
       security: []
@@ -376,7 +365,7 @@ paths:
 
   /products:
     get:
-      tags: [Catálogo]
+      tags: [Catalogo]
       operationId: listProducts
       summary: Productos a la venta, paginados
       security: []
@@ -407,7 +396,7 @@ paths:
 
   /products/{product}:
     get:
-      tags: [Catálogo]
+      tags: [Catalogo]
       operationId: showProduct
       summary: Ficha (por slug o por id)
       security: []
@@ -477,13 +466,13 @@ paths:
         '422': { $ref: '#/components/responses/Unprocessable' }
 
   /cart/items/{item}:
-    parameters:
-      - { name: item, in: path, required: true, schema: { type: integer } }
     patch:
       tags: [Carrito]
       operationId: updateCartItem
       summary: Cambia la cantidad (limitada al stock)
       x-abilities: ['cart:write']
+      parameters:
+        - { name: item, in: path, required: true, schema: { type: integer } }
       requestBody:
         required: true
         content:
@@ -504,6 +493,8 @@ paths:
       operationId: removeCartItem
       summary: 'Quita una línea del carrito'
       x-abilities: ['cart:write']
+      parameters:
+        - { name: item, in: path, required: true, schema: { type: integer } }
       responses:
         '200': { $ref: '#/components/responses/Cart' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -526,22 +517,7 @@ paths:
                 type: object
                 required: [data]
                 properties:
-                  data:
-                    type: object
-                    required: [items, totals, currency, shipping, payment]
-                    properties:
-                      items: { type: array, items: { $ref: '#/components/schemas/CartItem' } }
-                      totals: { $ref: '#/components/schemas/Totals' }
-                      currency: { type: string, const: USD }
-                      shipping: { $ref: '#/components/schemas/ShippingAddress' }
-                      payment:
-                        type: object
-                        required: [suggested_gateway, country, gateways, stripe_publishable_key]
-                        properties:
-                          suggested_gateway: { $ref: '#/components/schemas/Gateway' }
-                          country: { type: [string, 'null'], description: 'ISO 3166-1 alfa-2 por IP.' }
-                          gateways: { type: array, items: { $ref: '#/components/schemas/Gateway' } }
-                          stripe_publishable_key: { type: [string, 'null'] }
+                  data: { $ref: '#/components/schemas/CheckoutSummary' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/Unprocessable' }
@@ -602,16 +578,7 @@ paths:
                 type: object
                 required: [data]
                 properties:
-                  data:
-                    type: object
-                    required: [client_secret, payment_intent_id, publishable_key, amount, currency, order]
-                    properties:
-                      client_secret: { type: string }
-                      payment_intent_id: { type: string }
-                      publishable_key: { type: [string, 'null'] }
-                      amount: { type: integer, description: 'En centavos.' }
-                      currency: { type: string, const: usd }
-                      order: { $ref: '#/components/schemas/Order' }
+                  data: { $ref: '#/components/schemas/StripePaymentIntent' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -663,16 +630,7 @@ paths:
                 type: object
                 required: [data]
                 properties:
-                  data:
-                    type: object
-                    required: [redirect_url, client_transaction_id, return_url, order]
-                    properties:
-                      redirect_url: { type: string, format: uri }
-                      client_transaction_id: { type: string, pattern: '^GA\d+-[A-Z0-9]{10}$' }
-                      return_url:
-                        type: string
-                        description: Esquema de la app al que vuelve el navegador (`?status=…&order=…`).
-                      order: { $ref: '#/components/schemas/Order' }
+                  data: { $ref: '#/components/schemas/PayphonePayment' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -899,10 +857,33 @@ paths:
         content:
           multipart/form-data:
             schema:
-              allOf:
-                - $ref: '#/components/schemas/SellerProductInput'
-                - type: object
-                  required: [name, category_id, unit_price, unit, thumbnail, stocks]
+              type: object
+              required: [name, category_id, unit_price, unit, thumbnail, stocks]
+              properties:
+                name: { type: string, maxLength: 255 }
+                category_id: { type: integer }
+                brand_id: { type: integer }
+                unit_price: { type: number, minimum: 0 }
+                purchase_price: { type: number, minimum: 0 }
+                discount: { type: number, minimum: 0 }
+                discount_type: { type: string, enum: [percent, amount] }
+                unit: { type: string, maxLength: 50 }
+                variant_type: { type: string }
+                short_description: { type: string }
+                description: { type: string }
+                min_qty: { type: integer, minimum: 1 }
+                low_stock_qty: { type: integer, minimum: 0 }
+                shipping_cost: { type: number, minimum: 0 }
+                published: { type: boolean }
+                featured: { type: boolean }
+                todays_deal: { type: boolean }
+                stocks:
+                  type: array
+                  minItems: 1
+                  description: 'En multipart: stocks[0][size], stocks[0][color], stocks[0][price], stocks[0][qty], stocks[0][sku]…'
+                  items: { $ref: '#/components/schemas/StockInput' }
+                thumbnail: { type: string, format: binary, description: 'Imagen principal (jpg, png o webp).' }
+                photos: { type: array, maxItems: 5, items: { type: string, format: binary }, description: 'Hasta 5 fotos.' }
       responses:
         '201': { $ref: '#/components/responses/SellerProduct' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -910,13 +891,13 @@ paths:
         '422': { $ref: '#/components/responses/Unprocessable' }
 
   /seller/products/{product}:
-    parameters:
-      - { name: product, in: path, required: true, schema: { type: integer } }
     get:
       tags: [Vendedor]
       operationId: sellerShowProduct
       summary: 'Un producto del vendedor con su stock'
       x-abilities: ['seller:products']
+      parameters:
+        - { name: product, in: path, required: true, schema: { type: integer } }
       responses:
         '200': { $ref: '#/components/responses/SellerProduct' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
@@ -931,6 +912,8 @@ paths:
         `_method=PUT`** (PHP no lee archivos en un PUT). `stocks`, si llega,
         reemplaza todas las combinaciones; `photos[]` reemplaza todas las fotos.
       x-abilities: ['seller:products']
+      parameters:
+        - { name: product, in: path, required: true, schema: { type: integer } }
       requestBody:
         required: true
         content:
@@ -940,6 +923,10 @@ paths:
             schema:
               allOf:
                 - $ref: '#/components/schemas/SellerProductInput'
+                - type: object
+                  properties:
+                    thumbnail: { type: string, format: binary, description: 'Imagen principal (jpg, png o webp).' }
+                    photos: { type: array, maxItems: 5, items: { type: string, format: binary }, description: 'Hasta 5 fotos; reemplazan a todas.' }
                 - type: object
                   properties:
                     _method: { type: string, const: PUT }
@@ -1293,11 +1280,7 @@ paths:
                   - type: object
                     properties:
                       data: { type: array, items: { $ref: '#/components/schemas/Notification' } }
-                      meta:
-                        type: object
-                        required: [unread_count]
-                        properties:
-                          unread_count: { type: integer, description: 'No leídas en total (con o sin el filtro).' }
+                      meta: { $ref: '#/components/schemas/NotificationsMeta' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
@@ -1316,11 +1299,7 @@ paths:
                 type: object
                 required: [data]
                 properties:
-                  data:
-                    type: object
-                    required: [count]
-                    properties:
-                      count: { type: integer }
+                  data: { $ref: '#/components/schemas/UnreadCount' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
@@ -1530,25 +1509,8 @@ components:
       required: [data, links, meta]
       properties:
         data: { type: array }
-        links:
-          type: object
-          required: [first, last, prev, next]
-          properties:
-            first: { type: [string, 'null'] }
-            last: { type: [string, 'null'] }
-            prev: { type: [string, 'null'] }
-            next: { type: [string, 'null'] }
-        meta:
-          type: object
-          required: [current_page, last_page, per_page, total]
-          properties:
-            current_page: { type: integer }
-            from: { type: [integer, 'null'] }
-            last_page: { type: integer }
-            path: { type: string }
-            per_page: { type: integer }
-            to: { type: [integer, 'null'] }
-            total: { type: integer }
+        links: { $ref: '#/components/schemas/PaginationLinks' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
     NullableDateTime: { type: [string, 'null'], format: date-time }
     Gateway: { type: string, enum: [stripe, payphone] }
     DeliveryStatus: { type: string, enum: [pending, confirmed, warehouse, on_the_way, delivered] }
@@ -1569,12 +1531,7 @@ components:
         shop:
           oneOf:
             - type: 'null'
-            - type: object
-              required: [id, name, status]
-              properties:
-                id: { type: integer }
-                name: { type: string }
-                status: { type: string, enum: [pending, approved, rejected] }
+            - $ref: '#/components/schemas/UserShop'
         created_at: { $ref: '#/components/schemas/NullableDateTime' }
     Token:
       type: object
@@ -1584,13 +1541,7 @@ components:
         token_type: { type: string, const: Bearer }
         expires_at: { $ref: '#/components/schemas/NullableDateTime' }
         abilities: { type: array, items: { type: string } }
-        device:
-          type: object
-          required: [id, device_id, device_name]
-          properties:
-            id: { type: integer }
-            device_id: { type: [string, 'null'] }
-            device_name: { type: string }
+        device: { $ref: '#/components/schemas/TokenDevice' }
         user: { $ref: '#/components/schemas/User' }
     Device:
       type: object
@@ -1670,20 +1621,11 @@ components:
         category:
           oneOf:
             - type: 'null'
-            - type: object
-              required: [id, name, slug]
-              properties:
-                id: { type: integer }
-                name: { type: string }
-                slug: { type: string }
+            - $ref: '#/components/schemas/CategoryRef'
         brand:
           oneOf:
             - type: 'null'
-            - type: object
-              required: [id, name]
-              properties:
-                id: { type: integer }
-                name: { type: string }
+            - $ref: '#/components/schemas/NamedRef'
     Color:
       type: object
       required: [key, label, hex]
@@ -1716,34 +1658,21 @@ components:
             shop:
               oneOf:
                 - type: 'null'
-                - type: object
-                  required: [id, name]
-                  properties:
-                    id: { type: integer }
-                    name: { type: string }
-            variants:
-              type: object
-              required: [size_label, sizes, colors, combinations]
-              properties:
-                size_label: { type: string }
-                sizes: { type: array, items: { type: string } }
-                colors: { type: array, items: { $ref: '#/components/schemas/Color' } }
-                combinations: { type: array, items: { $ref: '#/components/schemas/Combination' } }
+                - $ref: '#/components/schemas/NamedRef'
+            variants: { $ref: '#/components/schemas/ProductVariants' }
             related: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
 
     # ── Carrito y pedidos ──
-    Variant:
-      oneOf:
-        - type: 'null'
-        - type: object
-          required: [text, size, size_label, color, color_label, color_hex]
-          properties:
-            text: { type: string, description: 'Para mostrar: "Talla US 9 · Negro".' }
-            size: { type: [string, 'null'] }
-            size_label: { type: [string, 'null'] }
-            color: { type: [string, 'null'] }
-            color_label: { type: [string, 'null'] }
-            color_hex: { type: [string, 'null'] }
+    VariantInfo:
+      type: object
+      required: [text, size, size_label, color, color_label, color_hex]
+      properties:
+        text: { type: string, description: 'Para mostrar: "Talla US 9 · Negro".' }
+        size: { type: [string, 'null'] }
+        size_label: { type: [string, 'null'] }
+        color: { type: [string, 'null'] }
+        color_label: { type: [string, 'null'] }
+        color_hex: { type: [string, 'null'] }
     Totals:
       type: object
       required: [subtotal, shipping, tax, grand_total]
@@ -1760,16 +1689,13 @@ components:
         product:
           oneOf:
             - type: 'null'
-            - type: object
-              required: [id, slug, name, thumbnail_url, on_sale]
-              properties:
-                id: { type: integer }
-                slug: { type: string }
-                name: { type: string }
-                thumbnail_url: { type: string }
-                on_sale: { type: boolean, description: 'false = despublicado o vetado tras añadirlo.' }
+            - $ref: '#/components/schemas/CartProduct'
         variation: { type: string }
-        variant: { $ref: '#/components/schemas/Variant' }
+        variant:
+          description: 'Talla y color legibles; null sin variación.'
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/VariantInfo'
         price: { type: number, description: 'Unitario fijado al añadir.' }
         quantity: { type: integer }
         line_total: { type: number }
@@ -1779,14 +1705,7 @@ components:
       type: object
       required: [data]
       properties:
-        data:
-          type: object
-          required: [items, count, totals, currency]
-          properties:
-            items: { type: array, items: { $ref: '#/components/schemas/CartItem' } }
-            count: { type: integer }
-            totals: { $ref: '#/components/schemas/Totals' }
-            currency: { type: string, const: USD }
+        data: { $ref: '#/components/schemas/CartData' }
         message: { type: string }
     ShippingInput:
       type: object
@@ -1821,7 +1740,11 @@ components:
         name: { type: string }
         thumbnail_url: { type: string }
         variation: { type: string }
-        variant: { $ref: '#/components/schemas/Variant' }
+        variant:
+          description: 'Talla y color legibles; null sin variación.'
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/VariantInfo'
         price: { type: number }
         quantity: { type: integer }
         line_total: { type: number }
@@ -1858,34 +1781,16 @@ components:
       type: object
       required: [shop, currency, products, pending_orders, delivered_orders, current_cycle, last_settlement, balance]
       properties:
-        shop:
-          type: object
-          required: [id, name]
-          properties:
-            id: { type: integer }
-            name: { type: string }
+        shop: { $ref: '#/components/schemas/NamedRef' }
         currency: { type: string, const: USD }
         products: { type: integer }
         pending_orders: { type: integer, description: 'Pagados y sin confirmar.' }
         delivered_orders: { type: integer }
-        current_cycle:
-          type: object
-          description: Líneas pagadas, entregadas y sin liquidar.
-          required: [total_sales, commission_rate, commission, net_amount, lines]
-          properties:
-            total_sales: { type: number }
-            commission_rate: { type: number }
-            commission: { type: number }
-            net_amount: { type: number }
-            lines: { type: integer }
+        current_cycle: { $ref: '#/components/schemas/SettlementCycle' }
         last_settlement:
           oneOf:
             - type: 'null'
-            - type: object
-              required: [net_amount, settled_at]
-              properties:
-                net_amount: { type: number }
-                settled_at: { $ref: '#/components/schemas/NullableDateTime' }
+            - $ref: '#/components/schemas/LastSettlement'
         balance: { type: number }
     SellerProductOptions:
       type: object
@@ -1893,32 +1798,13 @@ components:
       properties:
         categories:
           type: array
-          items:
-            type: object
-            required: [id, name, parent_id, variant_type]
-            properties:
-              id: { type: integer }
-              name: { type: string }
-              parent_id: { type: [integer, 'null'] }
-              variant_type: { type: string }
+          items: { $ref: '#/components/schemas/OptionCategory' }
         brands:
           type: array
-          items:
-            type: object
-            required: [id, name]
-            properties:
-              id: { type: integer }
-              name: { type: string }
+          items: { $ref: '#/components/schemas/NamedRef' }
         variant_types:
           type: array
-          items:
-            type: object
-            required: [key, label, size_label, sizes]
-            properties:
-              key: { type: string }
-              label: { type: string }
-              size_label: { type: [string, 'null'] }
-              sizes: { type: array, items: { type: string } }
+          items: { $ref: '#/components/schemas/VariantType' }
         colors: { type: array, items: { $ref: '#/components/schemas/Color' } }
         max_upload_kb: { type: integer }
         max_photos: { type: integer }
@@ -1932,11 +1818,7 @@ components:
         category:
           oneOf:
             - type: 'null'
-            - type: object
-              required: [id, name]
-              properties:
-                id: { type: integer }
-                name: { type: string }
+            - $ref: '#/components/schemas/NamedRef'
         brand_id: { type: [integer, 'null'] }
         unit_price: { type: number }
         purchase_price: { type: [number, 'null'] }
@@ -1958,17 +1840,7 @@ components:
         photos: { type: array, items: { type: string } }
         stocks:
           type: array
-          items:
-            type: object
-            required: [id, variation, size, color, price, qty, sku]
-            properties:
-              id: { type: integer }
-              variation: { type: string }
-              size: { type: [string, 'null'] }
-              color: { type: [string, 'null'] }
-              price: { type: number }
-              qty: { type: integer }
-              sku: { type: [string, 'null'] }
+          items: { $ref: '#/components/schemas/SellerStock' }
         total_qty: { type: integer }
         created_at: { $ref: '#/components/schemas/NullableDateTime' }
     SellerProductInput:
@@ -1992,21 +1864,11 @@ components:
         published: { type: boolean }
         featured: { type: boolean }
         todays_deal: { type: boolean }
-        thumbnail: { type: string, format: binary }
-        photos: { type: array, maxItems: 5, items: { type: string, format: binary } }
         stocks:
           type: array
           minItems: 1
           description: Una fila por combinación talla × color (en multipart, `stocks[0][size]`…).
-          items:
-            type: object
-            required: [price, qty]
-            properties:
-              size: { type: [string, 'null'] }
-              color: { type: [string, 'null'] }
-              price: { type: number, minimum: 0 }
-              qty: { type: integer, minimum: 0 }
-              sku: { type: [string, 'null'] }
+          items: { $ref: '#/components/schemas/StockInput' }
     SellerOrder:
       type: object
       required: [id, code, payment_status, payment_status_label, delivery_status, delivery_status_label, actions, currency, seller_total, items, buyer, shipping_address, tracking, created_at, paid_at]
@@ -2017,22 +1879,11 @@ components:
         payment_status_label: { type: string }
         delivery_status: { $ref: '#/components/schemas/DeliveryStatus' }
         delivery_status_label: { type: string }
-        actions:
-          type: object
-          required: [confirm, send_to_warehouse]
-          properties:
-            confirm: { type: boolean }
-            send_to_warehouse: { type: boolean }
+        actions: { $ref: '#/components/schemas/SellerOrderActions' }
         currency: { type: string, const: USD }
         seller_total: { type: number, description: 'Solo las líneas de este vendedor.' }
         items: { type: array, items: { $ref: '#/components/schemas/OrderItem' } }
-        buyer:
-          type: object
-          required: [name, email, phone]
-          properties:
-            name: { type: [string, 'null'] }
-            email: { type: [string, 'null'] }
-            phone: { type: [string, 'null'] }
+        buyer: { $ref: '#/components/schemas/Buyer' }
         shipping_address: { $ref: '#/components/schemas/ShippingAddress' }
         tracking: { $ref: '#/components/schemas/Tracking' }
         created_at: { $ref: '#/components/schemas/NullableDateTime' }
@@ -2117,3 +1968,201 @@ components:
         read: { type: boolean }
         read_at: { $ref: '#/components/schemas/NullableDateTime' }
         created_at: { $ref: '#/components/schemas/NullableDateTime' }
+
+    # ── Objetos con nombre (antes en línea) ──
+    TokenAbilities:
+      type: object
+      required: [abilities]
+      properties:
+        abilities: { type: array, items: { type: string } }
+    HomeFeed:
+      type: object
+      required: [banners, featured, new, best_selling]
+      properties:
+        banners: { type: array, items: { $ref: '#/components/schemas/Banner' } }
+        featured: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
+        new: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
+        best_selling: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
+    CheckoutSummary:
+      type: object
+      required: [items, totals, currency, shipping, payment]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/CartItem' } }
+        totals: { $ref: '#/components/schemas/Totals' }
+        currency: { type: string, const: USD }
+        shipping: { $ref: '#/components/schemas/ShippingAddress' }
+        payment: { $ref: '#/components/schemas/CheckoutPayment' }
+    StripePaymentIntent:
+      type: object
+      required: [client_secret, payment_intent_id, publishable_key, amount, currency, order]
+      properties:
+        client_secret: { type: string }
+        payment_intent_id: { type: string }
+        publishable_key: { type: [string, 'null'] }
+        amount: { type: integer, description: 'En centavos.' }
+        currency: { type: string, const: usd }
+        order: { $ref: '#/components/schemas/Order' }
+    PayphonePayment:
+      type: object
+      required: [redirect_url, client_transaction_id, return_url, order]
+      properties:
+        redirect_url: { type: string, format: uri }
+        client_transaction_id: { type: string, pattern: '^GA\d+-[A-Z0-9]{10}$' }
+        return_url:
+          type: string
+          description: Esquema de la app al que vuelve el navegador (`?status=…&order=…`).
+        order: { $ref: '#/components/schemas/Order' }
+    UnreadCount:
+      type: object
+      required: [count]
+      properties:
+        count: { type: integer }
+    NotificationsMeta:
+      type: object
+      required: [unread_count]
+      properties:
+        unread_count: { type: integer, description: 'No leídas en total (con o sin el filtro).' }
+    PaginationLinks:
+      type: object
+      required: [first, last, prev, next]
+      properties:
+        first: { type: [string, 'null'] }
+        last: { type: [string, 'null'] }
+        prev: { type: [string, 'null'] }
+        next: { type: [string, 'null'] }
+    PaginationMeta:
+      type: object
+      required: [current_page, last_page, per_page, total]
+      properties:
+        current_page: { type: integer }
+        from: { type: [integer, 'null'] }
+        last_page: { type: integer }
+        path: { type: string }
+        per_page: { type: integer }
+        to: { type: [integer, 'null'] }
+        total: { type: integer }
+    UserShop:
+      type: object
+      required: [id, name, status]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        status: { type: string, enum: [pending, approved, rejected] }
+    TokenDevice:
+      type: object
+      required: [id, device_id, device_name]
+      properties:
+        id: { type: integer }
+        device_id: { type: [string, 'null'] }
+        device_name: { type: string }
+    CategoryRef:
+      type: object
+      required: [id, name, slug]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+    NamedRef:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+    ProductVariants:
+      type: object
+      required: [size_label, sizes, colors, combinations]
+      properties:
+        size_label: { type: string }
+        sizes: { type: array, items: { type: string } }
+        colors: { type: array, items: { $ref: '#/components/schemas/Color' } }
+        combinations: { type: array, items: { $ref: '#/components/schemas/Combination' } }
+    CartProduct:
+      type: object
+      required: [id, slug, name, thumbnail_url, on_sale]
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        name: { type: string }
+        thumbnail_url: { type: string }
+        on_sale: { type: boolean, description: 'false = despublicado o vetado tras añadirlo.' }
+    CartData:
+      type: object
+      required: [items, count, totals, currency]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/CartItem' } }
+        count: { type: integer }
+        totals: { $ref: '#/components/schemas/Totals' }
+        currency: { type: string, const: USD }
+    SettlementCycle:
+      type: object
+      description: Líneas pagadas, entregadas y sin liquidar.
+      required: [total_sales, commission_rate, commission, net_amount, lines]
+      properties:
+        total_sales: { type: number }
+        commission_rate: { type: number }
+        commission: { type: number }
+        net_amount: { type: number }
+        lines: { type: integer }
+    LastSettlement:
+      type: object
+      required: [net_amount, settled_at]
+      properties:
+        net_amount: { type: number }
+        settled_at: { $ref: '#/components/schemas/NullableDateTime' }
+    OptionCategory:
+      type: object
+      required: [id, name, parent_id, variant_type]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        parent_id: { type: [integer, 'null'] }
+        variant_type: { type: string }
+    VariantType:
+      type: object
+      required: [key, label, size_label, sizes]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        size_label: { type: [string, 'null'] }
+        sizes: { type: array, items: { type: string } }
+    SellerStock:
+      type: object
+      required: [id, variation, size, color, price, qty, sku]
+      properties:
+        id: { type: integer }
+        variation: { type: string }
+        size: { type: [string, 'null'] }
+        color: { type: [string, 'null'] }
+        price: { type: number }
+        qty: { type: integer }
+        sku: { type: [string, 'null'] }
+    StockInput:
+      type: object
+      required: [price, qty]
+      properties:
+        size: { type: [string, 'null'] }
+        color: { type: [string, 'null'] }
+        price: { type: number, minimum: 0 }
+        qty: { type: integer, minimum: 0 }
+        sku: { type: [string, 'null'] }
+    SellerOrderActions:
+      type: object
+      required: [confirm, send_to_warehouse]
+      properties:
+        confirm: { type: boolean }
+        send_to_warehouse: { type: boolean }
+    Buyer:
+      type: object
+      required: [name, email, phone]
+      properties:
+        name: { type: [string, 'null'] }
+        email: { type: [string, 'null'] }
+        phone: { type: [string, 'null'] }
+    CheckoutPayment:
+      type: object
+      required: [suggested_gateway, country, gateways, stripe_publishable_key]
+      properties:
+        suggested_gateway: { $ref: '#/components/schemas/Gateway' }
+        country: { type: [string, 'null'], description: 'ISO 3166-1 alfa-2 por IP.' }
+        gateways: { type: array, items: { $ref: '#/components/schemas/Gateway' } }
+        stripe_publishable_key: { type: [string, 'null'] }

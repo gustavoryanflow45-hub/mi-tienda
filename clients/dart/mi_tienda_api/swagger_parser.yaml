@@ -1,0 +1,14 @@
+# Regenerar (desde clients/dart/mi_tienda_api):
+#   dart pub get
+#   dart run swagger_parser
+#   dart run build_runner build --delete-conflicting-outputs
+swagger_parser:
+  schema_path: ../../../docs/api/openapi.yaml
+  output_directory: lib/src
+  name: mi_tienda_api
+  language: dart
+  json_serializer: json_serializable
+  root_client: true
+  root_client_name: MiTiendaApi
+  put_clients_in_folder: true
+  unknown_enum_value: true

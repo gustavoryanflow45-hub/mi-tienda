@@ -1,0 +1,19 @@
+name: mi_tienda_api
+description: Cliente Dart de la API v1 de Mi Tienda, generado desde docs/api/openapi.yaml.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  dio: ^5.7.0
+  json_annotation: ^4.12.0
+  retrofit: ^4.4.0
+
+dev_dependencies:
+  test: ^1.25.0
+  build_runner: ^2.4.13
+  json_serializable: ^6.15.0
+  retrofit_generator: ">=10.0.0 <11.0.0"
+  swagger_parser: ^1.21.0
